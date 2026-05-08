@@ -16,6 +16,48 @@ DEFAULT_OUTPUT_CSV = ROOT_DIR / "data" / "output" / "schedule_list.csv"
 DEFAULT_OUTPUT_JSON = ROOT_DIR / "data" / "output" / "schedule_list.json"
 DEFAULT_PAGES_JSON = ROOT_DIR / "docs" / "data" / "schedule_list.json"
 
+THEATER_SIGNAL_PATTERNS = [
+    "演劇",
+    "劇団",
+    "朗読",
+    "朗読劇",
+    "歌舞伎",
+    "舞台",
+    "上演",
+    "演芸",
+    "ドラマ",
+    "観劇",
+    "怪談",
+    "一座",
+]
+
+NON_THEATER_PATTERNS = [
+    "アイドル",
+    "live",
+    "tour",
+    "ライブ",
+    "ダンス",
+    "バンド",
+    "コンサート",
+    "勉強会",
+    "ビジネス",
+    "子ども向けイベント",
+    "カイロ",
+    "アートフェス",
+    "展",
+]
+
+CONDITIONAL_NOISE_PATTERNS = [
+    "ワークショップ",
+    "フェス",
+    "祭り",
+]
+
+EXCLUDED_VENUE_PATTERNS = [
+    "金沢おぐら座",
+    "おぐら座",
+]
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Build a schedule planning list from filtered theater events")
@@ -109,7 +151,7 @@ def build_schedule_rows(
         date_range = build_date_range(start_date, end_date, (event_row.get("start_time") or "").strip())
         event_name = (event_row.get("event_name") or "").strip()
 
-        if not is_schedule_candidate(event_name, organization_name, venue_name, date_range):
+        if not is_schedule_candidate(event_name, organization_name, venue_name, date_range, event_row):
             continue
 
         dedupe_key = (event_name, organization_name, venue_name, date_range)
@@ -141,13 +183,42 @@ def build_schedule_rows(
     return rows
 
 
-def is_schedule_candidate(event_name: str, organization_name: str, venue_name: str, date_range: str) -> bool:
+def contains_any(value: str, patterns: list[str]) -> bool:
+    lowered = value.lower()
+    return any(pattern.lower() in lowered for pattern in patterns)
+
+
+def is_schedule_candidate(event_name: str, organization_name: str, venue_name: str, date_range: str, event_row: dict[str, str]) -> bool:
     if not date_range:
         return False
     if not event_name and not organization_name:
         return False
     if not venue_name and not organization_name:
         return False
+
+    if contains_any(venue_name, EXCLUDED_VENUE_PATTERNS):
+        return False
+
+    signal_text = " ".join(
+        [
+            event_name,
+            organization_name,
+            venue_name,
+            (event_row.get("category") or "").strip(),
+            (event_row.get("source_text") or "").strip(),
+        ]
+    )
+    has_theater_signal = contains_any(signal_text, THEATER_SIGNAL_PATTERNS)
+
+    if contains_any(signal_text, NON_THEATER_PATTERNS) and not has_theater_signal:
+        return False
+
+    if contains_any(signal_text, CONDITIONAL_NOISE_PATTERNS) and not has_theater_signal:
+        return False
+
+    if not has_theater_signal and not contains_any((event_row.get("category") or "").strip(), ["公演", "朗読劇"]):
+        return False
+
     return True
 
 
