@@ -170,6 +170,13 @@ def build_schedule(input_csv: Path) -> None:
     ])
 
 
+def build_master_pages_data() -> None:
+    run_command([
+        sys.executable,
+        str(ROOT_DIR / "src" / "build_master_pages_data.py"),
+    ])
+
+
 def run_git(command: list[str]) -> subprocess.CompletedProcess[str]:
     return run_command(["git", *command])
 
@@ -216,6 +223,7 @@ def main() -> int:
     event_cumulative_csv = build_event_cumulative(cumulative_filtered_csv)
     print("master update skipped: 劇団マスターと劇場マスターは既存ファイルを保持します")
     build_schedule(event_cumulative_csv)
+    build_master_pages_data()
     if args.publish:
         publish_pages_data(args)
     print("pipeline completed")

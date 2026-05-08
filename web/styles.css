@@ -56,6 +56,30 @@ body::before {
   color: var(--accent);
 }
 
+.page-nav {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 0 0 18px;
+}
+
+.page-nav-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 999px;
+  text-decoration: none;
+  color: var(--deep);
+  background: rgba(255, 255, 255, 0.52);
+  border: 1px solid rgba(34, 57, 74, 0.1);
+}
+
+.page-nav-link.is-current {
+  background: var(--deep);
+  color: #fff;
+}
+
 .hero h1 {
   margin: 0;
   font-family: "Yu Mincho", "Hiragino Mincho ProN", serif;
@@ -97,6 +121,10 @@ body::before {
   grid-template-columns: 2fr 1fr 1fr;
   gap: 14px;
   margin-top: 24px;
+}
+
+.master-controls {
+  grid-template-columns: 2fr 1fr 1.4fr;
 }
 
 .control {
@@ -215,6 +243,31 @@ body::before {
 
 .event-links a:hover {
   transform: translateY(-1px);
+}
+
+.master-grid {
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
+.master-card {
+  gap: 14px;
+}
+
+.master-chip {
+  background: rgba(32, 57, 71, 0.1);
+  color: var(--deep);
+}
+
+.master-id {
+  word-break: break-all;
+}
+
+.master-details a {
+  color: var(--deep);
+}
+
+.hero-meta-triple div {
+  min-width: 150px;
 }
 
 .primary-link {

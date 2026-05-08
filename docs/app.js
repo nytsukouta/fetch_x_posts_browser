@@ -106,7 +106,12 @@ function renderCards(items) {
     const card = fragment.querySelector(".event-card");
     card.style.animationDelay = `${Math.min(index * 55, 420)}ms`;
 
-    fragment.querySelector(".event-chip").textContent = buildReferenceLabel(item.official_reference_type);
+    const eventChip = fragment.querySelector(".event-chip");
+    if (hasOfficialReference(item)) {
+      eventChip.textContent = buildReferenceLabel(item.official_reference_type);
+    } else {
+      eventChip.remove();
+    }
     fragment.querySelector(".event-date").textContent = item.performance_schedule || "日程未設定";
     fragment.querySelector(".event-title").textContent = item.event_name || item.organization_name || "名称未設定";
     fragment.querySelector(".organization-name").textContent = item.organization_name || "未設定";
@@ -133,13 +138,10 @@ function renderCards(items) {
 }
 
 function buildReferenceLabel(referenceType) {
-  if (!referenceType) {
-    return "参照先なし";
-  }
   if (referenceType.startsWith("organization_official") || referenceType.startsWith("venue_official")) {
     return "公式リンク";
   }
-  return "X候補";
+  return "";
 }
 
 function hasOfficialReference(item) {
