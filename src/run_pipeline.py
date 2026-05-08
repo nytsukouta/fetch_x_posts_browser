@@ -182,19 +182,23 @@ def run_git(command: list[str]) -> subprocess.CompletedProcess[str]:
 
 
 def publish_pages_data(args: argparse.Namespace) -> None:
-    pages_json = ROOT_DIR / "docs" / "data" / "schedule_list.json"
-    if not pages_json.exists():
-        raise FileNotFoundError(f"pages json not found: {pages_json}")
+    pages_files = [
+        ROOT_DIR / "docs" / "data" / "schedule_list.json",
+        ROOT_DIR / "docs" / "data" / "master_data.json",
+    ]
+    for pages_file in pages_files:
+        if not pages_file.exists():
+            raise FileNotFoundError(f"pages json not found: {pages_file}")
 
-    run_git(["add", str(pages_json)])
+    run_git(["add", *(str(path) for path in pages_files)])
     diff_result = subprocess.run(
-        ["git", "diff", "--cached", "--quiet", "--", str(pages_json)],
+        ["git", "diff", "--cached", "--quiet", "--", *(str(path) for path in pages_files)],
         cwd=ROOT_DIR,
         text=True,
         capture_output=True,
     )
     if diff_result.returncode == 0:
-        print("publish skipped: docs/data/schedule_list.json に差分がありません")
+        print("publish skipped: docs/data の公開JSONに差分がありません")
         return
     if diff_result.returncode != 1:
         raise RuntimeError("staged diff の確認に失敗しました。")
