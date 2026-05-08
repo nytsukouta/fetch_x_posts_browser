@@ -5,7 +5,9 @@ import csv
 import json
 import os
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+import time
 from typing import Any
 from urllib import error, request
 
@@ -122,6 +124,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--filtered-output-csv", default=str(DEFAULT_FILTERED_CSV), help="ノイズ除去後CSVの保存先")
     parser.add_argument("--limit", type=int, default=None, help="処理件数の上限")
     parser.add_argument("--model", default=os.getenv("GITHUB_MODELS_MODEL", DEFAULT_MODEL), help="GitHub Models のモデルID")
+    parser.add_argument("--workers", type=int, default=2, help="GitHub Models 抽出の並列数")
     return parser.parse_args()
 
 
@@ -160,26 +163,41 @@ def call_github_models(token: str, api_version: str, model: str, prompt: str) ->
         "response_format": {"type": "json_object"},
     }
 
-    api_request = request.Request(
-        INFERENCE_URL,
-        data=json.dumps(payload).encode("utf-8"),
-        headers={
-            "Accept": "application/vnd.github+json",
-            "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json",
-            "X-GitHub-Api-Version": api_version,
-        },
-        method="POST",
-    )
+    last_error: Exception | None = None
+    for attempt in range(5):
+        api_request = request.Request(
+            INFERENCE_URL,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={
+                "Accept": "application/vnd.github+json",
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json",
+                "X-GitHub-Api-Version": api_version,
+            },
+            method="POST",
+        )
 
-    try:
-        with request.urlopen(api_request, timeout=60) as response:
-            return json.loads(response.read().decode("utf-8"))
-    except error.HTTPError as exc:
-        details = exc.read().decode("utf-8", errors="replace")
-        raise RuntimeError(f"GitHub Models API error {exc.code}: {details}") from exc
-    except error.URLError as exc:
-        raise RuntimeError(f"GitHub Models API へ接続できません: {exc}") from exc
+        try:
+            with request.urlopen(api_request, timeout=60) as response:
+                return json.loads(response.read().decode("utf-8"))
+        except error.HTTPError as exc:
+            details = exc.read().decode("utf-8", errors="replace")
+            if exc.code not in {429, 500, 502, 503, 504} or attempt == 4:
+                raise RuntimeError(f"GitHub Models API error {exc.code}: {details}") from exc
+            retry_after = exc.headers.get("Retry-After") if exc.headers else None
+            wait_seconds = float(retry_after) if retry_after else min(30, 2 * (attempt + 1))
+            print(f"retrying after API error {exc.code}: wait {wait_seconds:.0f}s", file=sys.stderr)
+            time.sleep(wait_seconds)
+            last_error = exc
+        except error.URLError as exc:
+            if attempt == 4:
+                raise RuntimeError(f"GitHub Models API へ接続できません: {exc}") from exc
+            wait_seconds = min(30, 2 * (attempt + 1))
+            print(f"retrying after connection error: wait {wait_seconds:.0f}s", file=sys.stderr)
+            time.sleep(wait_seconds)
+            last_error = exc
+
+    raise RuntimeError(f"GitHub Models API の呼び出しに失敗しました: {last_error}")
 
 
 def extract_json_content(response_payload: dict[str, Any]) -> dict[str, Any]:
@@ -326,6 +344,21 @@ def classify_noise(record: dict[str, Any]) -> tuple[bool, str]:
     return False, ""
 
 
+def extract_row(
+    index: int,
+    total: int,
+    row: dict[str, str],
+    github_token: str,
+    api_version: str,
+    model: str,
+) -> dict[str, Any]:
+    print(f"extracting: {index}/{total} {row.get('tweet_url', '')}")
+    prompt = build_user_prompt(row)
+    response_payload = call_github_models(github_token, api_version, model, prompt)
+    extracted = extract_json_content(response_payload)
+    return normalize_record(row, extracted)
+
+
 def main() -> int:
     load_dotenv(DEFAULT_ENV_FILE)
     args = parse_args()
@@ -338,14 +371,16 @@ def main() -> int:
 
     input_csv = Path(args.input_csv)
     rows = load_rows(input_csv, args.limit)
+    total = len(rows)
     structured_records: list[dict[str, Any]] = []
 
-    for index, row in enumerate(rows, start=1):
-        print(f"extracting: {index}/{len(rows)} {row.get('tweet_url', '')}")
-        prompt = build_user_prompt(row)
-        response_payload = call_github_models(github_token, api_version, args.model, prompt)
-        extracted = extract_json_content(response_payload)
-        structured_records.append(normalize_record(row, extracted))
+    with ThreadPoolExecutor(max_workers=max(1, args.workers)) as executor:
+        futures = [
+            executor.submit(extract_row, index, total, row, github_token, api_version, args.model)
+            for index, row in enumerate(rows, start=1)
+        ]
+        for future in futures:
+            structured_records.append(future.result())
 
     filtered_records = [record for record in structured_records if not record.get("is_noise")]
 
