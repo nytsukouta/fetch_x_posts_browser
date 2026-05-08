@@ -4,13 +4,31 @@ import argparse
 import csv
 import json
 from pathlib import Path
+from urllib.parse import urlparse
 
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 DEFAULT_ORGANIZATION_MASTER_CSV = ROOT_DIR / "data" / "output" / "organization_master.csv"
 DEFAULT_VENUE_MASTER_CSV = ROOT_DIR / "data" / "output" / "venue_master.csv"
 DEFAULT_OUTPUT_JSON = ROOT_DIR / "config" / "priority_queries.json"
-DEFAULT_EXCLUDE_TERMS = ["金沢おぐら座"]
+DEFAULT_EXCLUDE_TERMS = [
+    "映画",
+    "上映",
+    "シネマ",
+    "ライブ",
+    "LIVE",
+    "コンサート",
+    "DJ",
+    "フェス",
+    "アイドル",
+    "ダンス",
+]
+THEATER_ORGANIZATION_CONTEXT_TERMS = ["演劇", "舞台", "公演", "上演", "朗読劇"]
+THEATER_VENUE_CONTEXT_TERMS = ["演劇", "劇団", "上演", "朗読劇", "歌舞伎", "芝居"]
+THEATER_ORGANIZATION_INCLUDE_KEYWORDS = ["劇団", "演劇", "朗読", "鑑賞会", "表現集団", "theater", "show"]
+THEATER_ORGANIZATION_EXCLUDE_KEYWORDS = ["アイドル", "アンサンブル", "オーケストラ", "楽団", "吹奏楽", "ダンス"]
+THEATER_VENUE_INCLUDE_KEYWORDS = ["劇場", "演劇堂", "ドラマ工房", "芸術村", "文化ホール", "文化会館", "能楽堂", "カレード"]
+THEATER_VENUE_EXCLUDE_KEYWORDS = ["音楽堂", "live", "hall", "tabby's", "tabbys"]
 
 
 def parse_args() -> argparse.Namespace:
@@ -18,7 +36,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--organization-master-csv", default=str(DEFAULT_ORGANIZATION_MASTER_CSV))
     parser.add_argument("--venue-master-csv", default=str(DEFAULT_VENUE_MASTER_CSV))
     parser.add_argument("--output-json", default=str(DEFAULT_OUTPUT_JSON))
-    parser.add_argument("--max-results-per-query", type=int, default=10)
+    parser.add_argument("--max-results-per-query", type=int, default=30)
     return parser.parse_args()
 
 
@@ -27,19 +45,55 @@ def load_rows(path: Path) -> list[dict[str, str]]:
         return list(csv.DictReader(handle))
 
 
-def normalize_handle(value: str) -> str:
-    cleaned = (value or "").strip()
-    if not cleaned:
-        return ""
-    if cleaned.startswith("http://x.com/") or cleaned.startswith("https://x.com/"):
-        cleaned = cleaned.rsplit("/", 1)[-1]
-    if cleaned.startswith("@"):
-        cleaned = cleaned[1:]
-    return cleaned.strip()
-
-
 def build_exclusion_suffix() -> str:
     return " ".join(f'-"{term}"' for term in DEFAULT_EXCLUDE_TERMS if term)
+
+
+def build_context_suffix(terms: list[str]) -> str:
+    return "(" + " OR ".join(f'"{term}"' for term in terms if term) + ")"
+
+
+def normalize_handle(value: str) -> str:
+    candidate = value.strip()
+    if not candidate:
+        return ""
+    if candidate.startswith("@"):
+        return candidate[1:].strip().strip("/")
+
+    parsed = urlparse(candidate)
+    if parsed.scheme and parsed.netloc:
+        if parsed.netloc.lower() not in {"x.com", "www.x.com", "twitter.com", "www.twitter.com"}:
+            return ""
+        path_parts = [part for part in parsed.path.split("/") if part]
+        if not path_parts:
+            return ""
+        if path_parts[0].lower() in {"home", "search", "intent", "share", "i"}:
+            return ""
+        return path_parts[0].lstrip("@").strip()
+
+    return candidate.lstrip("@").strip().strip("/")
+
+
+def is_truthy(value: str) -> bool:
+    return value.strip().lower() in {"1", "true", "yes", "y", "on"}
+
+
+def is_theater_organization(name: str) -> bool:
+    normalized = name.strip().lower()
+    if not normalized:
+        return False
+    if any(keyword.lower() in normalized for keyword in THEATER_ORGANIZATION_EXCLUDE_KEYWORDS):
+        return False
+    return any(keyword.lower() in normalized for keyword in THEATER_ORGANIZATION_INCLUDE_KEYWORDS)
+
+
+def is_theater_venue(name: str) -> bool:
+    normalized = name.strip().lower()
+    if not normalized:
+        return False
+    if any(keyword.lower() in normalized for keyword in THEATER_VENUE_EXCLUDE_KEYWORDS):
+        return False
+    return any(keyword.lower() in normalized for keyword in THEATER_VENUE_INCLUDE_KEYWORDS)
 
 
 def add_query(queries: list[dict[str, str]], seen: set[str], label: str, query: str) -> None:
@@ -54,24 +108,28 @@ def build_queries(organization_rows: list[dict[str, str]], venue_rows: list[dict
     queries: list[dict[str, str]] = []
     seen: set[str] = set()
     exclusion_suffix = build_exclusion_suffix()
+    organization_context_suffix = build_context_suffix(THEATER_ORGANIZATION_CONTEXT_TERMS)
+    venue_context_suffix = build_context_suffix(THEATER_VENUE_CONTEXT_TERMS)
 
     for row in organization_rows:
         name = (row.get("organization_name_normalized") or row.get("organization_name") or "").strip()
-        if not name:
+        force_include = is_truthy(row.get("query_include") or row.get("query_enabled") or "")
+        if not name or (not force_include and not is_theater_organization(name)):
             continue
-        official_x = normalize_handle(row.get("official_x") or "")
-        if official_x:
-            add_query(queries, seen, f"劇団公式 {name}", f"from:{official_x}")
-        query = f'"{name}" {exclusion_suffix}'.strip()
+        official_handle = normalize_handle(row.get("official_x") or "")
+        if official_handle:
+            handle_query = f'from:{official_handle} {organization_context_suffix} {exclusion_suffix}'.strip()
+            add_query(queries, seen, f"劇団 {name} 公式X", handle_query)
+        query = f'"{name}" {organization_context_suffix} {exclusion_suffix}'.strip()
         add_query(queries, seen, f"劇団 {name}", query)
 
     for row in venue_rows:
         name = (row.get("venue_name_normalized") or row.get("venue_name") or "").strip()
-        if not name:
+        if not name or not is_theater_venue(name):
             continue
         if any(term in name for term in DEFAULT_EXCLUDE_TERMS):
             continue
-        query = f'"{name}" {exclusion_suffix}'.strip()
+        query = f'"{name}" {venue_context_suffix} {exclusion_suffix}'.strip()
         add_query(queries, seen, f"劇場 {name}", query)
 
     return queries

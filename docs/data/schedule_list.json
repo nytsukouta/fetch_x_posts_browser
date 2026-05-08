@@ -1,177 +1,7 @@
 {
-  "generated_at": "2026-05-08T15:08:23+09:00",
-  "count": 51,
+  "generated_at": "2026-05-08T19:51:48+09:00",
+  "count": 14,
   "items": [
-    {
-      "event_name": "港町純情物語",
-      "organization_name": "七尾市民劇団N",
-      "venue_name": "",
-      "performance_schedule": "2015-10-03 - 2015-10-04",
-      "official_reference_url": "https://x.com/momonngaribon",
-      "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "石川県七尾市",
-      "source_tweet_url": "https://x.com/momonngaribon/status/649229999585652737"
-    },
-    {
-      "event_name": "音楽劇 人形の家",
-      "organization_name": "俳優座劇場プロデュース",
-      "venue_name": "俳優座劇場",
-      "performance_schedule": "2022-12-13",
-      "official_reference_url": "https://x.com/tykay_k",
-      "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "石川県七尾市",
-      "source_tweet_url": "https://x.com/tykay_k/status/1602505869312557056"
-    },
-    {
-      "event_name": "罠",
-      "organization_name": "俳優座劇場プロデュース",
-      "venue_name": "俳優座劇場",
-      "performance_schedule": "2023-06-09",
-      "official_reference_url": "https://x.com/shiroishimoda",
-      "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "石川県七尾市",
-      "source_tweet_url": "https://x.com/shiroishimoda/status/1667193459424509955"
-    },
-    {
-      "event_name": "2月例会「サンシャインボーイズ」",
-      "organization_name": "神戸演劇鑑賞会",
-      "venue_name": "",
-      "performance_schedule": "2024-02-10",
-      "official_reference_url": "https://x.com/kaorinjiro",
-      "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "石川県七尾市 / 石川県能登地方",
-      "source_tweet_url": "https://x.com/kaorinjiro/status/1755967360660574290"
-    },
-    {
-      "event_name": "2024年度 新歓発表会",
-      "organization_name": "東洋大学マジシャンズソサエティ",
-      "venue_name": "東洋大学白山キャンパス 練習ホール1(4B201)",
-      "performance_schedule": "2024-05-11 15:30",
-      "official_reference_url": "https://x.com/toyo_magic",
-      "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "石川県白山市",
-      "source_tweet_url": "https://x.com/toyo_magic/status/1789156590677066205"
-    },
-    {
-      "event_name": "イワシのビッグウェーブ",
-      "organization_name": "七尾演劇鑑賞会",
-      "venue_name": "",
-      "performance_schedule": "2025-06-07",
-      "official_reference_url": "https://x.com/act_Lottie",
-      "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "石川県七尾市",
-      "source_tweet_url": "https://x.com/act_Lottie/status/1932909061223428231"
-    },
-    {
-      "event_name": "あなたがあれば、どこまでも",
-      "organization_name": "七尾市民劇団N",
-      "venue_name": "",
-      "performance_schedule": "2025-09-13 - 2025-09-14",
-      "official_reference_url": "https://x.com/skmt723_aug14",
-      "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "石川県七尾市",
-      "source_tweet_url": "https://x.com/skmt723_aug14/status/1966621924878090625"
-    },
-    {
-      "event_name": "落語的幸福論その参 あなたがあれば、どこまでも",
-      "organization_name": "七尾市民劇団N",
-      "venue_name": "",
-      "performance_schedule": "2025-09-13 - 2025-09-14",
-      "official_reference_url": "https://x.com/engekido",
-      "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "石川県七尾市 / 石川県能登地方",
-      "source_tweet_url": "https://x.com/engekido/status/1965666032036839608"
-    },
-    {
-      "event_name": "泉鏡花作「義血侠血」より「滝の白糸～月夜の天神橋～」朗読および泉鏡花作「湯島の境内」",
-      "organization_name": "",
-      "venue_name": "宇多須神社",
-      "performance_schedule": "2025-09-27",
-      "official_reference_url": "https://x.com/asanogawaclub",
-      "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "石川県金沢市 / 石川県加賀市",
-      "source_tweet_url": "https://x.com/asanogawaclub/status/1973280371279278425"
-    },
-    {
-      "event_name": "きらめく星座",
-      "organization_name": "こまつ座",
-      "venue_name": "七尾市文化ホール",
-      "performance_schedule": "2025-10-11",
-      "official_reference_url": "https://x.com/y_miyazu_5",
-      "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "石川県七尾市",
-      "source_tweet_url": "https://x.com/y_miyazu_5/status/1976979583854653585"
-    },
-    {
-      "event_name": "春の公演",
-      "organization_name": "劇団さくらんぼ",
-      "venue_name": "いしかわ子ども交流センタ－ ホール",
-      "performance_schedule": "2026-03-08 13:00",
-      "official_reference_url": "https://x.com/tonetoneto25403",
-      "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "",
-      "source_tweet_url": "https://x.com/tonetoneto25403/status/2028832801601343890"
-    },
-    {
-      "event_name": "",
-      "organization_name": "劇団ともだおれ",
-      "venue_name": "",
-      "performance_schedule": "2026-03-28",
-      "official_reference_url": "https://x.com/tonetoneto25403",
-      "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "",
-      "source_tweet_url": "https://x.com/tonetoneto25403/status/2036042312292434354"
-    },
-    {
-      "event_name": "ーのの陣ー",
-      "organization_name": "劇団羅針盤",
-      "venue_name": "学びの杜ののいち カレード 研修室・会議室",
-      "performance_schedule": "2026-04-01",
-      "official_reference_url": "https://x.com/kanazawa_teatre",
-      "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "石川県",
-      "source_tweet_url": "https://x.com/kanazawa_teatre/status/2042414459487134160"
-    },
-    {
-      "event_name": "怪奇庁怪異対策課の事件簿",
-      "organization_name": "金沢学院大学演劇部",
-      "venue_name": "",
-      "performance_schedule": "2026-04-01",
-      "official_reference_url": "https://x.com/kg_drama",
-      "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "石川県金沢市",
-      "source_tweet_url": "https://x.com/kg_drama/status/2039300116851617967"
-    },
-    {
-      "event_name": "怪奇庁怪異対策課の事件簿",
-      "organization_name": "金沢学院大学演劇部",
-      "venue_name": "",
-      "performance_schedule": "2026-04-02",
-      "official_reference_url": "https://x.com/kg_drama",
-      "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "石川県金沢市",
-      "source_tweet_url": "https://x.com/kg_drama/status/2039690594466050143"
-    },
-    {
-      "event_name": "",
-      "organization_name": "金沢学院大学演劇部",
-      "venue_name": "",
-      "performance_schedule": "2026-04-04",
-      "official_reference_url": "https://x.com/kg_drama",
-      "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "石川県金沢市",
-      "source_tweet_url": "https://x.com/kg_drama/status/2039648809094107252"
-    },
-    {
-      "event_name": "怪奇庁怪異対策課の事件簿",
-      "organization_name": "金沢学院大学演劇部",
-      "venue_name": "",
-      "performance_schedule": "2026-04-04",
-      "official_reference_url": "https://x.com/kg_drama",
-      "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "石川県金沢市",
-      "source_tweet_url": "https://x.com/kg_drama/status/2040068924927365371"
-    },
     {
       "event_name": "怪奇庁怪異対策課の事件簿",
       "organization_name": "金沢学院大学演劇部",
@@ -183,117 +13,27 @@
       "source_tweet_url": "https://x.com/kg_drama/status/2050476703806611526"
     },
     {
-      "event_name": "",
-      "organization_name": "東洋大学 劇団「曙」",
-      "venue_name": "白山キャンパス練習ホール1",
-      "performance_schedule": "2026-04-15 15:00",
-      "official_reference_url": "https://x.com/akebono_toyo",
-      "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "石川県白山市",
-      "source_tweet_url": "https://x.com/akebono_toyo/status/2043936086058250512"
-    },
-    {
-      "event_name": "芝居小屋羅針盤 ━のの陣━",
-      "organization_name": "劇団羅針盤",
-      "venue_name": "学びの杜ののいち カレード 研修室･会議室",
-      "performance_schedule": "2026-04-18 - 2026-04-19",
-      "official_reference_url": "https://x.com/nono1kaleido",
-      "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "ののいち",
-      "source_tweet_url": "https://x.com/nono1kaleido/status/2023258380702556300"
-    },
-    {
-      "event_name": "芝居小屋羅針盤っ！ ─のの陣─",
-      "organization_name": "劇団羅針盤",
-      "venue_name": "学びの杜ののいちカレード",
-      "performance_schedule": "2026-04-18 - 2026-04-19",
-      "official_reference_url": "https://x.com/stage_corich",
-      "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "石川県",
-      "source_tweet_url": "https://x.com/stage_corich/status/2027579520619004301"
-    },
-    {
-      "event_name": "雲を歩く",
-      "organization_name": "劇団自由調",
-      "venue_name": "こった創作空間",
-      "performance_schedule": "2026-05-01 - 2026-05-02",
-      "official_reference_url": "https://x.com/diver_dolphin",
-      "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "石川県",
-      "source_tweet_url": "https://x.com/diver_dolphin/status/2050529536752877610"
-    },
-    {
-      "event_name": "朗読劇 #雲を歩く",
+      "event_name": "第27回 日本こども歌舞伎まつりin小松",
       "organization_name": "",
-      "venue_name": "こった創作空間",
-      "performance_schedule": "2026-05-02",
-      "official_reference_url": "https://x.com/fum_0417",
+      "venue_name": "團十郎芸術劇場うらら",
+      "performance_schedule": "2026-05-04 - 2026-05-05",
+      "official_reference_url": "https://x.com/hideyoshikun_n",
       "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "",
-      "source_tweet_url": "https://x.com/fum_0417/status/2050407873256345950"
+      "normalized_location": "石川県小松市 / 石川県",
+      "source_tweet_url": "https://x.com/hideyoshikun_n/status/2051794351458828332"
     },
     {
-      "event_name": "ガルガンチュア音楽祭",
+      "event_name": "日本こども歌舞伎まつりin小松",
       "organization_name": "",
-      "venue_name": "石川県立音楽堂邦楽ホール",
-      "performance_schedule": "2026-05-03",
-      "official_reference_url": "https://x.com/mdaariir125",
-      "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "石川県",
-      "source_tweet_url": "https://x.com/mdaariir125/status/2050921579543216167"
-    },
-    {
-      "event_name": "朗読劇『雲を歩く』",
-      "organization_name": "C班",
-      "venue_name": "こった創作空間",
-      "performance_schedule": "2026-05-03",
-      "official_reference_url": "https://x.com/U2yurik8U",
-      "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "新宿三丁目駅より徒歩3分",
-      "source_tweet_url": "https://x.com/U2yurik8U/status/2050739183283736872"
-    },
-    {
-      "event_name": "朗読劇 #雲を歩く",
-      "organization_name": "",
-      "venue_name": "こった創作空間",
-      "performance_schedule": "2026-05-03 15:00",
-      "official_reference_url": "https://x.com/fum_0417",
-      "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "",
-      "source_tweet_url": "https://x.com/fum_0417/status/2050785522419892579"
-    },
-    {
-      "event_name": "ガルガンチュア音楽祭2026【H42】児玉隼人×ハイドン トランペット協奏曲",
-      "organization_name": "アンサンブル金沢",
-      "venue_name": "石川県立音楽堂 邦楽ホール",
-      "performance_schedule": "2026-05-04",
-      "official_reference_url": "https://x.com/muj_chubu",
-      "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "石川県金沢市 / 石川県",
-      "source_tweet_url": "https://x.com/muj_chubu/status/2051084388511957279"
-    },
-    {
-      "event_name": "ガルガンチュア音楽祭2026【H43】Cocomi×モーツァルト フルート協奏曲",
-      "organization_name": "アンサンブル金沢",
-      "venue_name": "石川県立音楽堂 邦楽ホール",
-      "performance_schedule": "2026-05-04",
-      "official_reference_url": "https://x.com/muj_chubu",
-      "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "石川県金沢市 / 石川県",
-      "source_tweet_url": "https://x.com/muj_chubu/status/2051086905249550339"
-    },
-    {
-      "event_name": "ガルガンチュア音楽祭2026「音楽幻想朗読劇」",
-      "organization_name": "",
-      "venue_name": "石川県立音楽堂 邦楽ホール",
+      "venue_name": "小松市團十郎芸術劇場うらら",
       "performance_schedule": "2026-05-05",
-      "official_reference_url": "https://x.com/81pro_official",
+      "official_reference_url": "https://x.com/c_hocknews",
       "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "石川県",
-      "source_tweet_url": "https://x.com/81pro_official/status/2051656909636374857"
+      "normalized_location": "石川県小松市 / 石川県",
+      "source_tweet_url": "https://x.com/c_hocknews/status/2051880808911446348"
     },
     {
-      "event_name": "第27回 日本こども歌舞伎まつりｉｎ小松 最終回（大千穐楽）",
+      "event_name": "第27回 日本こども歌舞伎まつりin小松",
       "organization_name": "",
       "venue_name": "團十郎芸術劇場うらら大ホール",
       "performance_schedule": "2026-05-05 - 2026-05-06",
@@ -303,144 +43,64 @@
       "source_tweet_url": "https://x.com/nomikai1988/status/2051495795703345548"
     },
     {
-      "event_name": "最後のこども歌舞伎まつり",
+      "event_name": "第27回 日本こども歌舞伎まつりｉｎ小松",
       "organization_name": "",
-      "venue_name": "小松市團十郎芸術劇場うらら",
+      "venue_name": "小松市團十郎芸術劇場うらら大ホール",
       "performance_schedule": "2026-05-05 - 2026-05-06",
-      "official_reference_url": "https://x.com/hokkokushimbun",
+      "official_reference_url": "https://x.com/nomikai1988",
       "official_reference_type": "source_author_x_candidate",
       "normalized_location": "石川県小松市",
-      "source_tweet_url": "https://x.com/hokkokushimbun/status/2048680197973848147"
+      "source_tweet_url": "https://x.com/nomikai1988/status/2051554716199633243"
     },
     {
-      "event_name": "第27回日本こども歌舞伎まつりin小松",
+      "event_name": "日本こども歌舞伎まつりin小松 大千穐楽",
       "organization_name": "",
-      "venue_name": "小松市團十郎芸術劇場うらら",
-      "performance_schedule": "2026-05-05 - 2026-05-06",
-      "official_reference_url": "https://x.com/blue_Demi",
+      "venue_name": "團十郎芸術劇場うらら",
+      "performance_schedule": "2026-05-06",
+      "official_reference_url": "https://x.com/kashiwagiyugehi",
       "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "石川県小松市",
-      "source_tweet_url": "https://x.com/blue_Demi/status/2048953313379701095"
+      "normalized_location": "石川県小松市 / 石川県",
+      "source_tweet_url": "https://x.com/kashiwagiyugehi/status/2052014074528149783"
     },
     {
-      "event_name": "日本こども歌舞伎まつりｉｎ小松",
+      "event_name": "日本こども歌舞伎まつりin小松",
       "organization_name": "",
       "venue_name": "小松市團十郎芸術劇場うらら",
       "performance_schedule": "2026-05-06",
-      "official_reference_url": "https://x.com/c_hocknews",
+      "official_reference_url": "https://x.com/kashiwagiyugehi",
       "official_reference_type": "source_author_x_candidate",
       "normalized_location": "石川県小松市 / 石川県",
       "source_tweet_url": "https://x.com/c_hocknews/status/2052168249794822412"
     },
     {
-      "event_name": "曳山お旅まつり",
-      "organization_name": "八日市町の一行",
-      "venue_name": "イオンモール新小松",
-      "performance_schedule": "2026-05-08",
-      "official_reference_url": "https://x.com/blue_Demi",
-      "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "石川県小松市",
-      "source_tweet_url": "https://x.com/blue_Demi/status/2052217415581466896"
-    },
-    {
-      "event_name": "定期公演mini",
-      "organization_name": "劇団 ほくりくアイドル部",
-      "venue_name": "",
-      "performance_schedule": "2026-05-08",
-      "official_reference_url": "https://x.com/yukarihime04",
-      "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "",
-      "source_tweet_url": "https://x.com/yukarihime04/status/2052581670457577746"
-    },
-    {
-      "event_name": "ムービートラップのテーマ",
+      "event_name": "コクシネル",
       "organization_name": "ムービートラップ",
-      "venue_name": "金沢市民芸術村",
-      "performance_schedule": "2026-05-09",
-      "official_reference_url": "https://x.com/yNnD0o6HaDTopMx",
-      "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "石川県金沢市",
-      "source_tweet_url": "https://x.com/yNnD0o6HaDTopMx/status/2050677560519111091"
-    },
-    {
-      "event_name": "ムービートラップ 上映会&展覧会",
-      "organization_name": "ゆかいな仲間たちのみゅーじアム",
-      "venue_name": "金沢市民芸術村アート工房(pit5)",
-      "performance_schedule": "2026-05-09 - 2026-05-10 12:00",
-      "official_reference_url": "https://x.com/Kana421Kana",
-      "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "石川県金沢市",
-      "source_tweet_url": "https://x.com/Kana421Kana/status/2050947482507792423"
-    },
-    {
-      "event_name": "ムービートラップ",
-      "organization_name": "",
-      "venue_name": "金沢市民芸術村アート工房",
-      "performance_schedule": "2026-05-09 - 2026-05-10 17:30",
-      "official_reference_url": "https://x.com/tamaron1206",
-      "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "石川県金沢市",
-      "source_tweet_url": "https://x.com/tamaron1206/status/2052546671809294769"
-    },
-    {
-      "event_name": "2026中日寄席 春の落語まつり",
-      "organization_name": "",
-      "venue_name": "石川県立音楽堂 邦楽ホール",
-      "performance_schedule": "2026-05-10 13:30",
-      "official_reference_url": "https://x.com/jNHUJCxgS7E1o2B",
-      "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "石川県",
-      "source_tweet_url": "https://x.com/jNHUJCxgS7E1o2B/status/2052610046148878684"
-    },
-    {
-      "event_name": "ぴりよは",
-      "organization_name": "",
-      "venue_name": "こった創作空間",
-      "performance_schedule": "2026-05-21",
-      "official_reference_url": "https://x.com/leon_shigeki",
+      "venue_name": "",
+      "performance_schedule": "2026-05-09 19:30",
+      "official_reference_url": "https://x.com/ikedarick",
       "official_reference_type": "source_author_x_candidate",
       "normalized_location": "",
-      "source_tweet_url": "https://x.com/leon_shigeki/status/2050443859524759918"
+      "source_tweet_url": "https://x.com/ikedarick/status/2051977057593405861"
     },
     {
-      "event_name": "ぴりよは",
+      "event_name": "ひとり文芸ミュージカル『乙姫』金沢公演",
       "organization_name": "",
-      "venue_name": "こった創作空間",
-      "performance_schedule": "2026-05-21 - 2026-05-24",
-      "official_reference_url": "https://x.com/leon_shigeki",
+      "venue_name": "石川県立能楽堂",
+      "performance_schedule": "2026-05-20",
+      "official_reference_url": "https://x.com/Blue_Radio_com",
       "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "",
-      "source_tweet_url": "https://x.com/leon_shigeki/status/2050414923537322248"
+      "normalized_location": "石川県金沢市 / 石川県",
+      "source_tweet_url": "https://x.com/Blue_Radio_com/status/2052271005989777648"
     },
     {
-      "event_name": "ピリオドが打てずとも余白はもうない",
+      "event_name": "ひとり文芸ミュージカル『乙姫様』",
       "organization_name": "",
-      "venue_name": "こった創作空間",
-      "performance_schedule": "2026-05-21 - 2026-05-24",
-      "official_reference_url": "https://x.com/YoshimitsuEbina",
+      "venue_name": "石川県立能楽堂",
+      "performance_schedule": "2026-05-20",
+      "official_reference_url": "https://x.com/heroine_mikeko",
       "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "",
-      "source_tweet_url": "https://x.com/YoshimitsuEbina/status/2051285759706255493"
-    },
-    {
-      "event_name": "ぴりよは",
-      "organization_name": "S.U.B TOKYO",
-      "venue_name": "S.U.B TOKYO",
-      "performance_schedule": "2026-05-21 - 2026-05-24",
-      "official_reference_url": "https://x.com/leon_shigeki",
-      "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "",
-      "source_tweet_url": "https://x.com/leon_shigeki/status/2050232234893103255"
-    },
-    {
-      "event_name": "桂宮治さんの独演会",
-      "organization_name": "",
-      "venue_name": "團十郎芸術劇場うらら",
-      "performance_schedule": "2026-06-07 13:30",
-      "official_reference_url": "https://x.com/oldkids_SNS",
-      "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "石川県小松市 / 石川県",
-      "source_tweet_url": "https://x.com/oldkids_SNS/status/2050111788805722289"
+      "normalized_location": "石川県金沢市 / 石川県",
+      "source_tweet_url": "https://x.com/heroine_mikeko/status/2052271738730483842"
     },
     {
       "event_name": "煙が目にしみる",
@@ -453,24 +113,14 @@
       "source_tweet_url": "https://x.com/tonetoneto25403/status/2051143252397687033"
     },
     {
-      "event_name": "第19回公演「煙が目にしみる」",
-      "organization_name": "表現集団tone!tone!tone!",
-      "venue_name": "金沢市民芸術村PIT2ドラマ工房",
-      "performance_schedule": "2026-06-13 - 2026-06-14",
-      "official_reference_url": "https://x.com/tonetoneto25403",
+      "event_name": "2026年 本公演 『街 2026』",
+      "organization_name": "劇団新人類人猿",
+      "venue_name": "",
+      "performance_schedule": "2026-07-11 - 2026-07-12",
+      "official_reference_url": "https://x.com/rui_jin_en",
       "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "石川県金沢市",
-      "source_tweet_url": "https://x.com/tonetoneto25403/status/2038574399251734740"
-    },
-    {
-      "event_name": "太陽系全速力",
-      "organization_name": "劇団羅針盤",
-      "venue_name": "金沢市民芸術村PIT2ドラマ工房",
-      "performance_schedule": "2026-07-24 - 2026-07-26",
-      "official_reference_url": "https://x.com/GEKIRASHINBAN",
-      "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "石川県金沢市",
-      "source_tweet_url": "https://x.com/GEKIRASHINBAN/status/2050132074917757264"
+      "normalized_location": "",
+      "source_tweet_url": "https://x.com/rui_jin_en/status/2050872108415398092"
     },
     {
       "event_name": "太陽系全速力（フルスロットル）",
@@ -483,7 +133,7 @@
       "source_tweet_url": "https://x.com/stage_corich/status/2052222353539842168"
     },
     {
-      "event_name": "Not a Number",
+      "event_name": "『Not a Number』再演",
       "organization_name": "",
       "venue_name": "金沢市民芸術村",
       "performance_schedule": "2026-08-01",
@@ -491,26 +141,6 @@
       "official_reference_type": "source_author_x_candidate",
       "normalized_location": "石川県金沢市",
       "source_tweet_url": "https://x.com/6dystopiandream/status/2051843324299161728"
-    },
-    {
-      "event_name": "10th anniversary 声優トークショー＆オリジナル朗読劇in小松Vol.11",
-      "organization_name": "",
-      "venue_name": "小松市團十郎芸術劇場うらら",
-      "performance_schedule": "2026-08-30",
-      "official_reference_url": "https://x.com/seiyutalk_",
-      "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "石川県小松市 / 石川県",
-      "source_tweet_url": "https://x.com/seiyutalk_/status/2048341317055639694"
-    },
-    {
-      "event_name": "",
-      "organization_name": "七尾市民劇団N",
-      "venue_name": "能登演劇堂",
-      "performance_schedule": "2026-12-01",
-      "official_reference_url": "https://x.com/kinder_space",
-      "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "石川県七尾市 / 石川県能登地方",
-      "source_tweet_url": "https://x.com/kinder_space/status/2048247661845970982"
     }
   ]
 }

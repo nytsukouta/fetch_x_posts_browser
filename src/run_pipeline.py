@@ -25,6 +25,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--input-csv", default=str(DEFAULT_EXISTING_INPUT_CSV), help="--skip-collect 時に使う収集済みCSV")
     parser.add_argument("--query-file", default=str(ROOT_DIR / "config" / "priority_queries.json"), help="収集に使うクエリJSON")
     parser.add_argument("--output-dir", default=str(DEFAULT_OUTPUT_DIR), help="収集CSVの出力先")
+    parser.add_argument("--collector", choices=["api", "browser"], default="api", help="情報収集の方式。既定は api")
     parser.add_argument("--state-file", default=str(ROOT_DIR / "data" / "session" / "x_storage_state.json"), help="Xログイン状態JSON")
     parser.add_argument("--max-results", type=int, default=None, help="各クエリの取得件数")
     parser.add_argument("--headless", action="store_true", help="収集をヘッドレスで実行する")
@@ -57,16 +58,20 @@ def find_saved_csv(stdout: str) -> Path:
 
 
 def collect_posts(args: argparse.Namespace) -> Path:
-    command = [sys.executable, str(ROOT_DIR / "src" / "fetch_x_posts_browser.py")]
+    if args.collector == "api":
+        command = [sys.executable, str(ROOT_DIR / "src" / "fetch_x_posts.py")]
+    else:
+        command = [sys.executable, str(ROOT_DIR / "src" / "fetch_x_posts_browser.py")]
     command.extend(["--query-file", args.query_file])
     command.extend(["--output-dir", args.output_dir])
-    command.extend(["--state-file", args.state_file])
-    command.extend(["--browser-channel", args.browser_channel])
-    command.extend(["--manual-login-timeout", str(args.manual_login_timeout)])
     if args.max_results is not None:
         command.extend(["--max-results", str(args.max_results)])
-    if args.headless:
-        command.append("--headless")
+    if args.collector == "browser":
+        command.extend(["--state-file", args.state_file])
+        command.extend(["--browser-channel", args.browser_channel])
+        command.extend(["--manual-login-timeout", str(args.manual_login_timeout)])
+        if args.headless:
+            command.append("--headless")
 
     completed = run_command(command)
     return find_saved_csv(completed.stdout)
@@ -109,7 +114,10 @@ def merge_cumulative_outputs() -> Path:
         raise RuntimeError("structured_events.csv が見つからないため累積マージできません。")
 
     cumulative_rows, cumulative_fieldnames = load_csv_rows(DEFAULT_CUMULATIVE_STRUCTURED_CSV)
-    fieldnames = cumulative_fieldnames or current_fieldnames
+    fieldnames = list(cumulative_fieldnames or current_fieldnames)
+    for fieldname in current_fieldnames:
+        if fieldname not in fieldnames:
+            fieldnames.append(fieldname)
     merged_by_tweet_url: dict[str, dict[str, str]] = {}
 
     for row in cumulative_rows:
@@ -151,15 +159,6 @@ def build_event_cumulative(input_csv: Path) -> Path:
         str(DEFAULT_EVENT_CUMULATIVE_CSV),
     ])
     return DEFAULT_EVENT_CUMULATIVE_CSV
-
-
-def build_masters(input_csv: Path) -> None:
-    run_command([
-        sys.executable,
-        str(ROOT_DIR / "src" / "build_entity_masters.py"),
-        "--input-csv",
-        str(input_csv),
-    ])
 
 
 def build_schedule(input_csv: Path) -> None:
@@ -215,7 +214,7 @@ def main() -> int:
     extract_events(input_csv, args)
     cumulative_filtered_csv = merge_cumulative_outputs()
     event_cumulative_csv = build_event_cumulative(cumulative_filtered_csv)
-    build_masters(event_cumulative_csv)
+    print("master update skipped: 劇団マスターと劇場マスターは既存ファイルを保持します")
     build_schedule(event_cumulative_csv)
     if args.publish:
         publish_pages_data(args)

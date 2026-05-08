@@ -26,8 +26,9 @@ async function main() {
     }
 
     const payload = await response.json();
-    state.items = Array.isArray(payload.items) ? payload.items : [];
-    elements.countValue.textContent = String(payload.count ?? state.items.length);
+  const loadedItems = Array.isArray(payload.items) ? payload.items : [];
+  state.items = loadedItems.filter((item) => isUpcomingSchedule(item.performance_schedule));
+  elements.countValue.textContent = String(state.items.length);
     elements.generatedAt.textContent = formatGeneratedAt(payload.generated_at);
 
     populateFilters(state.items);
@@ -165,6 +166,22 @@ function createOption(value, label) {
 function extractMonth(schedule) {
   const match = String(schedule || "").match(/^(\d{4}-\d{2})/);
   return match ? match[1] : "";
+}
+
+function isUpcomingSchedule(schedule) {
+  const match = String(schedule || "").match(/^(\d{4}-\d{2}-\d{2})/);
+  if (!match) {
+    return false;
+  }
+
+  const today = new Date();
+  const todayKey = [
+    today.getFullYear(),
+    String(today.getMonth() + 1).padStart(2, "0"),
+    String(today.getDate()).padStart(2, "0"),
+  ].join("-");
+
+  return match[1] >= todayKey;
 }
 
 function formatGeneratedAt(value) {

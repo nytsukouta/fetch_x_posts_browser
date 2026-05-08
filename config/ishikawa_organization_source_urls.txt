@@ -1,0 +1,11 @@
+# 石川県内の劇団・演劇団体候補を集めるためのURLを1行ずつ追加してください。
+# コメント行は # で始めます。
+
+# 演劇関連団体のまとまりページ
+https://www.geibunkyo.or.jp/about/organiz/%E3%81%8B%E3%81%AA%E3%81%96%E3%82%8F%E6%BC%94%E5%8A%87%E4%BA%BA%E5%8D%94%E4%BC%9A/
+
+# 石川県拠点の劇団・演劇団体の公式ページ
+https://potlucktheater.com/
+https://theaterangelus.com/
+https://gekirashinban.com/
+https://gekidann.com/

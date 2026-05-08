@@ -88,8 +88,13 @@ SYSTEM_PROMPT = """あなたは日本語のX投稿から演劇イベント情報
 不明な項目は null にしてください。
 出力は必ずJSONオブジェクトのみで返してください。説明文は不要です。
 
+この処理の目的は演劇関連情報だけを残すことです。
+映画、上映会、音楽ライブ、コンサート、DJイベント、アイドルイベント、展示、トークイベント、配信番組、一般ニュースは原則として演劇関連ではありません。
+ただし、舞台挨拶ではなく実際の演劇公演、朗読劇、演劇ワークショップ、劇団の出演募集、演劇フェスティバルは演劇関連として扱ってください。
+
 抽出項目:
 - event_name: 公演名や企画名
+- normalized_event_name: 同一公演の表記揺れ統合用の名称。副題、装飾記号、告知用の余分な説明はなるべく外し、同じ公演なら同じ名前に寄せる
 - organization: 劇団名、主催名、出演団体名
 - venue_name: 会場名
 - location: 地域名、住所、都市名
@@ -97,8 +102,11 @@ SYSTEM_PROMPT = """あなたは日本語のX投稿から演劇イベント情報
 - end_date: YYYY-MM-DD 形式。単日なら start_date と同じか null
 - start_time: HH:MM 24時間表記。不明なら null
 - category: 公演、募集、ワークショップ、朗読劇、その他 のいずれか
+- content_type: 演劇、映画、音楽ライブ、トーク、展示、配信、その他 のいずれか
+- is_theater_related: 演劇関連なら true、それ以外は false
 - is_recruitment: true か false
 - confidence: 0 から 1 の数値
+- exclusion_reason: 演劇関連ではない場合の短い理由。演劇関連なら null
 - reasoning: 1文で簡潔に判断根拠を書く
 """
 
@@ -196,6 +204,13 @@ def call_github_models(token: str, api_version: str, model: str, prompt: str) ->
             print(f"retrying after connection error: wait {wait_seconds:.0f}s", file=sys.stderr)
             time.sleep(wait_seconds)
             last_error = exc
+        except TimeoutError as exc:
+            if attempt == 4:
+                raise RuntimeError(f"GitHub Models API の応答待ちがタイムアウトしました: {exc}") from exc
+            wait_seconds = min(30, 2 * (attempt + 1))
+            print(f"retrying after read timeout: wait {wait_seconds:.0f}s", file=sys.stderr)
+            time.sleep(wait_seconds)
+            last_error = exc
 
     raise RuntimeError(f"GitHub Models API の呼び出しに失敗しました: {last_error}")
 
@@ -230,6 +245,7 @@ def write_csv(records: list[dict[str, Any]], output_path: Path) -> None:
         "author_name",
         "author_username",
         "event_name",
+        "normalized_event_name",
         "organization",
         "venue_name",
         "location",
@@ -239,10 +255,13 @@ def write_csv(records: list[dict[str, Any]], output_path: Path) -> None:
         "end_date",
         "start_time",
         "category",
+        "content_type",
+        "is_theater_related",
         "is_recruitment",
         "confidence",
         "is_noise",
         "noise_reason",
+        "exclusion_reason",
         "reasoning",
         "source_text",
     ]
@@ -259,6 +278,7 @@ def normalize_record(source_row: dict[str, str], extracted: dict[str, Any]) -> d
         "author_name": source_row.get("author_name", ""),
         "author_username": source_row.get("author_username", ""),
         "event_name": extracted.get("event_name"),
+        "normalized_event_name": extracted.get("normalized_event_name") or extracted.get("event_name"),
         "organization": extracted.get("organization"),
         "venue_name": extracted.get("venue_name"),
         "location": extracted.get("location"),
@@ -266,8 +286,11 @@ def normalize_record(source_row: dict[str, str], extracted: dict[str, Any]) -> d
         "end_date": extracted.get("end_date"),
         "start_time": extracted.get("start_time"),
         "category": extracted.get("category"),
+        "content_type": extracted.get("content_type"),
+        "is_theater_related": extracted.get("is_theater_related"),
         "is_recruitment": extracted.get("is_recruitment"),
         "confidence": extracted.get("confidence"),
+        "exclusion_reason": extracted.get("exclusion_reason"),
         "reasoning": extracted.get("reasoning"),
         "source_text": source_row.get("text", ""),
     }
@@ -311,10 +334,21 @@ def normalize_location(location: Any, normalized_venue_name: Any, source_text: A
 def classify_noise(record: dict[str, Any]) -> tuple[bool, str]:
     source_text = str(record.get("source_text") or "")
     category = str(record.get("category") or "")
+    content_type = str(record.get("content_type") or "")
     confidence = float(record.get("confidence") or 0)
     author_name = str(record.get("author_name") or "")
     organization = str(record.get("organization") or "")
     normalized_venue_name = str(record.get("normalized_venue_name") or "")
+    is_theater_related = record.get("is_theater_related")
+
+    if isinstance(is_theater_related, str):
+        is_theater_related = is_theater_related.strip().lower() == "true"
+
+    if is_theater_related is False:
+        return True, "non_theater_content"
+
+    if content_type and content_type != "演劇":
+        return True, f"content_type_{content_type}"
 
     if category == "その他":
         return True, "category_is_other"
