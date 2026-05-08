@@ -113,13 +113,11 @@ function renderCards(items) {
     fragment.querySelector(".location-name").textContent = item.normalized_location || "未設定";
 
     const primaryLink = fragment.querySelector(".primary-link");
-    if (item.official_reference_url) {
+    if (hasOfficialReference(item)) {
       primaryLink.href = item.official_reference_url;
       primaryLink.textContent = buildReferenceCta(item.official_reference_type);
     } else {
-      primaryLink.removeAttribute("href");
-      primaryLink.textContent = "参照先なし";
-      primaryLink.setAttribute("aria-disabled", "true");
+      primaryLink.remove();
     }
 
     const secondaryLink = fragment.querySelector(".secondary-link");
@@ -141,6 +139,13 @@ function buildReferenceLabel(referenceType) {
     return "公式リンク";
   }
   return "X候補";
+}
+
+function hasOfficialReference(item) {
+  if (!item.official_reference_url || !item.official_reference_type) {
+    return false;
+  }
+  return item.official_reference_type.startsWith("organization_official") || item.official_reference_type.startsWith("venue_official");
 }
 
 function buildReferenceCta(referenceType) {
