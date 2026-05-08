@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>石川の演劇スケジュール</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <p class="hero-kicker">Ishikawa Theater Watch</p>
+        <h1>石川の演劇スケジュール</h1>
+        <p class="hero-copy">
+          X から収集して整形した公演情報を、予定確認しやすい一覧で表示します。
+        </p>
+        <div class="hero-meta">
+          <div>
+            <span class="meta-label">件数</span>
+            <strong id="countValue">-</strong>
+          </div>
+          <div>
+            <span class="meta-label">更新</span>
+            <strong id="generatedAt">-</strong>
+          </div>
+        </div>
+      </header>
+
+      <section class="controls" aria-label="絞り込み">
+        <label class="control search-control">
+          <span>キーワード</span>
+          <input id="searchInput" type="search" placeholder="イベント名、劇団名、劇場名で検索" />
+        </label>
+        <label class="control">
+          <span>月</span>
+          <select id="monthFilter">
+            <option value="">すべて</option>
+          </select>
+        </label>
+        <label class="control">
+          <span>地域</span>
+          <select id="locationFilter">
+            <option value="">すべて</option>
+          </select>
+        </label>
+      </section>
+
+      <section class="status-bar">
+        <p id="resultSummary">読み込み中です。</p>
+      </section>
+
+      <main>
+        <div id="scheduleGrid" class="schedule-grid" aria-live="polite"></div>
+      </main>
+    </div>
+
+    <template id="cardTemplate">
+      <article class="event-card">
+        <div class="event-card-header">
+          <span class="event-chip"></span>
+          <p class="event-date"></p>
+        </div>
+        <h2 class="event-title"></h2>
+        <dl class="event-details">
+          <div>
+            <dt>劇団</dt>
+            <dd class="organization-name"></dd>
+          </div>
+          <div>
+            <dt>劇場</dt>
+            <dd class="venue-name"></dd>
+          </div>
+          <div>
+            <dt>地域</dt>
+            <dd class="location-name"></dd>
+          </div>
+        </dl>
+        <div class="event-links">
+          <a class="primary-link" target="_blank" rel="noreferrer">参照先を開く</a>
+          <a class="secondary-link" target="_blank" rel="noreferrer">元投稿を見る</a>
+        </div>
+      </article>
+    </template>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

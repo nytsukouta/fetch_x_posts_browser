@@ -1,0 +1,106 @@
+{
+  "generated_at": "2026-05-08T13:33:56+09:00",
+  "count": 10,
+  "items": [
+    {
+      "event_name": "送り出し",
+      "organization_name": "橘小竜丸劇団鈴組",
+      "venue_name": "金沢おぐら座",
+      "performance_schedule": "2026-04-02",
+      "official_reference_url": "https://x.com/hm4444my",
+      "official_reference_type": "source_author_x_candidate",
+      "normalized_location": "石川県金沢市",
+      "source_tweet_url": "https://x.com/hm4444my/status/2052492350862287178"
+    },
+    {
+      "event_name": "",
+      "organization_name": "劇団駒三郎",
+      "venue_name": "金沢おぐら座",
+      "performance_schedule": "2026-05-05",
+      "official_reference_url": "https://x.com/111Ishikawa",
+      "official_reference_type": "source_author_x_candidate",
+      "normalized_location": "石川県金沢市",
+      "source_tweet_url": "https://x.com/111Ishikawa/status/2052110350791962824"
+    },
+    {
+      "event_name": "定期公演mini",
+      "organization_name": "ほくりくアイドル部",
+      "venue_name": "",
+      "performance_schedule": "2026-05-08",
+      "official_reference_url": "https://x.com/maria_idolbu",
+      "official_reference_type": "source_author_x_candidate",
+      "normalized_location": "石川県金沢市",
+      "source_tweet_url": "https://x.com/maria_idolbu/status/2052587771949466013"
+    },
+    {
+      "event_name": "AVANTGARDEY LIVE TOUR 2026 【DANCE ON AIR】",
+      "organization_name": "AVANTGARDEY",
+      "venue_name": "團十郎芸術劇場うらら",
+      "performance_schedule": "2026-05-16",
+      "official_reference_url": "https://x.com/nagano_avantg",
+      "official_reference_type": "source_author_x_candidate",
+      "normalized_location": "石川県小松市 / 石川県",
+      "source_tweet_url": "https://x.com/nagano_avantg/status/2052384999836705031"
+    },
+    {
+      "event_name": "Who? AVANTGARDEY LIVE TOUR 2026 【DANCE ON AIR】",
+      "organization_name": "AVANTGARDEY",
+      "venue_name": "團十郎芸術劇場うらら",
+      "performance_schedule": "2026-05-16",
+      "official_reference_url": "https://x.com/nagano_avantg",
+      "official_reference_type": "source_author_x_candidate",
+      "normalized_location": "石川県小松市 / 石川県",
+      "source_tweet_url": "https://x.com/nagano_avantg/status/2052574608830918915"
+    },
+    {
+      "event_name": "ライブハウスツアー【乱舞 -外伝-】",
+      "organization_name": "",
+      "venue_name": "AZ",
+      "performance_schedule": "2026-06-12",
+      "official_reference_url": "https://x.com/kotaboo67",
+      "official_reference_type": "source_author_x_candidate",
+      "normalized_location": "石川県金沢市",
+      "source_tweet_url": "https://x.com/kotaboo67/status/2052576717349531831"
+    },
+    {
+      "event_name": "太陽系全速力（フルスロットル）",
+      "organization_name": "劇団羅針盤",
+      "venue_name": "金沢市民芸術村PIT2ドラマ工房",
+      "performance_schedule": "2026-07-24 - 2026-07-26",
+      "official_reference_url": "https://x.com/stage_corich",
+      "official_reference_type": "source_author_x_candidate",
+      "normalized_location": "石川県金沢市 / 石川県",
+      "source_tweet_url": "https://x.com/stage_corich/status/2052222353539842168"
+    },
+    {
+      "event_name": "ハートグローバル金沢2026",
+      "organization_name": "ハートグローバル金沢 HEART Global 金沢",
+      "venue_name": "石川県立音楽堂邦楽ホール",
+      "performance_schedule": "2026-08-14 - 2026-08-16",
+      "official_reference_url": "https://x.com/0y6bXgO8JEAnim7",
+      "official_reference_type": "source_author_x_candidate",
+      "normalized_location": "石川県金沢市 / 石川県",
+      "source_tweet_url": "https://x.com/0y6bXgO8JEAnim7/status/2051871226185077237"
+    },
+    {
+      "event_name": "能登公演",
+      "organization_name": "イエローヘルメッツ by GMBH(ゲーエムベーハー)",
+      "venue_name": "能登演劇堂",
+      "performance_schedule": "2026-09-05 - 2026-09-06",
+      "official_reference_url": "https://x.com/GMBH0802",
+      "official_reference_type": "source_author_x_candidate",
+      "normalized_location": "石川県七尾市 / 石川県能登地方 / 石川県",
+      "source_tweet_url": "https://x.com/GMBH0802/status/2049040859396796908"
+    },
+    {
+      "event_name": "",
+      "organization_name": "七尾市民劇団N",
+      "venue_name": "能登演劇堂",
+      "performance_schedule": "2026-12-01",
+      "official_reference_url": "https://x.com/kinder_space",
+      "official_reference_type": "source_author_x_candidate",
+      "normalized_location": "石川県七尾市 / 石川県能登地方",
+      "source_tweet_url": "https://x.com/kinder_space/status/2048247661845970982"
+    }
+  ]
+}

@@ -1,0 +1,260 @@
+:root {
+  --page-bg: linear-gradient(180deg, #f3efe4 0%, #d8e4ec 45%, #f7f5ef 100%);
+  --card-bg: rgba(255, 252, 246, 0.88);
+  --card-border: rgba(34, 57, 74, 0.12);
+  --text-main: #1c2730;
+  --text-sub: #53606b;
+  --accent: #a43b2f;
+  --accent-soft: #f1d4bf;
+  --deep: #203947;
+  --shadow: 0 22px 60px rgba(29, 43, 52, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "BIZ UDPGothic", "Yu Gothic UI", sans-serif;
+  color: var(--text-main);
+  background: var(--page-bg);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(circle at top right, rgba(164, 59, 47, 0.16), transparent 28%),
+    radial-gradient(circle at left 20% bottom 10%, rgba(32, 57, 71, 0.12), transparent 24%);
+  pointer-events: none;
+}
+
+.page-shell {
+  position: relative;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 40px 20px 64px;
+}
+
+.hero {
+  padding: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 28px;
+  background: linear-gradient(135deg, rgba(255, 250, 244, 0.92), rgba(226, 237, 242, 0.88));
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(12px);
+}
+
+.hero-kicker {
+  margin: 0 0 10px;
+  font-size: 0.82rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.hero h1 {
+  margin: 0;
+  font-family: "Yu Mincho", "Hiragino Mincho ProN", serif;
+  font-size: clamp(2.1rem, 5vw, 4rem);
+  line-height: 1.05;
+}
+
+.hero-copy {
+  max-width: 58ch;
+  margin: 14px 0 0;
+  color: var(--text-sub);
+  line-height: 1.8;
+}
+
+.hero-meta {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 22px;
+}
+
+.hero-meta div {
+  min-width: 180px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.56);
+  border: 1px solid rgba(34, 57, 74, 0.08);
+}
+
+.meta-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.78rem;
+  color: var(--text-sub);
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 14px;
+  margin-top: 24px;
+}
+
+.control {
+  display: grid;
+  gap: 8px;
+}
+
+.control span {
+  font-size: 0.88rem;
+  color: var(--deep);
+}
+
+.control input,
+.control select {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  font: inherit;
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.status-bar {
+  margin: 18px 0 10px;
+  color: var(--text-sub);
+}
+
+.schedule-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 18px;
+}
+
+.event-card {
+  display: grid;
+  gap: 18px;
+  padding: 22px;
+  border-radius: 24px;
+  border: 1px solid var(--card-border);
+  background: var(--card-bg);
+  box-shadow: var(--shadow);
+  opacity: 0;
+  transform: translateY(12px);
+  animation: rise 420ms ease forwards;
+}
+
+.event-card-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: start;
+}
+
+.event-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.82rem;
+}
+
+.event-date {
+  margin: 0;
+  font-size: 0.86rem;
+  color: var(--text-sub);
+}
+
+.event-title {
+  margin: 0;
+  font-size: 1.34rem;
+  line-height: 1.5;
+}
+
+.event-details {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+}
+
+.event-details div {
+  display: grid;
+  gap: 4px;
+}
+
+.event-details dt {
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-sub);
+}
+
+.event-details dd {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.event-links {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.event-links a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 16px;
+  border-radius: 999px;
+  text-decoration: none;
+  transition: transform 180ms ease, background-color 180ms ease;
+}
+
+.event-links a:hover {
+  transform: translateY(-1px);
+}
+
+.primary-link {
+  background: var(--deep);
+  color: #fff;
+}
+
+.secondary-link {
+  background: rgba(32, 57, 71, 0.08);
+  color: var(--deep);
+}
+
+.empty-state {
+  padding: 28px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid var(--card-border);
+}
+
+@keyframes rise {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 760px) {
+  .page-shell {
+    padding: 20px 14px 40px;
+  }
+
+  .hero {
+    padding: 22px;
+  }
+
+  .controls {
+    grid-template-columns: 1fr;
+  }
+
+  .schedule-grid {
+    grid-template-columns: 1fr;
+  }
+}
