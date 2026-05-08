@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import subprocess
 import sys
 from datetime import datetime
@@ -11,6 +12,10 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 DEFAULT_OUTPUT_DIR = ROOT_DIR / "data" / "output"
 DEFAULT_EXISTING_INPUT_CSV = ROOT_DIR / "data" / "output" / "x_browser_search_20260508_124323.csv"
 DEFAULT_PAGES_JSON = ROOT_DIR / "docs" / "data" / "schedule_list.json"
+DEFAULT_STRUCTURED_CSV = ROOT_DIR / "data" / "output" / "structured_events.csv"
+DEFAULT_FILTERED_CSV = ROOT_DIR / "data" / "output" / "structured_events_filtered.csv"
+DEFAULT_CUMULATIVE_STRUCTURED_CSV = ROOT_DIR / "data" / "output" / "structured_events_cumulative.csv"
+DEFAULT_CUMULATIVE_FILTERED_CSV = ROOT_DIR / "data" / "output" / "structured_events_filtered_cumulative.csv"
 
 
 def parse_args() -> argparse.Namespace:
@@ -80,12 +85,77 @@ def extract_events(input_csv: Path, args: argparse.Namespace) -> None:
     run_command(command)
 
 
-def build_masters() -> None:
-    run_command([sys.executable, str(ROOT_DIR / "src" / "build_entity_masters.py")])
+def load_csv_rows(path: Path) -> tuple[list[dict[str, str]], list[str]]:
+    if not path.exists():
+        return [], []
+    with path.open("r", encoding="utf-8-sig", newline="") as handle:
+        reader = csv.DictReader(handle)
+        rows = list(reader)
+        return rows, list(reader.fieldnames or [])
 
 
-def build_schedule() -> None:
-    run_command([sys.executable, str(ROOT_DIR / "src" / "build_schedule_list.py")])
+def write_csv_rows(path: Path, rows: list[dict[str, str]], fieldnames: list[str]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8-sig", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def merge_cumulative_outputs() -> Path:
+    current_rows, current_fieldnames = load_csv_rows(DEFAULT_STRUCTURED_CSV)
+    if not current_rows or not current_fieldnames:
+        raise RuntimeError("structured_events.csv が見つからないため累積マージできません。")
+
+    cumulative_rows, cumulative_fieldnames = load_csv_rows(DEFAULT_CUMULATIVE_STRUCTURED_CSV)
+    fieldnames = cumulative_fieldnames or current_fieldnames
+    merged_by_tweet_url: dict[str, dict[str, str]] = {}
+
+    for row in cumulative_rows:
+        tweet_url = (row.get("tweet_url") or "").strip()
+        if tweet_url:
+            merged_by_tweet_url[tweet_url] = row
+
+    existing_count = len(merged_by_tweet_url)
+    for row in current_rows:
+        tweet_url = (row.get("tweet_url") or "").strip()
+        if not tweet_url:
+            continue
+        merged_by_tweet_url[tweet_url] = row
+
+    merged_rows = sorted(
+        merged_by_tweet_url.values(),
+        key=lambda row: ((row.get("created_at") or ""), (row.get("tweet_url") or "")),
+        reverse=True,
+    )
+    filtered_rows = [row for row in merged_rows if str(row.get("is_noise") or "").lower() != "true"]
+
+    write_csv_rows(DEFAULT_CUMULATIVE_STRUCTURED_CSV, merged_rows, fieldnames)
+    write_csv_rows(DEFAULT_CUMULATIVE_FILTERED_CSV, filtered_rows, fieldnames)
+
+    new_count = len(merged_by_tweet_url) - existing_count
+    print(f"merged cumulative structured rows: {len(merged_rows)}")
+    print(f"new tweet rows: {max(new_count, 0)}")
+    print(f"merged cumulative filtered rows: {len(filtered_rows)}")
+    return DEFAULT_CUMULATIVE_FILTERED_CSV
+
+
+def build_masters(input_csv: Path) -> None:
+    run_command([
+        sys.executable,
+        str(ROOT_DIR / "src" / "build_entity_masters.py"),
+        "--input-csv",
+        str(input_csv),
+    ])
+
+
+def build_schedule(input_csv: Path) -> None:
+    run_command([
+        sys.executable,
+        str(ROOT_DIR / "src" / "build_schedule_list.py"),
+        "--events-csv",
+        str(input_csv),
+    ])
 
 
 def run_git(command: list[str]) -> subprocess.CompletedProcess[str]:
@@ -130,12 +200,15 @@ def main() -> int:
         input_csv = collect_posts(args)
 
     extract_events(input_csv, args)
-    build_masters()
-    build_schedule()
+    cumulative_filtered_csv = merge_cumulative_outputs()
+    build_masters(cumulative_filtered_csv)
+    build_schedule(cumulative_filtered_csv)
     if args.publish:
         publish_pages_data(args)
     print("pipeline completed")
     print(f"input_csv: {input_csv}")
+    print(f"cumulative_structured_csv: {DEFAULT_CUMULATIVE_STRUCTURED_CSV}")
+    print(f"cumulative_filtered_csv: {DEFAULT_CUMULATIVE_FILTERED_CSV}")
     print(f"schedule_csv: {ROOT_DIR / 'data' / 'output' / 'schedule_list.csv'}")
     print(f"pages_json: {DEFAULT_PAGES_JSON}")
     return 0
