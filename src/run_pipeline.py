@@ -3,12 +3,14 @@ from __future__ import annotations
 import argparse
 import subprocess
 import sys
+from datetime import datetime
 from pathlib import Path
 
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 DEFAULT_OUTPUT_DIR = ROOT_DIR / "data" / "output"
 DEFAULT_EXISTING_INPUT_CSV = ROOT_DIR / "data" / "output" / "x_browser_search_20260508_124323.csv"
+DEFAULT_PAGES_JSON = ROOT_DIR / "docs" / "data" / "schedule_list.json"
 
 
 def parse_args() -> argparse.Namespace:
@@ -24,6 +26,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--manual-login-timeout", type=int, default=600, help="手動ログイン待機秒数")
     parser.add_argument("--extract-limit", type=int, default=None, help="構造化抽出の件数上限")
     parser.add_argument("--model", default=None, help="GitHub Models のモデルIDを上書きする")
+    parser.add_argument("--publish", action="store_true", help="生成後に Pages 用 JSON を commit と push する")
+    parser.add_argument("--commit-message", default=None, help="--publish 時のコミットメッセージ")
     return parser.parse_args()
 
 
@@ -84,6 +88,38 @@ def build_schedule() -> None:
     run_command([sys.executable, str(ROOT_DIR / "src" / "build_schedule_list.py")])
 
 
+def run_git(command: list[str]) -> subprocess.CompletedProcess[str]:
+    return run_command(["git", *command])
+
+
+def publish_pages_data(args: argparse.Namespace) -> None:
+    pages_json = ROOT_DIR / "docs" / "data" / "schedule_list.json"
+    if not pages_json.exists():
+        raise FileNotFoundError(f"pages json not found: {pages_json}")
+
+    run_git(["add", str(pages_json)])
+    diff_result = subprocess.run(
+        ["git", "diff", "--cached", "--quiet", "--", str(pages_json)],
+        cwd=ROOT_DIR,
+        text=True,
+        capture_output=True,
+    )
+    if diff_result.returncode == 0:
+        print("publish skipped: docs/data/schedule_list.json に差分がありません")
+        return
+    if diff_result.returncode != 1:
+        raise RuntimeError("staged diff の確認に失敗しました。")
+
+    commit_message = args.commit_message or default_commit_message()
+    run_git(["commit", "-m", commit_message])
+    run_git(["push"])
+
+
+def default_commit_message() -> str:
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
+    return f"Update published schedule data ({timestamp})"
+
+
 def main() -> int:
     args = parse_args()
     if args.skip_collect:
@@ -96,10 +132,12 @@ def main() -> int:
     extract_events(input_csv, args)
     build_masters()
     build_schedule()
+    if args.publish:
+        publish_pages_data(args)
     print("pipeline completed")
     print(f"input_csv: {input_csv}")
     print(f"schedule_csv: {ROOT_DIR / 'data' / 'output' / 'schedule_list.csv'}")
-    print(f"pages_json: {ROOT_DIR / 'docs' / 'data' / 'schedule_list.json'}")
+    print(f"pages_json: {DEFAULT_PAGES_JSON}")
     return 0
 
 
