@@ -16,6 +16,7 @@ DEFAULT_STRUCTURED_CSV = ROOT_DIR / "data" / "output" / "structured_events.csv"
 DEFAULT_FILTERED_CSV = ROOT_DIR / "data" / "output" / "structured_events_filtered.csv"
 DEFAULT_CUMULATIVE_STRUCTURED_CSV = ROOT_DIR / "data" / "output" / "structured_events_cumulative.csv"
 DEFAULT_CUMULATIVE_FILTERED_CSV = ROOT_DIR / "data" / "output" / "structured_events_filtered_cumulative.csv"
+DEFAULT_EVENT_CUMULATIVE_CSV = ROOT_DIR / "data" / "output" / "event_cumulative.csv"
 
 
 def parse_args() -> argparse.Namespace:
@@ -140,6 +141,18 @@ def merge_cumulative_outputs() -> Path:
     return DEFAULT_CUMULATIVE_FILTERED_CSV
 
 
+def build_event_cumulative(input_csv: Path) -> Path:
+    run_command([
+        sys.executable,
+        str(ROOT_DIR / "src" / "build_event_cumulative.py"),
+        "--input-csv",
+        str(input_csv),
+        "--output-csv",
+        str(DEFAULT_EVENT_CUMULATIVE_CSV),
+    ])
+    return DEFAULT_EVENT_CUMULATIVE_CSV
+
+
 def build_masters(input_csv: Path) -> None:
     run_command([
         sys.executable,
@@ -201,14 +214,16 @@ def main() -> int:
 
     extract_events(input_csv, args)
     cumulative_filtered_csv = merge_cumulative_outputs()
-    build_masters(cumulative_filtered_csv)
-    build_schedule(cumulative_filtered_csv)
+    event_cumulative_csv = build_event_cumulative(cumulative_filtered_csv)
+    build_masters(event_cumulative_csv)
+    build_schedule(event_cumulative_csv)
     if args.publish:
         publish_pages_data(args)
     print("pipeline completed")
     print(f"input_csv: {input_csv}")
     print(f"cumulative_structured_csv: {DEFAULT_CUMULATIVE_STRUCTURED_CSV}")
     print(f"cumulative_filtered_csv: {DEFAULT_CUMULATIVE_FILTERED_CSV}")
+    print(f"event_cumulative_csv: {DEFAULT_EVENT_CUMULATIVE_CSV}")
     print(f"schedule_csv: {ROOT_DIR / 'data' / 'output' / 'schedule_list.csv'}")
     print(f"pages_json: {DEFAULT_PAGES_JSON}")
     return 0
