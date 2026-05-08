@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-05-08T19:51:48+09:00",
-  "count": 14,
+  "generated_at": "2026-05-08T19:55:36+09:00",
+  "count": 13,
   "items": [
     {
       "event_name": "怪奇庁怪異対策課の事件簿",
@@ -87,20 +87,10 @@
       "organization_name": "",
       "venue_name": "石川県立能楽堂",
       "performance_schedule": "2026-05-20",
-      "official_reference_url": "https://x.com/Blue_Radio_com",
-      "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "石川県金沢市 / 石川県",
-      "source_tweet_url": "https://x.com/Blue_Radio_com/status/2052271005989777648"
-    },
-    {
-      "event_name": "ひとり文芸ミュージカル『乙姫様』",
-      "organization_name": "",
-      "venue_name": "石川県立能楽堂",
-      "performance_schedule": "2026-05-20",
       "official_reference_url": "https://x.com/heroine_mikeko",
       "official_reference_type": "source_author_x_candidate",
       "normalized_location": "石川県金沢市 / 石川県",
-      "source_tweet_url": "https://x.com/heroine_mikeko/status/2052271738730483842"
+      "source_tweet_url": "https://x.com/Blue_Radio_com/status/2052271005989777648"
     },
     {
       "event_name": "煙が目にしみる",

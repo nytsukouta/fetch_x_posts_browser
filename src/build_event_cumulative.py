@@ -421,12 +421,6 @@ def secondary_dedupe(records: list[dict[str, Any]], model: str) -> list[dict[str
             merged_records.extend(group)
             continue
 
-        similarity_clusters = build_similarity_clusters(group)
-        if len(similarity_clusters) > 1:
-            for cluster in similarity_clusters:
-                merged_records.extend(secondary_dedupe(cluster, model) if len(cluster) >= 2 else cluster)
-            continue
-
         prompt = build_dedupe_prompt(group)
         try:
             response_payload = call_github_models(github_token, api_version, model, prompt)
