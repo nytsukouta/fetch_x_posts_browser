@@ -19,17 +19,17 @@ jobs:
       TZ: Asia/Tokyo
       X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
       GITHUB_TOKEN: ${{ secrets.GH_MODELS_TOKEN }}
-      GITHUB_MODELS_MODEL: ${{ vars.GITHUB_MODELS_MODEL }}
-      GITHUB_MODELS_API_VERSION: ${{ vars.GITHUB_MODELS_API_VERSION }}
+      GITHUB_MODELS_MODEL: ${{ vars.GH_MODELS_MODEL || 'openai/gpt-4.1-mini' }}
+      GITHUB_MODELS_API_VERSION: ${{ vars.GH_MODELS_API_VERSION || '2026-03-10' }}
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.13"
 
