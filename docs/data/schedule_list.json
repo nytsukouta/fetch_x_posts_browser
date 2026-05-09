@@ -1,7 +1,17 @@
 {
-  "generated_at": "2026-05-09T17:41:18+09:00",
-  "count": 12,
+  "generated_at": "2026-05-09T17:54:51+09:00",
+  "count": 14,
   "items": [
+    {
+      "event_name": "怪奇庁怪異対策課の事件簿",
+      "organization_name": "金沢学院大学演劇部",
+      "venue_name": "",
+      "performance_schedule": "2026-04-04 - 2026-04-05",
+      "official_reference_url": "https://x.com/kg_drama",
+      "official_reference_type": "source_author_x_candidate",
+      "normalized_location": "石川県金沢市",
+      "source_tweet_url": "https://x.com/kg_drama/status/2050476703806611526"
+    },
     {
       "event_name": "第27回 日本こども歌舞伎まつりin小松",
       "organization_name": "",
@@ -15,11 +25,11 @@
     {
       "event_name": "日本こども歌舞伎まつりin小松",
       "organization_name": "",
-      "venue_name": "小松市團十郎芸術劇場うらら",
+      "venue_name": "團十郎芸術劇場うらら",
       "performance_schedule": "2026-05-05",
       "official_reference_url": "https://x.com/c_hocknews",
       "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "石川県小松市 / 石川県",
+      "normalized_location": "石川県小松市",
       "source_tweet_url": "https://x.com/c_hocknews/status/2051880808911446348"
     },
     {
@@ -71,6 +81,16 @@
       "official_reference_type": "source_author_x_candidate",
       "normalized_location": "石川県小松市 / 石川県",
       "source_tweet_url": "https://x.com/c_hocknews/status/2052168249794822412"
+    },
+    {
+      "event_name": "コクシネル",
+      "organization_name": "ムービートラップ",
+      "venue_name": "",
+      "performance_schedule": "2026-05-09 19:30",
+      "official_reference_url": "https://x.com/ikedarick",
+      "official_reference_type": "source_author_x_candidate",
+      "normalized_location": "",
+      "source_tweet_url": "https://x.com/ikedarick/status/2051977057593405861"
     },
     {
       "event_name": "ひとり文芸ミュージカル『乙姫』金沢公演",

@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-05-09T17:38:17+09:00",
+  "generated_at": "2026-05-09T17:54:50+09:00",
   "counts": {
-    "organizations": 21,
+    "organizations": 22,
     "venues": 20
   },
   "organizations": [
@@ -54,14 +54,6 @@
       "query_include": false
     },
     {
-      "id": "org-coffee-ジョキャニーニャ",
-      "name": "Coffeeジョキャニーニャ",
-      "location": "石川県金沢市",
-      "official_website": "http://jokya.jp/",
-      "official_x": "https://x.com/jokya_official",
-      "query_include": true
-    },
-    {
       "id": "org-k-cat",
       "name": "K-CAT",
       "location": "石川県金沢市",
@@ -86,12 +78,28 @@
       "query_include": false
     },
     {
+      "id": "org-coffee-ジョキャニーニャ",
+      "name": "ジョキャニーニャ",
+      "location": "石川県金沢市",
+      "official_website": "http://jokya.jp/",
+      "official_x": "https://x.com/jokya_official",
+      "query_include": true
+    },
+    {
       "id": "org-ハートグローバル金沢",
       "name": "ハートグローバル金沢",
       "location": "石川県金沢市",
       "official_website": "https://www.heart-global.jp",
       "official_x": "https://x.com/0y6bXgO8JEAnim7",
       "query_include": false
+    },
+    {
+      "id": "org-出会い頭",
+      "name": "出会い頭",
+      "location": "石川県金沢市",
+      "official_website": "",
+      "official_x": "https://x.com/nabesan_p",
+      "query_include": true
     },
     {
       "id": "org-劇団さくらんぼ",
@@ -107,6 +115,14 @@
       "location": "石川県金沢市",
       "official_website": "https://www.youtube.com/channel/UCboTc51BFjAMdizZYofidDw",
       "official_x": "",
+      "query_include": false
+    },
+    {
+      "id": "org-劇団アンゲルス",
+      "name": "劇団アンゲルス",
+      "location": "石川県金沢市",
+      "official_website": "https://www.angels.jp/",
+      "official_x": "https://x.com/angels_gekidan",
       "query_include": false
     },
     {
@@ -135,7 +151,7 @@
     },
     {
       "id": "org-浪漫好-romance",
-      "name": "演劇ユニット浪漫好-Romance-",
+      "name": "演劇ユニット浪漫好",
       "location": "石川県金沢市",
       "official_website": "https://www.youtube.com/@ROMANCE966",
       "official_x": "https://x.com/ROMANCE966",
@@ -147,14 +163,6 @@
       "location": "石川県金沢市",
       "official_website": "",
       "official_x": "https://x.com/tonetoneto25403",
-      "query_include": false
-    },
-    {
-      "id": "org-出会い頭",
-      "name": "金沢劇団 出会い頭",
-      "location": "石川県金沢市",
-      "official_website": "",
-      "official_x": "https://x.com/nabesan_p",
       "query_include": false
     },
     {
