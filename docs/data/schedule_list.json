@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-05-09T17:20:24+09:00",
-  "count": 13,
+  "generated_at": "2026-05-09T17:34:00+09:00",
+  "count": 14,
   "items": [
     {
       "event_name": "怪奇庁怪異対策課の事件簿",
@@ -31,6 +31,16 @@
       "official_reference_type": "source_author_x_candidate",
       "normalized_location": "石川県小松市",
       "source_tweet_url": "https://x.com/c_hocknews/status/2051880808911446348"
+    },
+    {
+      "event_name": "ガルガンチュア音楽祭2026「音楽幻想朗読劇」",
+      "organization_name": "８１プロデュース",
+      "venue_name": "石川県立音楽堂 邦楽ホール",
+      "performance_schedule": "2026-05-05",
+      "official_reference_url": "https://x.com/81pro_official",
+      "official_reference_type": "source_author_x_candidate",
+      "normalized_location": "石川県",
+      "source_tweet_url": "https://x.com/81pro_official/status/2051656909636374857"
     },
     {
       "event_name": "第27回 日本こども歌舞伎まつりin小松",

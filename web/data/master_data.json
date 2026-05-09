@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-05-09T17:20:24+09:00",
+  "generated_at": "2026-05-09T17:34:00+09:00",
   "counts": {
     "organizations": 21,
-    "venues": 19
+    "venues": 20
   },
   "organizations": [
     {
@@ -198,6 +198,12 @@
       "name": "金沢市文化ホール",
       "location": "〒920-0864 石川県金沢市高岡町15-1",
       "official_website": "https://www.bunka-h.gr.jp/"
+    },
+    {
+      "id": "venue-スタジオ犀",
+      "name": "スタジオ犀",
+      "location": "〒920-0867 石川県金沢市長土塀3−24−28",
+      "official_website": "https://studiosai-kanazawa.com/"
     },
     {
       "id": "venue-石川県立能楽堂",

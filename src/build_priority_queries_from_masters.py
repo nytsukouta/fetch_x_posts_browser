@@ -125,9 +125,10 @@ def build_queries(organization_rows: list[dict[str, str]], venue_rows: list[dict
 
     for row in venue_rows:
         name = (row.get("venue_name_normalized") or row.get("venue_name") or "").strip()
-        if not name or not is_theater_venue(name):
+        force_include = is_truthy(row.get("query_include") or row.get("query_enabled") or "")
+        if not name or (not force_include and not is_theater_venue(name)):
             continue
-        if any(term in name for term in DEFAULT_EXCLUDE_TERMS):
+        if not force_include and any(term in name for term in DEFAULT_EXCLUDE_TERMS):
             continue
         query = f'"{name}" {venue_context_suffix} {exclusion_suffix}'.strip()
         add_query(queries, seen, f"劇場 {name}", query)

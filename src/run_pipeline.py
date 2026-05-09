@@ -57,6 +57,15 @@ def find_saved_csv(stdout: str) -> Path:
     raise RuntimeError("収集CSVの保存先を出力から判定できませんでした。")
 
 
+def rebuild_query_configuration(args: argparse.Namespace) -> None:
+    run_command([
+        sys.executable,
+        str(ROOT_DIR / "src" / "build_priority_queries_from_masters.py"),
+        "--output-json",
+        args.query_file,
+    ])
+
+
 def collect_posts(args: argparse.Namespace) -> Path:
     if args.collector == "api":
         command = [sys.executable, str(ROOT_DIR / "src" / "fetch_x_posts.py")]
@@ -215,6 +224,7 @@ def default_commit_message() -> str:
 
 def main() -> int:
     args = parse_args()
+    rebuild_query_configuration(args)
     if args.skip_collect:
         input_csv = Path(args.input_csv)
         if not input_csv.exists():
