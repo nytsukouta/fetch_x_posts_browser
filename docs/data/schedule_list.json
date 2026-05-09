@@ -1,7 +1,17 @@
 {
-  "generated_at": "2026-05-09T16:46:32+09:00",
-  "count": 11,
+  "generated_at": "2026-05-09T17:20:24+09:00",
+  "count": 13,
   "items": [
+    {
+      "event_name": "怪奇庁怪異対策課の事件簿",
+      "organization_name": "金沢学院大学演劇部",
+      "venue_name": "",
+      "performance_schedule": "2026-04-04 - 2026-04-05",
+      "official_reference_url": "https://x.com/kg_drama",
+      "official_reference_type": "source_author_x_candidate",
+      "normalized_location": "石川県金沢市",
+      "source_tweet_url": "https://x.com/kg_drama/status/2050476703806611526"
+    },
     {
       "event_name": "第27回 日本こども歌舞伎まつりin小松",
       "organization_name": "",
@@ -23,7 +33,7 @@
       "source_tweet_url": "https://x.com/c_hocknews/status/2051880808911446348"
     },
     {
-      "event_name": "第27回 日本こども歌舞伎まつりｉｎ小松",
+      "event_name": "第27回 日本こども歌舞伎まつりin小松",
       "organization_name": "",
       "venue_name": "團十郎芸術劇場うらら大ホール",
       "performance_schedule": "2026-05-05 - 2026-05-06",
@@ -63,11 +73,21 @@
       "source_tweet_url": "https://x.com/c_hocknews/status/2052168249794822412"
     },
     {
+      "event_name": "コクシネル",
+      "organization_name": "ムービートラップ",
+      "venue_name": "",
+      "performance_schedule": "2026-05-09 19:30",
+      "official_reference_url": "https://x.com/ikedarick",
+      "official_reference_type": "source_author_x_candidate",
+      "normalized_location": "",
+      "source_tweet_url": "https://x.com/ikedarick/status/2051977057593405861"
+    },
+    {
       "event_name": "ひとり文芸ミュージカル『乙姫』金沢公演",
       "organization_name": "",
       "venue_name": "石川県立能楽堂",
       "performance_schedule": "2026-05-20",
-      "official_reference_url": "https://x.com/Blue_Radio_com",
+      "official_reference_url": "https://x.com/heroine_mikeko",
       "official_reference_type": "source_author_x_candidate",
       "normalized_location": "石川県金沢市 / 石川県",
       "source_tweet_url": "https://x.com/Blue_Radio_com/status/2052271005989777648"
@@ -83,7 +103,7 @@
       "source_tweet_url": "https://x.com/tonetoneto25403/status/2051143252397687033"
     },
     {
-      "event_name": "街 2026",
+      "event_name": "2026年 本公演 『街 2026』",
       "organization_name": "劇団新人類人猿",
       "venue_name": "",
       "performance_schedule": "2026-07-11 - 2026-07-12",

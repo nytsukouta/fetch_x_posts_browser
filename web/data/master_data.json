@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-05-09T17:02:04+09:00",
+  "generated_at": "2026-05-09T17:20:24+09:00",
   "counts": {
-    "organizations": 20,
+    "organizations": 21,
     "venues": 19
   },
   "organizations": [
@@ -11,6 +11,14 @@
       "location": "北陸地方",
       "official_website": "https://hkrk.jp",
       "official_x": "https://x.com/hokuriku_idolbu",
+      "query_include": false
+    },
+    {
+      "id": "org-劇団血パンダ",
+      "name": "劇団血パンダ",
+      "location": "富山県射水市",
+      "official_website": "https://blood-panda.net/",
+      "official_x": "https://x.com/BP_chipanda",
       "query_include": false
     },
     {
