@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-09T17:34:00+09:00",
+  "generated_at": "2026-05-09T17:38:17+09:00",
   "counts": {
     "organizations": 21,
     "venues": 20
@@ -14,8 +14,8 @@
       "query_include": false
     },
     {
-      "id": "org-劇団血パンダ",
-      "name": "劇団血パンダ",
+      "id": "org-血パンダ",
+      "name": "血パンダ",
       "location": "富山県射水市",
       "official_website": "https://blood-panda.net/",
       "official_x": "https://x.com/BP_chipanda",
