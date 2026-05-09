@@ -23,6 +23,10 @@ INFERENCE_URL = "https://models.github.ai/inference/chat/completions"
 NON_ALNUM_RE = re.compile(r"[^0-9a-zA-Z\u3040-\u30ff\u3400-\u9fff]+")
 TITLE_SIMILARITY_THRESHOLD = 0.6
 
+
+def get_github_models_token() -> str:
+    return os.getenv("GH_MODELS_TOKEN", "").strip() or os.getenv("GITHUB_TOKEN", "").strip()
+
 MERGE_FIELDS = [
     "event_name",
     "normalized_event_name",
@@ -395,10 +399,10 @@ def renumber_records(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 def secondary_dedupe(records: list[dict[str, Any]], model: str) -> list[dict[str, Any]]:
     load_dotenv(DEFAULT_ENV_FILE)
-    github_token = os.getenv("GITHUB_TOKEN", "").strip()
+    github_token = get_github_models_token()
     api_version = os.getenv("GITHUB_MODELS_API_VERSION", DEFAULT_API_VERSION).strip() or DEFAULT_API_VERSION
     if not github_token:
-        print("secondary dedupe skipped: GITHUB_TOKEN が見つかりません")
+        print("secondary dedupe skipped: GH_MODELS_TOKEN または GITHUB_TOKEN が見つかりません")
         return records
 
     grouped_records: dict[str, list[dict[str, Any]]] = {}

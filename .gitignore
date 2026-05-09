@@ -1,5 +1,7 @@
 .env
 __pycache__/
 *.pyc
-data/output/
+data/output/*
+!data/output/organization_master.csv
+!data/output/venue_master.csv
 data/session/

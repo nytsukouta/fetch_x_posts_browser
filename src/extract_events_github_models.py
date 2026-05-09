@@ -111,6 +111,10 @@ SYSTEM_PROMPT = """あなたは日本語のX投稿から演劇イベント情報
 """
 
 
+def get_github_models_token() -> str:
+    return os.getenv("GH_MODELS_TOKEN", "").strip() or os.getenv("GITHUB_TOKEN", "").strip()
+
+
 def load_dotenv(env_path: Path) -> None:
     if not env_path.exists():
         return
@@ -397,10 +401,10 @@ def main() -> int:
     load_dotenv(DEFAULT_ENV_FILE)
     args = parse_args()
 
-    github_token = os.getenv("GITHUB_TOKEN", "").strip()
+    github_token = get_github_models_token()
     api_version = os.getenv("GITHUB_MODELS_API_VERSION", DEFAULT_API_VERSION).strip() or DEFAULT_API_VERSION
     if not github_token:
-        print("GITHUB_TOKEN が見つかりません。.env に設定してください。", file=sys.stderr)
+        print("GH_MODELS_TOKEN または GITHUB_TOKEN が見つかりません。.env または Actions secrets に設定してください。", file=sys.stderr)
         return 1
 
     input_csv = Path(args.input_csv)
