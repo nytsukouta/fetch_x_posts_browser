@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-05-11T08:07:54+09:00",
-  "count": 14,
+  "generated_at": "2026-05-12T08:18:53+09:00",
+  "count": 15,
   "items": [
     {
       "event_name": "第27回 日本こども歌舞伎まつりin小松",
@@ -24,7 +24,7 @@
     },
     {
       "event_name": "ガルガンチュア音楽祭2026「音楽幻想朗読劇」",
-      "organization_name": "",
+      "organization_name": "ガルガンチュア音楽祭2026",
       "venue_name": "石川県立音楽堂 邦楽ホール",
       "performance_schedule": "2026-05-05",
       "official_reference_url": "https://x.com/81pro_official",
@@ -93,6 +93,16 @@
       "source_tweet_url": "https://x.com/MOVE805/status/2051963934224322719"
     },
     {
+      "event_name": "銀河鉄道の夜",
+      "organization_name": "劇団アンゲルス",
+      "venue_name": "スタジオ犀",
+      "performance_schedule": "2026-05-15 - 2026-05-17",
+      "official_reference_url": "https://x.com/Tf0Crazy",
+      "official_reference_type": "source_author_x_candidate",
+      "normalized_location": "",
+      "source_tweet_url": "https://x.com/Tf0Crazy/status/2053704971762499853"
+    },
+    {
       "event_name": "ひとり文芸ミュージカル『乙姫』金沢公演",
       "organization_name": "",
       "venue_name": "石川県立能楽堂",
@@ -103,14 +113,14 @@
       "source_tweet_url": "https://x.com/Blue_Radio_com/status/2052271005989777648"
     },
     {
-      "event_name": "煙が目にしみる",
+      "event_name": "第19回公演「煙が目にしみる」",
       "organization_name": "表現集団tone!tone!tone!",
-      "venue_name": "",
+      "venue_name": "金沢市民芸術村PIT2ドラマ工房",
       "performance_schedule": "2026-06-13 - 2026-06-14",
       "official_reference_url": "https://x.com/tonetoneto25403",
       "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "",
-      "source_tweet_url": "https://x.com/tonetoneto25403/status/2051143252397687033"
+      "normalized_location": "石川県金沢市",
+      "source_tweet_url": "https://x.com/tonetoneto25403/status/2053754502445166690"
     },
     {
       "event_name": "太陽系全速力（フルスロットル）",
