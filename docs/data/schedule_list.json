@@ -1,46 +1,16 @@
 {
-  "generated_at": "2026-05-12T08:18:53+09:00",
-  "count": 15,
+  "generated_at": "2026-05-13T08:16:43+09:00",
+  "count": 11,
   "items": [
-    {
-      "event_name": "第27回 日本こども歌舞伎まつりin小松",
-      "organization_name": "",
-      "venue_name": "團十郎芸術劇場うらら",
-      "performance_schedule": "2026-05-04 - 2026-05-05",
-      "official_reference_url": "https://x.com/hideyoshikun_n",
-      "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "石川県小松市 / 石川県",
-      "source_tweet_url": "https://x.com/hideyoshikun_n/status/2051794351458828332"
-    },
     {
       "event_name": "日本こども歌舞伎まつりin小松",
       "organization_name": "",
-      "venue_name": "團十郎芸術劇場うらら",
+      "venue_name": "小松市團十郎芸術劇場うらら",
       "performance_schedule": "2026-05-05",
       "official_reference_url": "https://x.com/c_hocknews",
       "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "石川県小松市",
+      "normalized_location": "石川県小松市 / 石川県",
       "source_tweet_url": "https://x.com/c_hocknews/status/2051880808911446348"
-    },
-    {
-      "event_name": "ガルガンチュア音楽祭2026「音楽幻想朗読劇」",
-      "organization_name": "ガルガンチュア音楽祭2026",
-      "venue_name": "石川県立音楽堂 邦楽ホール",
-      "performance_schedule": "2026-05-05",
-      "official_reference_url": "https://x.com/81pro_official",
-      "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "石川県",
-      "source_tweet_url": "https://x.com/81pro_official/status/2051656909636374857"
-    },
-    {
-      "event_name": "第27回 日本こども歌舞伎まつりin小松",
-      "organization_name": "",
-      "venue_name": "團十郎芸術劇場うらら大ホール",
-      "performance_schedule": "2026-05-05 - 2026-05-06",
-      "official_reference_url": "https://x.com/nomikai1988",
-      "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "石川県小松市",
-      "source_tweet_url": "https://x.com/nomikai1988/status/2051495795703345548"
     },
     {
       "event_name": "日本こども歌舞伎まつりin小松",
@@ -53,17 +23,7 @@
       "source_tweet_url": "https://x.com/kashiwagiyugehi/status/2053594679464034443"
     },
     {
-      "event_name": "第27回 日本こども歌舞伎まつりｉｎ小松",
-      "organization_name": "",
-      "venue_name": "小松市團十郎芸術劇場うらら大ホール",
-      "performance_schedule": "2026-05-05 - 2026-05-06",
-      "official_reference_url": "https://x.com/nomikai1988",
-      "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "石川県小松市",
-      "source_tweet_url": "https://x.com/nomikai1988/status/2051554716199633243"
-    },
-    {
-      "event_name": "日本こども歌舞伎まつりin小松 大千穐楽",
+      "event_name": "日本こども歌舞伎まつりin小松「大千穐楽」",
       "organization_name": "",
       "venue_name": "團十郎芸術劇場うらら",
       "performance_schedule": "2026-05-06",
@@ -107,7 +67,7 @@
       "organization_name": "",
       "venue_name": "石川県立能楽堂",
       "performance_schedule": "2026-05-20",
-      "official_reference_url": "https://x.com/heroine_mikeko",
+      "official_reference_url": "https://x.com/Blue_Radio_com",
       "official_reference_type": "source_author_x_candidate",
       "normalized_location": "石川県金沢市 / 石川県",
       "source_tweet_url": "https://x.com/Blue_Radio_com/status/2052271005989777648"
