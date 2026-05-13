@@ -1,19 +1,9 @@
 {
-  "generated_at": "2026-05-13T08:16:43+09:00",
-  "count": 11,
+  "generated_at": "2026-05-14T08:20:09+09:00",
+  "count": 9,
   "items": [
     {
-      "event_name": "日本こども歌舞伎まつりin小松",
-      "organization_name": "",
-      "venue_name": "小松市團十郎芸術劇場うらら",
-      "performance_schedule": "2026-05-05",
-      "official_reference_url": "https://x.com/c_hocknews",
-      "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "石川県小松市 / 石川県",
-      "source_tweet_url": "https://x.com/c_hocknews/status/2051880808911446348"
-    },
-    {
-      "event_name": "日本こども歌舞伎まつりin小松",
+      "event_name": "日本こども歌舞伎まつりin小松「勧進帳」",
       "organization_name": "",
       "venue_name": "小松市團十郎芸術劇場うらら",
       "performance_schedule": "2026-05-05 - 2026-05-06",
@@ -23,21 +13,11 @@
       "source_tweet_url": "https://x.com/kashiwagiyugehi/status/2053594679464034443"
     },
     {
-      "event_name": "日本こども歌舞伎まつりin小松「大千穐楽」",
-      "organization_name": "",
-      "venue_name": "團十郎芸術劇場うらら",
-      "performance_schedule": "2026-05-06",
-      "official_reference_url": "https://x.com/kashiwagiyugehi",
-      "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "石川県小松市 / 石川県",
-      "source_tweet_url": "https://x.com/kashiwagiyugehi/status/2052014074528149783"
-    },
-    {
       "event_name": "日本こども歌舞伎まつりin小松",
       "organization_name": "",
       "venue_name": "小松市團十郎芸術劇場うらら",
       "performance_schedule": "2026-05-06",
-      "official_reference_url": "https://x.com/kashiwagiyugehi",
+      "official_reference_url": "https://x.com/c_hocknews",
       "official_reference_type": "source_author_x_candidate",
       "normalized_location": "石川県小松市 / 石川県",
       "source_tweet_url": "https://x.com/c_hocknews/status/2052168249794822412"
@@ -50,7 +30,7 @@
       "official_reference_url": "https://x.com/MOVE805",
       "official_reference_type": "source_author_x_candidate",
       "normalized_location": "石川県",
-      "source_tweet_url": "https://x.com/MOVE805/status/2051963934224322719"
+      "source_tweet_url": "https://x.com/MOVE805/status/2052281173012074517"
     },
     {
       "event_name": "銀河鉄道の夜",
@@ -67,7 +47,7 @@
       "organization_name": "",
       "venue_name": "石川県立能楽堂",
       "performance_schedule": "2026-05-20",
-      "official_reference_url": "https://x.com/Blue_Radio_com",
+      "official_reference_url": "https://x.com/heroine_mikeko",
       "official_reference_type": "source_author_x_candidate",
       "normalized_location": "石川県金沢市 / 石川県",
       "source_tweet_url": "https://x.com/Blue_Radio_com/status/2052271005989777648"
@@ -83,6 +63,16 @@
       "source_tweet_url": "https://x.com/tonetoneto25403/status/2053754502445166690"
     },
     {
+      "event_name": "太陽系全速力",
+      "organization_name": "劇団羅針盤",
+      "venue_name": "",
+      "performance_schedule": "2026-07-01",
+      "official_reference_url": "https://x.com/GEKIRASHINBAN",
+      "official_reference_type": "source_author_x_candidate",
+      "normalized_location": "",
+      "source_tweet_url": "https://x.com/GEKIRASHINBAN/status/2053822881755533514"
+    },
+    {
       "event_name": "太陽系全速力（フルスロットル）",
       "organization_name": "劇団羅針盤",
       "venue_name": "金沢市民芸術村PIT2ドラマ工房",
@@ -91,16 +81,6 @@
       "official_reference_type": "source_author_x_candidate",
       "normalized_location": "石川県金沢市 / 石川県",
       "source_tweet_url": "https://x.com/stage_corich/status/2052222353539842168"
-    },
-    {
-      "event_name": "Not a Number",
-      "organization_name": "",
-      "venue_name": "金沢市民芸術村",
-      "performance_schedule": "2026-08-01",
-      "official_reference_url": "https://x.com/6dystopiandream",
-      "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "石川県金沢市",
-      "source_tweet_url": "https://x.com/6dystopiandream/status/2051843324299161728"
     },
     {
       "event_name": "七尾演劇鑑賞会第159回例会 劇団1980公演『素劇・楢山節考』",
