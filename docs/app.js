@@ -149,6 +149,13 @@ function renderCards(items) {
       primaryLink.remove();
     }
 
+    const organizationLink = fragment.querySelector(".organization-link");
+    if (item.organization_id) {
+      organizationLink.href = buildOrganizationLink(item.organization_id);
+    } else {
+      organizationLink.remove();
+    }
+
     const secondaryLink = fragment.querySelector(".secondary-link");
     if (item.source_tweet_url) {
       secondaryLink.href = item.source_tweet_url;
@@ -179,6 +186,11 @@ function buildReferenceCta(referenceType) {
     return "公式情報を見る";
   }
   return "候補アカウントを見る";
+}
+
+function buildOrganizationLink(organizationId) {
+  const params = new URLSearchParams({ type: "organizations", id: organizationId });
+  return `./masters.html?${params.toString()}`;
 }
 
 function createOption(value, label) {

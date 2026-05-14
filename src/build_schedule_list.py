@@ -170,6 +170,7 @@ def build_schedule_rows(
             dedupe_key,
             {
                 "event_name": event_name,
+                "organization_id": (organization_row.get("organization_id") or "").strip() if organization_row else "",
                 "organization_name": organization_name,
                 "venue_name": venue_name,
                 "performance_schedule": date_range,
@@ -244,6 +245,7 @@ def write_csv(rows: list[dict[str, Any]], output_path: Path) -> None:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fieldnames = [
         "event_name",
+        "organization_id",
         "organization_name",
         "venue_name",
         "performance_schedule",

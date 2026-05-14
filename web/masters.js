@@ -4,6 +4,7 @@ const state = {
   payload: null,
   items: [],
   filteredItems: [],
+  focusedId: "",
 };
 
 const elements = {
@@ -20,6 +21,7 @@ const elements = {
 
 async function main() {
   bindEvents();
+  readInitialQuery();
 
   try {
     const response = await fetch(DATA_URL, { cache: "no-store" });
@@ -42,11 +44,34 @@ async function main() {
 
 function bindEvents() {
   elements.typeFilter.addEventListener("change", () => {
+    clearFocusedId();
     syncItems();
     applyFilters();
   });
-  elements.locationFilter.addEventListener("change", applyFilters);
-  elements.searchInput.addEventListener("input", applyFilters);
+  elements.locationFilter.addEventListener("change", () => {
+    clearFocusedId();
+    applyFilters();
+  });
+  elements.searchInput.addEventListener("input", () => {
+    clearFocusedId();
+    applyFilters();
+  });
+}
+
+function readInitialQuery() {
+  const params = new URLSearchParams(window.location.search);
+  const type = params.get("type");
+  const id = params.get("id");
+  if (type === "organizations" || type === "venues") {
+    elements.typeFilter.value = type;
+  }
+  if (id) {
+    state.focusedId = id;
+  }
+}
+
+function clearFocusedId() {
+  state.focusedId = "";
 }
 
 function syncItems() {
@@ -72,6 +97,10 @@ function applyFilters() {
   const location = elements.locationFilter.value;
 
   state.filteredItems = state.items.filter((item) => {
+    if (state.focusedId && item.id !== state.focusedId) {
+      return false;
+    }
+
     const haystack = [item.name, item.location, item.id].filter(Boolean).join(" ").toLowerCase();
 
     if (keyword && !haystack.includes(keyword)) {
@@ -87,6 +116,10 @@ function applyFilters() {
 
   renderCards(state.filteredItems, elements.typeFilter.value);
   const typeLabel = elements.typeFilter.value === "organizations" ? "劇団" : "劇場";
+  if (state.focusedId) {
+    elements.resultSummary.textContent = `${typeLabel} 1 件をピン表示中 / 全 ${state.items.length} 件`;
+    return;
+  }
   elements.resultSummary.textContent = `${typeLabel} ${state.filteredItems.length} 件を表示中 / 全 ${state.items.length} 件`;
 }
 

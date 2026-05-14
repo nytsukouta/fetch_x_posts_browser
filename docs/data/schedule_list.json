@@ -1,9 +1,10 @@
 {
-  "generated_at": "2026-05-14T20:43:42+09:00",
+  "generated_at": "2026-05-14T20:57:44+09:00",
   "count": 13,
   "items": [
     {
       "event_name": "朗読劇『赤い花』",
+      "organization_id": "",
       "organization_name": "徳田秋聲記念館",
       "venue_name": "金沢市文化ホール",
       "performance_schedule": "2021-01-01",
@@ -14,6 +15,7 @@
     },
     {
       "event_name": "怪奇庁怪異対策課の事件簿",
+      "organization_id": "org-金沢学院大学演劇部",
       "organization_name": "金沢学院大学演劇部",
       "venue_name": "",
       "performance_schedule": "2026-04-04 - 2026-04-05",
@@ -24,6 +26,7 @@
     },
     {
       "event_name": "日本こども歌舞伎まつりin小松 大千穐楽",
+      "organization_id": "",
       "organization_name": "",
       "venue_name": "小松市團十郎芸術劇場うらら",
       "performance_schedule": "2026-05-04 - 2026-05-06",
@@ -34,6 +37,7 @@
     },
     {
       "event_name": "ガルガンチュア音楽祭2026「音楽幻想朗読劇」",
+      "organization_id": "",
       "organization_name": "ガルガンチュア音楽祭2026",
       "venue_name": "石川県立音楽堂邦楽ホール",
       "performance_schedule": "2026-05-05",
@@ -44,6 +48,7 @@
     },
     {
       "event_name": "コクシネル",
+      "organization_id": "",
       "organization_name": "ムービートラップ",
       "venue_name": "",
       "performance_schedule": "2026-05-09 19:30",
@@ -54,6 +59,7 @@
     },
     {
       "event_name": "銀河鉄道の夜",
+      "organization_id": "org-劇団アンゲルス",
       "organization_name": "劇団アンゲルス",
       "venue_name": "スタジオ犀",
       "performance_schedule": "2026-05-15 - 2026-05-17",
@@ -64,6 +70,7 @@
     },
     {
       "event_name": "ひとり文芸ミュージカル『乙姫』金沢公演",
+      "organization_id": "",
       "organization_name": "",
       "venue_name": "石川県立能楽堂",
       "performance_schedule": "2026-05-20",
@@ -74,6 +81,7 @@
     },
     {
       "event_name": "煙が目にしみる",
+      "organization_id": "org-表現集団tone-tone-tone",
       "organization_name": "表現集団tone!tone!tone!",
       "venue_name": "",
       "performance_schedule": "2026-06-13 - 2026-06-14",
@@ -84,6 +92,7 @@
     },
     {
       "event_name": "表現集団tone!tone!tone! 第19回公演「煙が目にしみる」",
+      "organization_id": "org-表現集団tone-tone-tone",
       "organization_name": "表現集団tone!tone!tone!",
       "venue_name": "金沢市民芸術村PIT2ドラマ工房",
       "performance_schedule": "2026-06-13 - 2026-06-14",
@@ -94,6 +103,7 @@
     },
     {
       "event_name": "2026年 本公演 『街 2026』",
+      "organization_id": "org-劇団新人類人猿",
       "organization_name": "劇団新人類人猿",
       "venue_name": "",
       "performance_schedule": "2026-07-11 - 2026-07-12",
@@ -104,6 +114,7 @@
     },
     {
       "event_name": "太陽系全速力（フルスロットル）",
+      "organization_id": "org-劇団羅針盤",
       "organization_name": "劇団羅針盤",
       "venue_name": "金沢市民芸術村PIT2ドラマ工房",
       "performance_schedule": "2026-07-24 - 2026-07-26",
@@ -114,6 +125,7 @@
     },
     {
       "event_name": "『Not a Number』再演",
+      "organization_id": "",
       "organization_name": "",
       "venue_name": "金沢市民芸術村",
       "performance_schedule": "2026-08-01",
@@ -124,6 +136,7 @@
     },
     {
       "event_name": "七尾演劇鑑賞会第159回例会 劇団1980公演『素劇・楢山節考』",
+      "organization_id": "",
       "organization_name": "劇団1980",
       "venue_name": "",
       "performance_schedule": "2026-10-09",
