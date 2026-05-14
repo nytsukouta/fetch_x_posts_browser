@@ -1,6 +1,7 @@
 const DATA_URL = "../data/output/schedule_list.json";
 
 const state = {
+  allItems: [],
   items: [],
   filteredItems: [],
 };
@@ -8,6 +9,7 @@ const state = {
 const elements = {
   countValue: document.getElementById("countValue"),
   generatedAt: document.getElementById("generatedAt"),
+  dateScopeFilter: document.getElementById("dateScopeFilter"),
   monthFilter: document.getElementById("monthFilter"),
   locationFilter: document.getElementById("locationFilter"),
   searchInput: document.getElementById("searchInput"),
@@ -26,12 +28,9 @@ async function main() {
     }
 
     const payload = await response.json();
-  const loadedItems = Array.isArray(payload.items) ? payload.items : [];
-  state.items = loadedItems.filter((item) => isUpcomingSchedule(item.performance_schedule));
-  elements.countValue.textContent = String(state.items.length);
+    state.allItems = Array.isArray(payload.items) ? payload.items : [];
     elements.generatedAt.textContent = formatGeneratedAt(payload.generated_at);
 
-    populateFilters(state.items);
     applyFilters();
   } catch (error) {
     elements.resultSummary.textContent = "データを読み込めませんでした。HTTP サーバー経由で開いているか確認してください。";
@@ -41,13 +40,19 @@ async function main() {
 
 function bindEvents() {
   elements.searchInput.addEventListener("input", applyFilters);
+  elements.dateScopeFilter.addEventListener("change", applyFilters);
   elements.monthFilter.addEventListener("change", applyFilters);
   elements.locationFilter.addEventListener("change", applyFilters);
 }
 
 function populateFilters(items) {
+  const selectedMonth = elements.monthFilter.value;
+  const selectedLocation = elements.locationFilter.value;
   const months = unique(items.map((item) => extractMonth(item.performance_schedule)).filter(Boolean));
   const locations = unique(items.map((item) => item.normalized_location).filter(Boolean));
+
+  elements.monthFilter.innerHTML = "<option value=\"\">すべて</option>";
+  elements.locationFilter.innerHTML = "<option value=\"\">すべて</option>";
 
   for (const month of months) {
     elements.monthFilter.append(createOption(month, month));
@@ -56,9 +61,19 @@ function populateFilters(items) {
   for (const location of locations) {
     elements.locationFilter.append(createOption(location, location));
   }
+
+  if (selectedMonth && months.includes(selectedMonth)) {
+    elements.monthFilter.value = selectedMonth;
+  }
+  if (selectedLocation && locations.includes(selectedLocation)) {
+    elements.locationFilter.value = selectedLocation;
+  }
 }
 
 function applyFilters() {
+  state.items = getScopedItems();
+  populateFilters(state.items);
+
   const keyword = elements.searchInput.value.trim().toLowerCase();
   const month = elements.monthFilter.value;
   const location = elements.locationFilter.value;
@@ -90,7 +105,15 @@ function applyFilters() {
   });
 
   renderCards(state.filteredItems);
+  elements.countValue.textContent = String(state.items.length);
   elements.resultSummary.textContent = `${state.filteredItems.length} 件を表示中 / 全 ${state.items.length} 件`;
+}
+
+function getScopedItems() {
+  if (elements.dateScopeFilter.value === "all") {
+    return [...state.allItems];
+  }
+  return state.allItems.filter((item) => isUpcomingSchedule(item.performance_schedule));
 }
 
 function renderCards(items) {

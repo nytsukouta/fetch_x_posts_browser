@@ -45,7 +45,7 @@ jobs:
         run: python src/build_priority_queries_from_masters.py
 
       - name: Run API pipeline
-        run: python src/run_pipeline.py --collector api
+        run: python src/run_pipeline.py
 
       - name: Commit and push updates
         shell: bash

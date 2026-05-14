@@ -4,11 +4,13 @@ import argparse
 import csv
 import json
 import os
+import re
 import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 import time
 from typing import Any
+from urllib.parse import urlparse
 from urllib import error, request
 
 
@@ -19,9 +21,11 @@ DEFAULT_OUTPUT_JSONL = ROOT_DIR / "data" / "output" / "structured_events.jsonl"
 DEFAULT_OUTPUT_CSV = ROOT_DIR / "data" / "output" / "structured_events.csv"
 DEFAULT_FILTERED_JSONL = ROOT_DIR / "data" / "output" / "structured_events_filtered.jsonl"
 DEFAULT_FILTERED_CSV = ROOT_DIR / "data" / "output" / "structured_events_filtered.csv"
+DEFAULT_ORGANIZATION_MASTER_CSV = ROOT_DIR / "data" / "output" / "organization_master.csv"
 DEFAULT_MODEL = "openai/gpt-4.1-mini"
 DEFAULT_API_VERSION = "2026-03-10"
 INFERENCE_URL = "https://models.github.ai/inference/chat/completions"
+NON_ALNUM_RE = re.compile(r"[^0-9a-zA-Z\u3040-\u30ff\u3400-\u9fff]+")
 
 CITY_ALIASES = {
     "金沢": "石川県金沢市",
@@ -42,7 +46,12 @@ CITY_ALIASES = {
 VENUE_ALIASES = {
     "金沢おぐら座": "金沢おぐら座",
     "能登演劇堂": "能登演劇堂",
+    "石川県立音楽堂邦楽ホール": "石川県立音楽堂邦楽ホール",
     "金沢市民芸術村pit2ドラマ工房": "金沢市民芸術村PIT2ドラマ工房",
+    "團十郎芸術劇場うらら": "小松市團十郎芸術劇場うらら",
+    "團十郎芸術劇場うらら大ホール": "小松市團十郎芸術劇場うらら",
+    "小松市團十郎芸術劇場うらら": "小松市團十郎芸術劇場うらら",
+    "小松市團十郎芸術劇場うらら大ホール": "小松市團十郎芸術劇場うらら",
     "ダブル金沢": "ダブル金沢",
     "az": "AZ",
 }
@@ -113,6 +122,80 @@ SYSTEM_PROMPT = """あなたは日本語のX投稿から演劇イベント情報
 
 def get_github_models_token() -> str:
     return os.getenv("GH_MODELS_TOKEN", "").strip() or os.getenv("GITHUB_TOKEN", "").strip()
+
+
+def compact_text(value: Any) -> str:
+    return NON_ALNUM_RE.sub("", str(value or "").strip().lower())
+
+
+def normalize_handle(value: str) -> str:
+    candidate = value.strip()
+    if not candidate:
+        return ""
+    if candidate.startswith("@"):
+        return candidate[1:].strip().strip("/").lower()
+
+    parsed = urlparse(candidate)
+    if parsed.scheme and parsed.netloc:
+        if parsed.netloc.lower() not in {"x.com", "www.x.com", "twitter.com", "www.twitter.com"}:
+            return ""
+        path_parts = [part for part in parsed.path.split("/") if part]
+        if not path_parts:
+            return ""
+        if path_parts[0].lower() in {"home", "search", "intent", "share", "i"}:
+            return ""
+        return path_parts[0].lstrip("@").strip().lower()
+
+    return candidate.lstrip("@").strip().strip("/").lower()
+
+
+def load_organization_rows(path: Path) -> list[dict[str, str]]:
+    if not path.exists():
+        return []
+    with path.open("r", encoding="utf-8-sig", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+    for row in rows:
+        normalized_name = (row.get("organization_name_normalized") or "").strip()
+        if not normalized_name and (row.get("organization_name") or "").strip():
+            row["organization_name_normalized"] = (row.get("organization_name") or "").strip()
+    return rows
+
+
+def build_organization_lookup(rows: list[dict[str, str]]) -> tuple[dict[str, str], dict[str, str]]:
+    by_name: dict[str, str] = {}
+    by_handle: dict[str, str] = {}
+    for row in rows:
+        canonical = (row.get("organization_name_normalized") or row.get("organization_name") or "").strip()
+        if not canonical:
+            continue
+        for candidate in [row.get("organization_name_normalized") or "", row.get("organization_name") or ""]:
+            compact = compact_text(candidate)
+            if compact and compact not in by_name:
+                by_name[compact] = canonical
+        handle = normalize_handle(row.get("official_x") or "")
+        if handle and handle not in by_handle:
+            by_handle[handle] = canonical
+    return by_name, by_handle
+
+
+def normalize_organization_name(
+    organization: Any,
+    author_username: Any,
+    organization_name_lookup: dict[str, str],
+    organization_handle_lookup: dict[str, str],
+) -> str | None:
+    handle = normalize_handle(str(author_username or ""))
+    if handle and handle in organization_handle_lookup:
+        return organization_handle_lookup[handle]
+
+    normalized = str(organization or "").strip().replace("　", " ")
+    if not normalized:
+        return None
+
+    compact = compact_text(normalized)
+    if compact in organization_name_lookup:
+        return organization_name_lookup[compact]
+    return normalized
 
 
 def load_dotenv(env_path: Path) -> None:
@@ -275,7 +358,12 @@ def write_csv(records: list[dict[str, Any]], output_path: Path) -> None:
         writer.writerows(records)
 
 
-def normalize_record(source_row: dict[str, str], extracted: dict[str, Any]) -> dict[str, Any]:
+def normalize_record(
+    source_row: dict[str, str],
+    extracted: dict[str, Any],
+    organization_name_lookup: dict[str, str],
+    organization_handle_lookup: dict[str, str],
+) -> dict[str, Any]:
     record = {
         "tweet_url": source_row.get("tweet_url", ""),
         "created_at": source_row.get("created_at", ""),
@@ -298,6 +386,12 @@ def normalize_record(source_row: dict[str, str], extracted: dict[str, Any]) -> d
         "reasoning": extracted.get("reasoning"),
         "source_text": source_row.get("text", ""),
     }
+    record["organization"] = normalize_organization_name(
+        record.get("organization"),
+        record.get("author_username"),
+        organization_name_lookup,
+        organization_handle_lookup,
+    )
     record["normalized_venue_name"] = normalize_venue_name(record.get("venue_name"))
     record["normalized_location"] = normalize_location(record.get("location"), record.get("normalized_venue_name"), record.get("source_text"))
     noise, noise_reason = classify_noise(record)
@@ -389,12 +483,14 @@ def extract_row(
     github_token: str,
     api_version: str,
     model: str,
+    organization_name_lookup: dict[str, str],
+    organization_handle_lookup: dict[str, str],
 ) -> dict[str, Any]:
     print(f"extracting: {index}/{total} {row.get('tweet_url', '')}")
     prompt = build_user_prompt(row)
     response_payload = call_github_models(github_token, api_version, model, prompt)
     extracted = extract_json_content(response_payload)
-    return normalize_record(row, extracted)
+    return normalize_record(row, extracted, organization_name_lookup, organization_handle_lookup)
 
 
 def main() -> int:
@@ -411,10 +507,22 @@ def main() -> int:
     rows = load_rows(input_csv, args.limit)
     total = len(rows)
     structured_records: list[dict[str, Any]] = []
+    organization_rows = load_organization_rows(DEFAULT_ORGANIZATION_MASTER_CSV)
+    organization_name_lookup, organization_handle_lookup = build_organization_lookup(organization_rows)
 
     with ThreadPoolExecutor(max_workers=max(1, args.workers)) as executor:
         futures = [
-            executor.submit(extract_row, index, total, row, github_token, api_version, args.model)
+            executor.submit(
+                extract_row,
+                index,
+                total,
+                row,
+                github_token,
+                api_version,
+                args.model,
+                organization_name_lookup,
+                organization_handle_lookup,
+            )
             for index, row in enumerate(rows, start=1)
         ]
         for future in futures:

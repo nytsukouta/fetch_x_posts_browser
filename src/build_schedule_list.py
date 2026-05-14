@@ -84,7 +84,13 @@ def parse_args() -> argparse.Namespace:
 
 def load_csv_rows(path: Path) -> list[dict[str, str]]:
     with path.open("r", encoding="utf-8-sig", newline="") as handle:
-        return list(csv.DictReader(handle))
+        rows = list(csv.DictReader(handle))
+    if path.name == "organization_master.csv":
+        for row in rows:
+            normalized_name = (row.get("organization_name_normalized") or "").strip()
+            if not normalized_name and (row.get("organization_name") or "").strip():
+                row["organization_name_normalized"] = (row.get("organization_name") or "").strip()
+    return rows
 
 
 def index_master(rows: list[dict[str, str]], key_field: str) -> dict[str, dict[str, str]]:

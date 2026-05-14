@@ -22,6 +22,15 @@ DEFAULT_API_VERSION = "2026-03-10"
 INFERENCE_URL = "https://models.github.ai/inference/chat/completions"
 NON_ALNUM_RE = re.compile(r"[^0-9a-zA-Z\u3040-\u30ff\u3400-\u9fff]+")
 TITLE_SIMILARITY_THRESHOLD = 0.6
+VENUE_GROUP_ALIASES = {
+    compact: canonical
+    for compact, canonical in {
+        "團十郎芸術劇場うらら": "小松市團十郎芸術劇場うらら",
+        "團十郎芸術劇場うらら大ホール": "小松市團十郎芸術劇場うらら",
+        "小松市團十郎芸術劇場うらら": "小松市團十郎芸術劇場うらら",
+        "小松市團十郎芸術劇場うらら大ホール": "小松市團十郎芸術劇場うらら",
+    }.items()
+}
 
 
 def get_github_models_token() -> str:
@@ -54,9 +63,10 @@ SECONDARY_DEDUPE_SYSTEM_PROMPT = """あなたは日本語の公演イベント�
 - 記号や装飾の有無
 - LIVE TOUR 2026 と LIVE TOUR 2026 DANCE ON AIR のように、同じ公演名の主題と副題の差
 - 「in小松」の有無など軽微な表記差
+- 開催期間全体の投稿と、その期間内の単日投稿や千秋楽投稿の差
 
 同一とみなしてはいけない例:
-- 日付違い
+- 開催期間が重ならない別日程
 - 会場違い
 - 同一シリーズでも別公演回
 - 募集と本公演
@@ -103,10 +113,20 @@ def compact_text(value: str) -> str:
     return cleaned
 
 
+def normalize_venue_group_key(value: str) -> str:
+    compacted = compact_text(value)
+    if not compacted:
+        return ""
+    for alias, canonical in VENUE_GROUP_ALIASES.items():
+        if alias in compacted:
+            return compact_text(canonical)
+    return compacted
+
+
 def build_event_key(row: dict[str, str]) -> str:
     event_name = compact_text(row.get("normalized_event_name") or row.get("event_name") or "")
     organization = compact_text(row.get("organization") or "")
-    venue_name = compact_text(row.get("normalized_venue_name") or row.get("venue_name") or "")
+    venue_name = normalize_venue_group_key(row.get("normalized_venue_name") or row.get("venue_name") or "")
     location = compact_text(row.get("normalized_location") or row.get("location") or "")
     start_date = (row.get("start_date") or "").strip()
     end_date = (row.get("end_date") or "").strip()
@@ -276,20 +296,32 @@ def build_similarity_clusters(records: list[dict[str, Any]]) -> list[list[dict[s
 
 def secondary_group_key(record: dict[str, Any]) -> str:
     start_date = (record.get("start_date") or "").strip()
-    end_date = (record.get("end_date") or "").strip()
     category = (record.get("category") or "").strip()
-    venue_name = compact_text(record.get("normalized_venue_name") or record.get("venue_name") or "")
+    venue_name = normalize_venue_group_key(record.get("normalized_venue_name") or record.get("venue_name") or "")
     organization = compact_text(record.get("organization") or "")
 
     if not start_date:
         return ""
+    month_bucket = start_date[:7]
     if venue_name:
         anchor = f"venue:{venue_name}"
     elif organization:
         anchor = f"org:{organization}"
     else:
         return ""
-    return "|".join([start_date, end_date, category, anchor])
+    return "|".join([month_bucket, category, anchor])
+
+
+def merge_date_range(records: list[dict[str, Any]]) -> tuple[str, str]:
+    start_dates = sorted({(record.get("start_date") or "").strip() for record in records if (record.get("start_date") or "").strip()})
+    end_dates = sorted({(record.get("end_date") or "").strip() for record in records if (record.get("end_date") or "").strip()})
+    merged_start = start_dates[0] if start_dates else ""
+    merged_end = end_dates[-1] if end_dates else ""
+    if merged_start and not merged_end:
+        merged_end = merged_start
+    if merged_end and not merged_start:
+        merged_start = merged_end
+    return merged_start, merged_end
 
 
 def build_dedupe_prompt(records: list[dict[str, Any]]) -> str:
@@ -363,6 +395,9 @@ def merge_event_group(records: list[dict[str, Any]], canonical_name: str) -> dic
             max_confidence = confidence
 
     merged["normalized_event_name"] = choose_canonical_name(records, canonical_name)
+    merged_start_date, merged_end_date = merge_date_range(records)
+    merged["start_date"] = merged_start_date
+    merged["end_date"] = merged_end_date
     merged["tweet_url"] = sorted(source_tweet_urls)[0] if source_tweet_urls else str(merged.get("tweet_url") or "")
     merged["created_at"] = last_seen or str(merged.get("created_at") or "")
     merged["confidence"] = max_confidence
@@ -416,45 +451,46 @@ def secondary_dedupe(records: list[dict[str, Any]], model: str) -> list[dict[str
 
     merged_records: list[dict[str, Any]] = list(passthrough_records)
     for group_key, group in grouped_records.items():
-        unique_names = {
-            compact_text(record.get("normalized_event_name") or record.get("event_name") or "")
-            for record in group
-            if (record.get("normalized_event_name") or record.get("event_name") or "")
-        }
-        if len(group) < 2 or len(unique_names) < 2:
-            merged_records.extend(group)
-            continue
-
-        prompt = build_dedupe_prompt(group)
-        try:
-            response_payload = call_github_models(github_token, api_version, model, prompt)
-            decision_payload = extract_json_content(response_payload)
-        except Exception as exc:
-            print(f"secondary dedupe skipped for group {group_key}: {exc}", file=sys.stderr)
-            merged_records.extend(group)
-            continue
-
-        id_to_record = {str(index): record for index, record in enumerate(group, start=1)}
-        consumed_ids: set[str] = set()
-        decisions = decision_payload.get("decisions") if isinstance(decision_payload, dict) else None
-        if not isinstance(decisions, list):
-            merged_records.extend(group)
-            continue
-
-        for decision in decisions:
-            if not isinstance(decision, dict):
+        for cluster_index, cluster in enumerate(build_similarity_clusters(group), start=1):
+            unique_names = {
+                compact_text(record.get("normalized_event_name") or record.get("event_name") or "")
+                for record in cluster
+                if (record.get("normalized_event_name") or record.get("event_name") or "")
+            }
+            if len(cluster) < 2 or len(unique_names) < 2:
+                merged_records.extend(cluster)
                 continue
-            member_ids = [str(member_id) for member_id in decision.get("member_ids", []) if str(member_id) in id_to_record]
-            member_ids = [member_id for member_id in member_ids if member_id not in consumed_ids]
-            if not member_ids:
-                continue
-            consumed_ids.update(member_ids)
-            member_records = [id_to_record[member_id] for member_id in member_ids]
-            merged_records.append(merge_event_group(member_records, str(decision.get("canonical_name") or "")))
 
-        for member_id, record in id_to_record.items():
-            if member_id not in consumed_ids:
-                merged_records.append(record)
+            prompt = build_dedupe_prompt(cluster)
+            try:
+                response_payload = call_github_models(github_token, api_version, model, prompt)
+                decision_payload = extract_json_content(response_payload)
+            except Exception as exc:
+                print(f"secondary dedupe skipped for group {group_key} cluster {cluster_index}: {exc}", file=sys.stderr)
+                merged_records.extend(cluster)
+                continue
+
+            id_to_record = {str(index): record for index, record in enumerate(cluster, start=1)}
+            consumed_ids: set[str] = set()
+            decisions = decision_payload.get("decisions") if isinstance(decision_payload, dict) else None
+            if not isinstance(decisions, list):
+                merged_records.extend(cluster)
+                continue
+
+            for decision in decisions:
+                if not isinstance(decision, dict):
+                    continue
+                member_ids = [str(member_id) for member_id in decision.get("member_ids", []) if str(member_id) in id_to_record]
+                member_ids = [member_id for member_id in member_ids if member_id not in consumed_ids]
+                if not member_ids:
+                    continue
+                consumed_ids.update(member_ids)
+                member_records = [id_to_record[member_id] for member_id in member_ids]
+                merged_records.append(merge_event_group(member_records, str(decision.get("canonical_name") or "")))
+
+            for member_id, record in id_to_record.items():
+                if member_id not in consumed_ids:
+                    merged_records.append(record)
 
     return renumber_records(merged_records)
 

@@ -10,7 +10,7 @@ from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 DEFAULT_OUTPUT_DIR = ROOT_DIR / "data" / "output"
-DEFAULT_EXISTING_INPUT_CSV = ROOT_DIR / "data" / "output" / "x_browser_search_20260508_124323.csv"
+DEFAULT_EXISTING_INPUT_CSV = ROOT_DIR / "data" / "output" / "x_recent_search_20260509_173241.csv"
 DEFAULT_PAGES_JSON = ROOT_DIR / "docs" / "data" / "schedule_list.json"
 DEFAULT_STRUCTURED_CSV = ROOT_DIR / "data" / "output" / "structured_events.csv"
 DEFAULT_FILTERED_CSV = ROOT_DIR / "data" / "output" / "structured_events_filtered.csv"
@@ -25,12 +25,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--input-csv", default=str(DEFAULT_EXISTING_INPUT_CSV), help="--skip-collect 時に使う収集済みCSV")
     parser.add_argument("--query-file", default=str(ROOT_DIR / "config" / "priority_queries.json"), help="収集に使うクエリJSON")
     parser.add_argument("--output-dir", default=str(DEFAULT_OUTPUT_DIR), help="収集CSVの出力先")
-    parser.add_argument("--collector", choices=["api", "browser"], default="api", help="情報収集の方式。既定は api")
-    parser.add_argument("--state-file", default=str(ROOT_DIR / "data" / "session" / "x_storage_state.json"), help="Xログイン状態JSON")
     parser.add_argument("--max-results", type=int, default=None, help="各クエリの取得件数")
-    parser.add_argument("--headless", action="store_true", help="収集をヘッドレスで実行する")
-    parser.add_argument("--browser-channel", default="msedge", help="Playwright の browser channel")
-    parser.add_argument("--manual-login-timeout", type=int, default=600, help="手動ログイン待機秒数")
     parser.add_argument("--extract-limit", type=int, default=None, help="構造化抽出の件数上限")
     parser.add_argument("--model", default=None, help="GitHub Models のモデルIDを上書きする")
     parser.add_argument("--publish", action="store_true", help="生成後に Pages 用 JSON を commit と push する")
@@ -67,20 +62,11 @@ def rebuild_query_configuration(args: argparse.Namespace) -> None:
 
 
 def collect_posts(args: argparse.Namespace) -> Path:
-    if args.collector == "api":
-        command = [sys.executable, str(ROOT_DIR / "src" / "fetch_x_posts.py")]
-    else:
-        command = [sys.executable, str(ROOT_DIR / "src" / "fetch_x_posts_browser.py")]
+    command = [sys.executable, str(ROOT_DIR / "src" / "fetch_x_posts.py")]
     command.extend(["--query-file", args.query_file])
     command.extend(["--output-dir", args.output_dir])
     if args.max_results is not None:
         command.extend(["--max-results", str(args.max_results)])
-    if args.collector == "browser":
-        command.extend(["--state-file", args.state_file])
-        command.extend(["--browser-channel", args.browser_channel])
-        command.extend(["--manual-login-timeout", str(args.manual_login_timeout)])
-        if args.headless:
-            command.append("--headless")
 
     completed = run_command(command)
     return find_saved_csv(completed.stdout)
