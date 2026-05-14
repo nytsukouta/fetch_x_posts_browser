@@ -275,6 +275,12 @@ body::before {
   color: #fff;
 }
 
+.organization-link {
+  background: rgba(164, 59, 47, 0.12);
+  color: var(--accent);
+  border: 1px solid rgba(164, 59, 47, 0.24);
+}
+
 .secondary-link {
   background: rgba(32, 57, 71, 0.08);
   color: var(--deep);
