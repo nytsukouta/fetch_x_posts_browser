@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-05-16T08:11:10+09:00",
-  "count": 8,
+  "generated_at": "2026-05-17T08:05:26+09:00",
+  "count": 11,
   "items": [
     {
       "event_name": "朗読劇『赤い花』",
@@ -25,7 +25,7 @@
       "source_tweet_url": "https://x.com/GekidanFurosya/status/2055238050977026287"
     },
     {
-      "event_name": "日本こども歌舞伎まつりin小松",
+      "event_name": "日本こども歌舞伎まつりin小松「勧進帳」",
       "organization_id": "",
       "organization_name": "",
       "venue_name": "小松市團十郎芸術劇場うらら",
@@ -43,8 +43,30 @@
       "performance_schedule": "2026-05-15 - 2026-05-17",
       "official_reference_url": "https://www.angels.jp/",
       "official_reference_type": "organization_official_website",
-      "normalized_location": "",
+      "normalized_location": "富山",
       "source_tweet_url": "https://x.com/Tf0Crazy/status/2053704971762499853"
+    },
+    {
+      "event_name": "銀河鉄道の夜",
+      "organization_id": "org-劇団アンゲルス",
+      "organization_name": "劇団アンゲルス",
+      "venue_name": "スタジオ犀",
+      "performance_schedule": "2026-05-16",
+      "official_reference_url": "https://www.angels.jp/",
+      "official_reference_type": "organization_official_website",
+      "normalized_location": "石川県",
+      "source_tweet_url": "https://x.com/theater_angelus/status/2055449225048277277"
+    },
+    {
+      "event_name": "銀河鉄道の夜",
+      "organization_id": "org-劇団アンゲルス",
+      "organization_name": "劇団アンゲルス",
+      "venue_name": "スタジオ犀",
+      "performance_schedule": "2026-05-16 14:00",
+      "official_reference_url": "https://www.angels.jp/",
+      "official_reference_type": "organization_official_website",
+      "normalized_location": "",
+      "source_tweet_url": "https://x.com/theater_angelus/status/2055671538670805042"
     },
     {
       "event_name": "七尾東雲高校演劇科 第17回 定期公演 『ドン・キホーテは故郷に帰り、サンチョ・パンサは旅に出る。』",
@@ -78,6 +100,17 @@
       "official_reference_type": "organization_official_x",
       "normalized_location": "",
       "source_tweet_url": "https://x.com/NollieSakaitaka/status/2054933723288875214"
+    },
+    {
+      "event_name": "7月公演 太陽系全速力",
+      "organization_id": "org-劇団羅針盤",
+      "organization_name": "劇団羅針盤",
+      "venue_name": "金沢市民芸術村PIT2ドラマ工房",
+      "performance_schedule": "2026-07-24 - 2026-07-26",
+      "official_reference_url": "https://gekirashinban.com",
+      "official_reference_type": "organization_official_website",
+      "normalized_location": "石川県金沢市",
+      "source_tweet_url": "https://x.com/GEKIRASHINBAN/status/2055531269749080382"
     },
     {
       "event_name": "七尾演劇鑑賞会第159回例会 劇団1980公演『素劇・楢山節考』",
