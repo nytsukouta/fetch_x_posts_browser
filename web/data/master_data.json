@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-14T20:43:42+09:00",
+  "generated_at": "2026-05-17T13:28:47+09:00",
   "counts": {
     "organizations": 22,
     "venues": 20
@@ -42,7 +42,7 @@
       "name": "劇団nono",
       "location": "石川県野々市市",
       "official_website": "http://gekidan.nono1.jp/gekidan.html",
-      "official_x": "",
+      "official_x": "https://x.com/gekidannono",
       "query_include": false
     },
     {
@@ -66,7 +66,7 @@
       "name": "Potluck Theater",
       "location": "石川県金沢市",
       "official_website": "https://potlucktheater.com/",
-      "official_x": "",
+      "official_x": "https://x.com/PotluckTheater",
       "query_include": false
     },
     {
@@ -74,7 +74,7 @@
       "name": "かなざわ演劇人協会",
       "location": "石川県金沢市",
       "official_website": "https://www.geibunkyo.or.jp/about/organiz/%E3%81%8B%E3%81%AA%E3%81%96%E3%82%8F%E6%BC%94%E5%8A%87%E4%BA%BA%E5%8D%94%E4%BC%9A/",
-      "official_x": "",
+      "official_x": "https://x.com/kanazawa_teatre",
       "query_include": false
     },
     {
@@ -121,7 +121,7 @@
       "id": "org-劇団アンゲルス",
       "name": "劇団アンゲルス",
       "location": "石川県金沢市",
-      "official_website": "https://www.angels.jp/",
+      "official_website": "https://theaterangelus.com/",
       "official_x": "https://x.com/angels_gekidan",
       "query_include": false
     },
@@ -137,7 +137,7 @@
       "id": "org-劇団新人類人猿",
       "name": "劇団新人類人猿",
       "location": "石川県金沢市",
-      "official_website": "",
+      "official_website": "https://potofu.me/rui-jin-en",
       "official_x": "https://x.com/rui_jin_en",
       "query_include": false
     },
