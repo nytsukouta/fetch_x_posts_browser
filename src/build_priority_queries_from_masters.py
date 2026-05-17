@@ -125,8 +125,9 @@ def build_queries(organization_rows: list[dict[str, str]], venue_rows: list[dict
         if official_handle:
             handle_query = f'from:{official_handle} {organization_context_suffix} {exclusion_suffix}'.strip()
             add_query(queries, seen, f"劇団 {name} 公式X", handle_query)
-        query = f'"{name}" {organization_context_suffix} {exclusion_suffix}'.strip()
-        add_query(queries, seen, f"劇団 {name}", query)
+        if not official_handle or force_include:
+            query = f'"{name}" {organization_context_suffix} {exclusion_suffix}'.strip()
+            add_query(queries, seen, f"劇団 {name}", query)
 
     for row in venue_rows:
         name = (row.get("venue_name_normalized") or row.get("venue_name") or "").strip()
