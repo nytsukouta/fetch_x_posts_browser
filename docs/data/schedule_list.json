@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-05-17T13:49:44+09:00",
-  "count": 6,
+  "generated_at": "2026-05-17T14:16:28+09:00",
+  "count": 5,
   "items": [
     {
       "event_name": "銀河鉄道の夜",
@@ -45,17 +45,6 @@
       "official_reference_type": "organization_official_website",
       "normalized_location": "",
       "source_tweet_url": "https://x.com/NollieSakaitaka/status/2054933723288875214"
-    },
-    {
-      "event_name": "太陽系全速力",
-      "organization_id": "org-劇団羅針盤",
-      "organization_name": "劇団羅針盤",
-      "venue_name": "",
-      "performance_schedule": "2026-07-01",
-      "official_reference_url": "https://gekirashinban.com",
-      "official_reference_type": "organization_official_website",
-      "normalized_location": "",
-      "source_tweet_url": "https://x.com/GEKIRASHINBAN/status/2053822881755533514"
     },
     {
       "event_name": "太陽系全速力",

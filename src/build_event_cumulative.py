@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import csv
 import difflib
+from datetime import date
 import json
 import os
 import re
@@ -409,6 +410,112 @@ def merge_event_group(records: list[dict[str, Any]], canonical_name: str) -> dic
     return merged
 
 
+def build_preview_group_key(record: dict[str, Any]) -> str:
+    event_name = str(record.get("normalized_event_name") or record.get("event_name") or "").strip()
+    if not event_name:
+        return ""
+
+    organization = compact_text(record.get("organization") or "")
+    venue_name = normalize_venue_group_key(record.get("normalized_venue_name") or record.get("venue_name") or "")
+
+    if organization:
+        return "|".join([compact_text(event_name), f"org:{organization}"])
+    if venue_name:
+        return "|".join([compact_text(event_name), f"venue:{venue_name}"])
+    return ""
+
+
+def preview_record_priority(record: dict[str, Any]) -> tuple[int, int, int, int, int, str]:
+    venue_name = str(record.get("normalized_venue_name") or record.get("venue_name") or "").strip()
+    start_date = str(record.get("start_date") or "").strip()
+    end_date = str(record.get("end_date") or "").strip()
+    start_time = str(record.get("start_time") or "").strip()
+    source_tweet_count = int(record.get("source_tweet_count") or 0)
+    source_text_length = len(str(record.get("source_text") or "").strip())
+    has_multi_day_range = int(bool(start_date and end_date and start_date != end_date))
+    has_venue = int(bool(venue_name))
+    has_start_time = int(bool(start_time))
+    return (has_venue, has_multi_day_range, has_start_time, source_tweet_count, source_text_length, start_date)
+
+
+def is_preview_subsumed(candidate: dict[str, Any], canonical: dict[str, Any]) -> bool:
+    candidate_venue = str(candidate.get("normalized_venue_name") or candidate.get("venue_name") or "").strip()
+    canonical_venue = str(canonical.get("normalized_venue_name") or canonical.get("venue_name") or "").strip()
+
+    if not candidate_venue and canonical_venue:
+        return True
+    if candidate_venue and canonical_venue and candidate_venue != canonical_venue:
+        return False
+
+    candidate_start = str(candidate.get("start_date") or "").strip()
+    candidate_end = str(candidate.get("end_date") or "").strip() or candidate_start
+    canonical_start = str(canonical.get("start_date") or "").strip()
+    canonical_end = str(canonical.get("end_date") or "").strip() or canonical_start
+    if candidate_start and candidate_end and canonical_start and canonical_end:
+        if canonical_start <= candidate_start and canonical_end >= candidate_end:
+            return preview_record_priority(canonical) > preview_record_priority(candidate)
+
+    if candidate_start or candidate_end or not canonical_start or not canonical_end:
+        return False
+
+    if candidate_venue:
+        return False
+
+    candidate_seen_date = parse_created_at_date(str(candidate.get("last_seen_created_at") or candidate.get("created_at") or ""))
+    canonical_seen_date = parse_created_at_date(str(canonical.get("last_seen_created_at") or canonical.get("created_at") or ""))
+    canonical_start_date = parse_iso_date(canonical_start)
+    if not candidate_seen_date or not canonical_seen_date or not canonical_start_date:
+        return False
+
+    if abs((canonical_seen_date - candidate_seen_date).days) > 120:
+        return False
+
+    if canonical_start_date < candidate_seen_date:
+        return False
+
+    return preview_record_priority(canonical) > preview_record_priority(candidate)
+
+
+def parse_iso_date(value: str) -> date | None:
+    cleaned = value.strip()
+    if not cleaned:
+        return None
+    try:
+        return date.fromisoformat(cleaned)
+    except ValueError:
+        return None
+
+
+def parse_created_at_date(value: str) -> date | None:
+    cleaned = value.strip()
+    if len(cleaned) < 10:
+        return None
+    return parse_iso_date(cleaned[:10])
+
+
+def suppress_preview_like_records(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    grouped_records: dict[str, list[dict[str, Any]]] = {}
+    passthrough_records: list[dict[str, Any]] = []
+
+    for record in records:
+        group_key = build_preview_group_key(record)
+        if not group_key:
+            passthrough_records.append(record)
+            continue
+        grouped_records.setdefault(group_key, []).append(record)
+
+    filtered_records = list(passthrough_records)
+    for group in grouped_records.values():
+        kept_records: list[dict[str, Any]] = []
+        for record in sorted(group, key=preview_record_priority, reverse=True):
+            if any(is_preview_subsumed(record, kept_record) for kept_record in kept_records):
+                continue
+            kept_records.append(record)
+        filtered_records.extend(kept_records)
+
+    return filtered_records
+
+
 def renumber_records(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
     sorted_records = sorted(
         records,
@@ -492,7 +599,7 @@ def secondary_dedupe(records: list[dict[str, Any]], model: str) -> list[dict[str
                 if member_id not in consumed_ids:
                     merged_records.append(record)
 
-    return renumber_records(merged_records)
+    return renumber_records(suppress_preview_like_records(merged_records))
 
 
 def build_event_records(rows: list[dict[str, str]]) -> list[dict[str, Any]]:

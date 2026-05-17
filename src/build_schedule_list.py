@@ -144,7 +144,7 @@ def build_schedule_rows(
     organization_index: dict[str, dict[str, str]],
     venue_index: dict[str, dict[str, str]],
 ) -> list[dict[str, Any]]:
-    schedule_by_key: dict[tuple[str, str, str, str], dict[str, Any]] = {}
+    candidate_rows: list[dict[str, str]] = []
 
     for event_row in event_rows:
         if str(event_row.get("is_noise") or "").lower() == "true":
@@ -163,6 +163,20 @@ def build_schedule_rows(
 
         if not is_schedule_candidate(event_name, organization_name, venue_name, date_range, event_row):
             continue
+
+        candidate_rows.append(event_row)
+
+    candidate_rows = suppress_preview_like_duplicates(candidate_rows)
+
+    schedule_by_key: dict[tuple[str, str, str, str], dict[str, Any]] = {}
+
+    for event_row in candidate_rows:
+        organization_name = (event_row.get("organization") or "").strip()
+        venue_name = (event_row.get("normalized_venue_name") or event_row.get("venue_name") or "").strip()
+        start_date = (event_row.get("start_date") or "").strip()
+        end_date = (event_row.get("end_date") or "").strip()
+        date_range = build_date_range(start_date, end_date, (event_row.get("start_time") or "").strip())
+        event_name = (event_row.get("event_name") or "").strip()
 
         dedupe_key = (event_name, organization_name, venue_name, date_range)
 
@@ -243,6 +257,80 @@ def build_date_range(start_date: str, end_date: str, start_time: str) -> str:
             return f"{start_date} {start_time}"
         return start_date
     return ""
+
+
+def suppress_preview_like_duplicates(rows: list[dict[str, str]]) -> list[dict[str, str]]:
+    grouped_rows: dict[str, list[dict[str, str]]] = {}
+    passthrough_rows: list[dict[str, str]] = []
+
+    for row in rows:
+        group_key = build_preview_group_key(row)
+        if not group_key:
+            passthrough_rows.append(row)
+            continue
+        grouped_rows.setdefault(group_key, []).append(row)
+
+    filtered_rows = list(passthrough_rows)
+    for group in grouped_rows.values():
+        kept_rows: list[dict[str, str]] = []
+        for row in sorted(group, key=preview_row_priority, reverse=True):
+            if any(is_subsumed_preview_row(row, kept_row) for kept_row in kept_rows):
+                continue
+            kept_rows.append(row)
+        filtered_rows.extend(kept_rows)
+
+    return filtered_rows
+
+
+def build_preview_group_key(row: dict[str, str]) -> str:
+    event_name = (row.get("normalized_event_name") or row.get("event_name") or "").strip()
+    if not event_name:
+        return ""
+
+    start_date = (row.get("start_date") or "").strip()
+    month_bucket = start_date[:7] if len(start_date) >= 7 else ""
+    organization_name = (row.get("organization") or "").strip()
+    venue_name = (row.get("normalized_venue_name") or row.get("venue_name") or "").strip()
+
+    if organization_name:
+        return "|".join([event_name, organization_name, month_bucket])
+    if venue_name:
+        return "|".join([event_name, venue_name, month_bucket])
+    return ""
+
+
+def preview_row_priority(row: dict[str, str]) -> tuple[int, int, int, int, str]:
+    venue_name = (row.get("normalized_venue_name") or row.get("venue_name") or "").strip()
+    start_date = (row.get("start_date") or "").strip()
+    end_date = (row.get("end_date") or "").strip()
+    start_time = (row.get("start_time") or "").strip()
+    source_tweet_count = int(str(row.get("source_tweet_count") or "0") or "0")
+    has_multi_day_range = int(bool(start_date and end_date and start_date != end_date))
+    has_venue = int(bool(venue_name))
+    has_start_time = int(bool(start_time))
+    return (has_venue, has_multi_day_range, has_start_time, source_tweet_count, start_date)
+
+
+def is_subsumed_preview_row(candidate: dict[str, str], canonical: dict[str, str]) -> bool:
+    candidate_venue = (candidate.get("normalized_venue_name") or candidate.get("venue_name") or "").strip()
+    canonical_venue = (canonical.get("normalized_venue_name") or canonical.get("venue_name") or "").strip()
+
+    if not candidate_venue and canonical_venue:
+        return True
+    if candidate_venue and canonical_venue and candidate_venue != canonical_venue:
+        return False
+
+    candidate_start = parse_iso_date((candidate.get("start_date") or "").strip())
+    candidate_end = parse_iso_date((candidate.get("end_date") or "").strip()) or candidate_start
+    canonical_start = parse_iso_date((canonical.get("start_date") or "").strip())
+    canonical_end = parse_iso_date((canonical.get("end_date") or "").strip()) or canonical_start
+    if not candidate_start or not candidate_end or not canonical_start or not canonical_end:
+        return False
+
+    if canonical_start <= candidate_start and canonical_end >= candidate_end:
+        return preview_row_priority(canonical) > preview_row_priority(candidate)
+
+    return False
 
 
 def parse_iso_date(value: str) -> date | None:
