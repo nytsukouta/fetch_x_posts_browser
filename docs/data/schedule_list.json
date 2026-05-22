@@ -1,17 +1,17 @@
 {
-  "generated_at": "2026-05-22T08:16:56+09:00",
-  "count": 3,
+  "generated_at": "2026-05-23T08:19:22+09:00",
+  "count": 4,
   "items": [
     {
-      "event_name": "七尾東雲高校演劇科 第17回 定期公演 『ドン・キホーテは故郷に帰り、サンチョ・パンサは旅に出る。』",
+      "event_name": "ミキ漫 全国ツアー2026～石川公演～",
       "organization_id": "",
-      "organization_name": "七尾東雲高校演劇科",
+      "organization_name": "ミキ漫",
       "venue_name": "能登演劇堂",
-      "performance_schedule": "2026-06-12 - 2026-06-13 14:00",
-      "official_reference_url": "https://x.com/hkd_kokoengeki",
+      "performance_schedule": "2026-05-24 15:00",
+      "official_reference_url": "https://x.com/winnie16022403",
       "official_reference_type": "source_author_x_candidate",
       "normalized_location": "石川県七尾市 / 石川県能登地方 / 石川県",
-      "source_tweet_url": "https://x.com/hkd_kokoengeki/status/2055301221922353493"
+      "source_tweet_url": "https://x.com/winnie16022403/status/2057937130706657543"
     },
     {
       "event_name": "表現集団tone!tone!tone! 第19回公演「煙が目にしみる」",
@@ -23,6 +23,17 @@
       "official_reference_type": "organization_official_x",
       "normalized_location": "石川県金沢市",
       "source_tweet_url": "https://x.com/tonetoneto25403/status/2056337679470718994"
+    },
+    {
+      "event_name": "こまつ座『花よりタンゴ』能登演劇堂公演",
+      "organization_id": "",
+      "organization_name": "こまつ座",
+      "venue_name": "能登演劇堂",
+      "performance_schedule": "2026-06-20 - 2026-06-21",
+      "official_reference_url": "https://x.com/engekido",
+      "official_reference_type": "source_author_x_candidate",
+      "normalized_location": "石川県能登地方",
+      "source_tweet_url": "https://x.com/0223Kissy/status/2057784201412596109"
     },
     {
       "event_name": "太陽系全速力",
