@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-23T08:19:22+09:00",
+  "generated_at": "2026-05-24T08:08:12+09:00",
   "count": 4,
   "items": [
     {
@@ -8,10 +8,10 @@
       "organization_name": "ミキ漫",
       "venue_name": "能登演劇堂",
       "performance_schedule": "2026-05-24 15:00",
-      "official_reference_url": "https://x.com/winnie16022403",
+      "official_reference_url": "https://x.com/mikiman_ak",
       "official_reference_type": "source_author_x_candidate",
       "normalized_location": "石川県七尾市 / 石川県能登地方 / 石川県",
-      "source_tweet_url": "https://x.com/winnie16022403/status/2057937130706657543"
+      "source_tweet_url": "https://x.com/mikiman_ak/status/2058166664068546624"
     },
     {
       "event_name": "表現集団tone!tone!tone! 第19回公演「煙が目にしみる」",
@@ -25,26 +25,26 @@
       "source_tweet_url": "https://x.com/tonetoneto25403/status/2056337679470718994"
     },
     {
-      "event_name": "こまつ座『花よりタンゴ』能登演劇堂公演",
+      "event_name": "花よりタンゴ",
       "organization_id": "",
       "organization_name": "こまつ座",
       "venue_name": "能登演劇堂",
       "performance_schedule": "2026-06-20 - 2026-06-21",
-      "official_reference_url": "https://x.com/engekido",
+      "official_reference_url": "https://x.com/tatsudeluxe",
       "official_reference_type": "source_author_x_candidate",
       "normalized_location": "石川県能登地方",
-      "source_tweet_url": "https://x.com/0223Kissy/status/2057784201412596109"
+      "source_tweet_url": "https://x.com/tatsudeluxe/status/2057994448202789208"
     },
     {
-      "event_name": "太陽系全速力",
-      "organization_id": "org-劇団羅針盤",
-      "organization_name": "劇団羅針盤",
-      "venue_name": "金沢市民芸術村PIT2ドラマ工房",
-      "performance_schedule": "2026-07-24 - 2026-07-26",
-      "official_reference_url": "https://gekirashinban.com",
-      "official_reference_type": "organization_official_website",
-      "normalized_location": "石川県金沢市",
-      "source_tweet_url": "https://x.com/GEKIRASHINBAN/status/2055531269749080382"
+      "event_name": "のんびりユニットころころ公演「七夕の日に」",
+      "organization_id": "",
+      "organization_name": "のんびりユニットころころ",
+      "venue_name": "金沢市民芸術村 里山の家",
+      "performance_schedule": "2026-07-04",
+      "official_reference_url": "https://x.com/kolokolo3214go",
+      "official_reference_type": "source_author_x_candidate",
+      "normalized_location": "石川県金沢市 / 石川県",
+      "source_tweet_url": "https://x.com/kolokolo3214go/status/2058111827629023514"
     }
   ]
 }
