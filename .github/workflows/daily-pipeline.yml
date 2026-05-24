@@ -4,6 +4,16 @@ on:
   schedule:
     - cron: "10 22 * * *"
   workflow_dispatch:
+    inputs:
+      post_mode:
+        description: "X 投稿モード"
+        required: true
+        default: dry-run
+        type: choice
+        options:
+          - off
+          - dry-run
+          - live
   push:
     branches:
       - main
@@ -26,12 +36,17 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
+      POST_MODE: ${{ github.event_name == 'schedule' && 'live' || github.event_name == 'workflow_dispatch' && github.event.inputs.post_mode || 'off' }}
       TZ: Asia/Tokyo
       X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
       GH_MODELS_TOKEN: ${{ secrets.GH_MODELS_TOKEN }}
       GITHUB_TOKEN: ${{ secrets.GH_MODELS_TOKEN }}
       GITHUB_MODELS_MODEL: ${{ vars.GH_MODELS_MODEL || 'openai/gpt-4.1-mini' }}
       GITHUB_MODELS_API_VERSION: ${{ vars.GH_MODELS_API_VERSION || '2026-03-10' }}
+      X_API_KEY: ${{ secrets.X_API_KEY }}
+      X_API_SECRET: ${{ secrets.X_API_SECRET }}
+      X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+      X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
 
     steps:
       - name: Check out repository
@@ -50,12 +65,46 @@ jobs:
           set -euo pipefail
           test -n "$X_BEARER_TOKEN" || { echo "X_BEARER_TOKEN is required"; exit 1; }
           test -n "$GH_MODELS_TOKEN" || { echo "GH_MODELS_TOKEN is required"; exit 1; }
+          if [[ "$POST_MODE" == "live" ]]; then
+            test -n "$X_API_KEY" || { echo "X_API_KEY is required for live posting"; exit 1; }
+            test -n "$X_API_SECRET" || { echo "X_API_SECRET is required for live posting"; exit 1; }
+            test -n "$X_ACCESS_TOKEN" || { echo "X_ACCESS_TOKEN is required for live posting"; exit 1; }
+            test -n "$X_ACCESS_TOKEN_SECRET" || { echo "X_ACCESS_TOKEN_SECRET is required for live posting"; exit 1; }
+          fi
+
+      - name: Restore posted event log
+        if: env.POST_MODE != 'off'
+        uses: actions/cache/restore@v4
+        with:
+          path: data/output/posted_events.csv
+          key: posted-events-${{ github.ref_name }}-${{ github.run_id }}
+          restore-keys: |
+            posted-events-${{ github.ref_name }}-
 
       - name: Rebuild query configuration
         run: python src/build_priority_queries_from_masters.py
 
       - name: Run API pipeline
-        run: python src/run_pipeline.py
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=()
+          case "$POST_MODE" in
+            live)
+              args+=(--post-new-events)
+              ;;
+            dry-run)
+              args+=(--post-new-events --post-dry-run)
+              ;;
+          esac
+          python src/run_pipeline.py "${args[@]}"
+
+      - name: Save posted event log
+        if: env.POST_MODE == 'live' && success() && hashFiles('data/output/posted_events.csv') != ''
+        uses: actions/cache/save@v4
+        with:
+          path: data/output/posted_events.csv
+          key: posted-events-${{ github.ref_name }}-${{ github.run_id }}
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
