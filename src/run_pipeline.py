@@ -11,26 +11,59 @@ from pathlib import Path
 ROOT_DIR = Path(__file__).resolve().parent.parent
 DEFAULT_OUTPUT_DIR = ROOT_DIR / "data" / "output"
 DEFAULT_EXISTING_INPUT_CSV = ROOT_DIR / "data" / "output" / "x_recent_search_20260509_173241.csv"
+DEFAULT_QUERY_FILE = ROOT_DIR / "config" / "priority_queries.json"
 DEFAULT_PAGES_JSON = ROOT_DIR / "docs" / "data" / "schedule_list.json"
+DEFAULT_MASTER_PAGES_JSON = ROOT_DIR / "docs" / "data" / "master_data.json"
+DEFAULT_MASTER_WEB_JSON = ROOT_DIR / "web" / "data" / "master_data.json"
 DEFAULT_STRUCTURED_CSV = ROOT_DIR / "data" / "output" / "structured_events.csv"
 DEFAULT_FILTERED_CSV = ROOT_DIR / "data" / "output" / "structured_events_filtered.csv"
 DEFAULT_CUMULATIVE_STRUCTURED_CSV = ROOT_DIR / "data" / "output" / "structured_events_cumulative.csv"
 DEFAULT_CUMULATIVE_FILTERED_CSV = ROOT_DIR / "data" / "output" / "structured_events_filtered_cumulative.csv"
 DEFAULT_EVENT_CUMULATIVE_CSV = ROOT_DIR / "data" / "output" / "event_cumulative.csv"
+DEFAULT_LOCAL_PREVIEW_DIR = DEFAULT_OUTPUT_DIR / "_local_preview"
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run collection and data shaping pipeline in one command")
     parser.add_argument("--skip-collect", action="store_true", help="情報収集を飛ばして既存CSVから続行する")
     parser.add_argument("--input-csv", default=str(DEFAULT_EXISTING_INPUT_CSV), help="--skip-collect 時に使う収集済みCSV")
-    parser.add_argument("--query-file", default=str(ROOT_DIR / "config" / "priority_queries.json"), help="収集に使うクエリJSON")
+    parser.add_argument("--query-file", default=str(DEFAULT_QUERY_FILE), help="収集に使うクエリJSON")
     parser.add_argument("--output-dir", default=str(DEFAULT_OUTPUT_DIR), help="収集CSVの出力先")
     parser.add_argument("--max-results", type=int, default=None, help="各クエリの取得件数")
     parser.add_argument("--extract-limit", type=int, default=None, help="構造化抽出の件数上限")
     parser.add_argument("--model", default=None, help="GitHub Models のモデルIDを上書きする")
+    parser.add_argument(
+        "--local-preview-dir",
+        nargs="?",
+        const=str(DEFAULT_LOCAL_PREVIEW_DIR),
+        default=None,
+        help="ローカル確認用の生成物を別ディレクトリへ保存し、config/docs/web の tracked ファイルを更新しない",
+    )
     parser.add_argument("--publish", action="store_true", help="生成後に Pages 用 JSON を commit と push する")
     parser.add_argument("--commit-message", default=None, help="--publish 時のコミットメッセージ")
     return parser.parse_args()
+
+
+def resolve_runtime_paths(args: argparse.Namespace) -> dict[str, Path]:
+    query_file = Path(args.query_file)
+    schedule_pages_json = DEFAULT_PAGES_JSON
+    master_pages_json = DEFAULT_MASTER_PAGES_JSON
+    master_web_json = DEFAULT_MASTER_WEB_JSON
+
+    if args.local_preview_dir:
+        preview_dir = Path(args.local_preview_dir)
+        if query_file == DEFAULT_QUERY_FILE:
+            query_file = preview_dir / "config" / "priority_queries.json"
+        schedule_pages_json = preview_dir / "docs" / "data" / "schedule_list.json"
+        master_pages_json = preview_dir / "docs" / "data" / "master_data.json"
+        master_web_json = preview_dir / "web" / "data" / "master_data.json"
+
+    return {
+        "query_file": query_file,
+        "schedule_pages_json": schedule_pages_json,
+        "master_pages_json": master_pages_json,
+        "master_web_json": master_web_json,
+    }
 
 
 def run_command(command: list[str]) -> subprocess.CompletedProcess[str]:
@@ -52,18 +85,18 @@ def find_saved_csv(stdout: str) -> Path:
     raise RuntimeError("収集CSVの保存先を出力から判定できませんでした。")
 
 
-def rebuild_query_configuration(args: argparse.Namespace) -> None:
+def rebuild_query_configuration(query_file: Path) -> None:
     run_command([
         sys.executable,
         str(ROOT_DIR / "src" / "build_priority_queries_from_masters.py"),
         "--output-json",
-        args.query_file,
+        str(query_file),
     ])
 
 
-def collect_posts(args: argparse.Namespace) -> Path:
+def collect_posts(args: argparse.Namespace, query_file: Path) -> Path:
     command = [sys.executable, str(ROOT_DIR / "src" / "fetch_x_posts.py")]
-    command.extend(["--query-file", args.query_file])
+    command.extend(["--query-file", str(query_file)])
     command.extend(["--output-dir", args.output_dir])
     if args.max_results is not None:
         command.extend(["--max-results", str(args.max_results)])
@@ -156,19 +189,25 @@ def build_event_cumulative(input_csv: Path) -> Path:
     return DEFAULT_EVENT_CUMULATIVE_CSV
 
 
-def build_schedule(input_csv: Path) -> None:
+def build_schedule(input_csv: Path, pages_json: Path) -> None:
     run_command([
         sys.executable,
         str(ROOT_DIR / "src" / "build_schedule_list.py"),
         "--events-csv",
         str(input_csv),
+        "--pages-json",
+        str(pages_json),
     ])
 
 
-def build_master_pages_data() -> None:
+def build_master_pages_data(pages_json: Path, web_json: Path) -> None:
     run_command([
         sys.executable,
         str(ROOT_DIR / "src" / "build_master_pages_data.py"),
+        "--pages-json",
+        str(pages_json),
+        "--web-json",
+        str(web_json),
     ])
 
 
@@ -210,20 +249,24 @@ def default_commit_message() -> str:
 
 def main() -> int:
     args = parse_args()
-    rebuild_query_configuration(args)
+    if args.publish and args.local_preview_dir:
+        raise ValueError("--publish と --local-preview-dir は同時に使えません。")
+
+    runtime_paths = resolve_runtime_paths(args)
+    rebuild_query_configuration(runtime_paths["query_file"])
     if args.skip_collect:
         input_csv = Path(args.input_csv)
         if not input_csv.exists():
             raise FileNotFoundError(f"input csv not found: {input_csv}")
     else:
-        input_csv = collect_posts(args)
+        input_csv = collect_posts(args, runtime_paths["query_file"])
 
     extract_events(input_csv, args)
     cumulative_filtered_csv = merge_cumulative_outputs()
     event_cumulative_csv = build_event_cumulative(cumulative_filtered_csv)
     print("master update skipped: 劇団マスターと劇場マスターは既存ファイルを保持します")
-    build_schedule(event_cumulative_csv)
-    build_master_pages_data()
+    build_schedule(event_cumulative_csv, runtime_paths["schedule_pages_json"])
+    build_master_pages_data(runtime_paths["master_pages_json"], runtime_paths["master_web_json"])
     if args.publish:
         publish_pages_data(args)
     print("pipeline completed")
@@ -232,7 +275,9 @@ def main() -> int:
     print(f"cumulative_filtered_csv: {DEFAULT_CUMULATIVE_FILTERED_CSV}")
     print(f"event_cumulative_csv: {DEFAULT_EVENT_CUMULATIVE_CSV}")
     print(f"schedule_csv: {ROOT_DIR / 'data' / 'output' / 'schedule_list.csv'}")
-    print(f"pages_json: {DEFAULT_PAGES_JSON}")
+    print(f"pages_json: {runtime_paths['schedule_pages_json']}")
+    if args.local_preview_dir:
+        print(f"local_preview_dir: {Path(args.local_preview_dir)}")
     return 0
 
 

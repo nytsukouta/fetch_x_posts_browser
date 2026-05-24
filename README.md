@@ -98,6 +98,16 @@
 - 劇団マスターと劇場マスターはパイプラインでは自動更新せず、既存ファイルを参照します
 - 最後にイベント単位データから `data/output/schedule_list.csv` と `docs/data/schedule_list.json` を更新します
 
+tracked な `config/` や `docs/` を汚さずにローカル確認したい場合:
+
+1. `.venv/Scripts/python.exe src/run_pipeline.py --local-preview-dir`
+
+補足:
+
+- `--local-preview-dir` を付けると `config/priority_queries.json`、`docs/data/schedule_list.json`、`docs/data/master_data.json`、`web/data/master_data.json` を直接更新せず、既定では `data/output/_local_preview/` 配下へ保存します
+- 別の保存先を使いたい場合は `--local-preview-dir data/output/my_preview` のように明示できます
+- `--publish` とは同時に使えません
+
 マスター運用メモ:
 
 - `data/output/organization_master.csv` の `query_include` に `1` を入れると、名前判定に引っかからない劇団も優先クエリに含めます
