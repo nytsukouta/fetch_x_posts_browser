@@ -20,6 +20,7 @@ DEFAULT_FILTERED_CSV = ROOT_DIR / "data" / "output" / "structured_events_filtere
 DEFAULT_CUMULATIVE_STRUCTURED_CSV = ROOT_DIR / "data" / "output" / "structured_events_cumulative.csv"
 DEFAULT_CUMULATIVE_FILTERED_CSV = ROOT_DIR / "data" / "output" / "structured_events_filtered_cumulative.csv"
 DEFAULT_EVENT_CUMULATIVE_CSV = ROOT_DIR / "data" / "output" / "event_cumulative.csv"
+DEFAULT_POSTED_EVENTS_CSV = ROOT_DIR / "data" / "output" / "posted_events.csv"
 DEFAULT_LOCAL_PREVIEW_DIR = DEFAULT_OUTPUT_DIR / "_local_preview"
 
 
@@ -33,6 +34,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--extract-limit", type=int, default=None, help="構造化抽出の件数上限")
     parser.add_argument("--model", default=None, help="GitHub Models のモデルIDを上書きする")
     parser.add_argument("--debug-outputs", action="store_true", help="抽出段階の JSONL などデバッグ用中間生成物も保存する")
+    parser.add_argument("--post-new-events", action="store_true", help="新規公演を X に投稿する")
+    parser.add_argument("--post-dry-run", action="store_true", help="新規公演の投稿文だけを表示し、実際には投稿しない")
+    parser.add_argument("--post-limit", type=int, default=None, help="投稿または dry-run 表示する件数上限")
+    parser.add_argument("--post-hashtag", default="石川演劇", help="投稿末尾に付けるハッシュタグ。空文字で無効化")
     parser.add_argument(
         "--local-preview-dir",
         nargs="?",
@@ -214,6 +219,24 @@ def build_master_pages_data(pages_json: Path, web_json: Path) -> None:
     ])
 
 
+def post_new_events(input_csv: Path, args: argparse.Namespace) -> None:
+    command = [
+        sys.executable,
+        str(ROOT_DIR / "src" / "post_new_events_to_x.py"),
+        "--events-csv",
+        str(input_csv),
+        "--posted-log-csv",
+        str(DEFAULT_POSTED_EVENTS_CSV),
+        "--hashtag",
+        args.post_hashtag,
+    ]
+    if args.post_dry_run:
+        command.append("--dry-run")
+    if args.post_limit is not None:
+        command.extend(["--limit", str(args.post_limit)])
+    run_command(command)
+
+
 def run_git(command: list[str]) -> subprocess.CompletedProcess[str]:
     return run_command(["git", *command])
 
@@ -254,6 +277,8 @@ def main() -> int:
     args = parse_args()
     if args.publish and args.local_preview_dir:
         raise ValueError("--publish と --local-preview-dir は同時に使えません。")
+    if args.post_dry_run and not args.post_new_events:
+        raise ValueError("--post-dry-run を使う場合は --post-new-events も指定してください。")
 
     runtime_paths = resolve_runtime_paths(args)
     rebuild_query_configuration(runtime_paths["query_file"])
@@ -268,6 +293,8 @@ def main() -> int:
     cumulative_filtered_csv = merge_cumulative_outputs()
     event_cumulative_csv = build_event_cumulative(cumulative_filtered_csv)
     print("master update skipped: 劇団マスターと劇場マスターは既存ファイルを保持します")
+    if args.post_new_events:
+        post_new_events(event_cumulative_csv, args)
     build_schedule(event_cumulative_csv, runtime_paths["schedule_pages_json"])
     build_master_pages_data(runtime_paths["master_pages_json"], runtime_paths["master_web_json"])
     if args.publish:
