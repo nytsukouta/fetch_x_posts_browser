@@ -220,6 +220,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--limit", type=int, default=None, help="処理件数の上限")
     parser.add_argument("--model", default=os.getenv("GITHUB_MODELS_MODEL", DEFAULT_MODEL), help="GitHub Models のモデルID")
     parser.add_argument("--workers", type=int, default=2, help="GitHub Models 抽出の並列数")
+    parser.add_argument("--debug-outputs", action="store_true", help="デバッグ用に JSONL 中間生成物も保存する")
     return parser.parse_args()
 
 
@@ -530,15 +531,17 @@ def main() -> int:
 
     filtered_records = [record for record in structured_records if not record.get("is_noise")]
 
-    write_jsonl(structured_records, Path(args.output_jsonl))
     write_csv(structured_records, Path(args.output_csv))
-    write_jsonl(filtered_records, Path(args.filtered_output_jsonl))
     write_csv(filtered_records, Path(args.filtered_output_csv))
+    if args.debug_outputs:
+        write_jsonl(structured_records, Path(args.output_jsonl))
+        write_jsonl(filtered_records, Path(args.filtered_output_jsonl))
 
-    print(f"saved jsonl: {args.output_jsonl}")
     print(f"saved csv: {args.output_csv}")
-    print(f"saved filtered jsonl: {args.filtered_output_jsonl}")
     print(f"saved filtered csv: {args.filtered_output_csv}")
+    if args.debug_outputs:
+        print(f"saved jsonl: {args.output_jsonl}")
+        print(f"saved filtered jsonl: {args.filtered_output_jsonl}")
     print(f"rows: {len(structured_records)}")
     print(f"filtered_rows: {len(filtered_records)}")
     return 0

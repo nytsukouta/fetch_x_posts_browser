@@ -32,6 +32,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-results", type=int, default=None, help="各クエリの取得件数")
     parser.add_argument("--extract-limit", type=int, default=None, help="構造化抽出の件数上限")
     parser.add_argument("--model", default=None, help="GitHub Models のモデルIDを上書きする")
+    parser.add_argument("--debug-outputs", action="store_true", help="抽出段階の JSONL などデバッグ用中間生成物も保存する")
     parser.add_argument(
         "--local-preview-dir",
         nargs="?",
@@ -116,6 +117,8 @@ def extract_events(input_csv: Path, args: argparse.Namespace) -> None:
         command.extend(["--limit", str(args.extract_limit)])
     if args.model:
         command.extend(["--model", args.model])
+    if args.debug_outputs:
+        command.append("--debug-outputs")
     run_command(command)
 
 

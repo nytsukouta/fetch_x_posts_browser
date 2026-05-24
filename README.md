@@ -36,15 +36,14 @@
 
 出力先:
 
-- `data/output/structured_events.jsonl`
 - `data/output/structured_events.csv`
-- `data/output/structured_events_filtered.jsonl`
 - `data/output/structured_events_filtered.csv`
 
 補足:
 
 - `structured_events.*` は生の抽出結果です
 - `structured_events_filtered.*` はノイズ除去後の結果です
+- JSONL は通常運用では保存せず、必要な時だけ `--debug-outputs` を付けて保存します
 - `organization` は `data/output/organization_master.csv` の `official_x` と正規名に基づいて補正されます
 - `normalized_venue_name` と `normalized_location` に正規化結果が入ります
 
@@ -97,6 +96,7 @@
 - イベント単位の統合結果は `data/output/event_cumulative.csv` に保存されます
 - 劇団マスターと劇場マスターはパイプラインでは自動更新せず、既存ファイルを参照します
 - 最後にイベント単位データから `data/output/schedule_list.csv` と `docs/data/schedule_list.json` を更新します
+- 抽出段階の JSONL は通常運用では保存せず、必要な時だけ `--debug-outputs` を付けて保存します
 
 tracked な `config/` や `docs/` を汚さずにローカル確認したい場合:
 
