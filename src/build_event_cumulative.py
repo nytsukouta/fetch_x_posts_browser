@@ -49,6 +49,13 @@ MERGE_FIELDS = [
     "end_date",
     "start_time",
     "category",
+    "is_event_announcement",
+    "is_impression_or_review",
+    "is_past_event_reference",
+    "has_actionable_schedule_info",
+    "requires_link_or_image_context",
+    "posting_recommendation",
+    "posting_reason",
     "reasoning",
     "source_text",
     "author_name",
@@ -238,6 +245,58 @@ def choose_value(current: str, candidate: str) -> str:
     return current_value
 
 
+def parse_bool(value: Any) -> bool | None:
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return None
+
+    cleaned = str(value).strip().lower()
+    if cleaned in {"true", "1", "yes"}:
+        return True
+    if cleaned in {"false", "0", "no"}:
+        return False
+    return None
+
+
+def bool_to_csv(value: bool | None) -> str:
+    if value is True:
+        return "True"
+    if value is False:
+        return "False"
+    return ""
+
+
+def recommendation_rank(value: Any) -> int:
+    cleaned = str(value or "").strip().lower()
+    if cleaned == "post":
+        return 3
+    if cleaned == "review":
+        return 2
+    if cleaned == "skip":
+        return 1
+    return 0
+
+
+def choose_group_posting_recommendation(records: list[dict[str, Any]]) -> tuple[str, str]:
+    best_record: dict[str, Any] | None = None
+    best_score: tuple[int, tuple[float, int, int, str]] | None = None
+
+    for record in records:
+        score = (recommendation_rank(record.get("posting_recommendation")), row_quality(record))
+        if best_score is None or score > best_score:
+            best_record = record
+            best_score = score
+
+    if best_record is None:
+        return "", ""
+
+    return (
+        str(best_record.get("posting_recommendation") or "").strip().lower(),
+        str(best_record.get("posting_reason") or "").strip(),
+    )
+
+
 def title_similarity(left: str, right: str) -> float:
     normalized_left = compact_text(left)
     normalized_right = compact_text(right)
@@ -407,6 +466,12 @@ def merge_event_group(records: list[dict[str, Any]], canonical_name: str) -> dic
     merged["source_author_usernames"] = " | ".join(sorted(source_author_usernames))
     merged["first_seen_created_at"] = first_seen
     merged["last_seen_created_at"] = last_seen
+    merged["is_event_announcement"] = bool_to_csv(any(parse_bool(record.get("is_event_announcement")) is True for record in records))
+    merged["is_impression_or_review"] = bool_to_csv(any(parse_bool(record.get("is_impression_or_review")) is True for record in records))
+    merged["is_past_event_reference"] = bool_to_csv(any(parse_bool(record.get("is_past_event_reference")) is True for record in records))
+    merged["has_actionable_schedule_info"] = bool_to_csv(any(parse_bool(record.get("has_actionable_schedule_info")) is True for record in records))
+    merged["requires_link_or_image_context"] = bool_to_csv(any(parse_bool(record.get("requires_link_or_image_context")) is True for record in records))
+    merged["posting_recommendation"], merged["posting_reason"] = choose_group_posting_recommendation(records)
     return merged
 
 
@@ -687,6 +752,13 @@ def build_event_records(rows: list[dict[str, str]]) -> list[dict[str, Any]]:
                 "start_time": (best_row.get("start_time") or "").strip(),
                 "category": (best_row.get("category") or "").strip(),
                 "is_recruitment": (best_row.get("is_recruitment") or "").strip(),
+                "is_event_announcement": (best_row.get("is_event_announcement") or "").strip(),
+                "is_impression_or_review": (best_row.get("is_impression_or_review") or "").strip(),
+                "is_past_event_reference": (best_row.get("is_past_event_reference") or "").strip(),
+                "has_actionable_schedule_info": (best_row.get("has_actionable_schedule_info") or "").strip(),
+                "requires_link_or_image_context": (best_row.get("requires_link_or_image_context") or "").strip(),
+                "posting_recommendation": (best_row.get("posting_recommendation") or "").strip(),
+                "posting_reason": (best_row.get("posting_reason") or "").strip(),
                 "confidence": bucket["max_confidence"],
                 "reasoning": (best_row.get("reasoning") or "").strip(),
                 "source_text": (best_row.get("source_text") or "").strip(),
@@ -721,6 +793,13 @@ def write_csv(records: list[dict[str, Any]], output_path: Path) -> None:
         "start_time",
         "category",
         "is_recruitment",
+        "is_event_announcement",
+        "is_impression_or_review",
+        "is_past_event_reference",
+        "has_actionable_schedule_info",
+        "requires_link_or_image_context",
+        "posting_recommendation",
+        "posting_reason",
         "confidence",
         "reasoning",
         "source_text",

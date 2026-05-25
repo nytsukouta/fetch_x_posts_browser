@@ -1,17 +1,17 @@
 {
-  "generated_at": "2026-05-24T08:08:12+09:00",
+  "generated_at": "2026-05-25T21:00:24+09:00",
   "count": 4,
   "items": [
     {
-      "event_name": "ミキ漫 全国ツアー2026～石川公演～",
+      "event_name": "七尾東雲高校演劇科 第17回 定期公演 『ドン・キホーテは故郷に帰り、サンチョ・パンサは旅に出る。』",
       "organization_id": "",
-      "organization_name": "ミキ漫",
+      "organization_name": "石川県立七尾東雲高等学校 演劇科",
       "venue_name": "能登演劇堂",
-      "performance_schedule": "2026-05-24 15:00",
-      "official_reference_url": "https://x.com/mikiman_ak",
+      "performance_schedule": "2026-06-12 - 2026-06-13 14:00",
+      "official_reference_url": "https://x.com/hkd_kokoengeki",
       "official_reference_type": "source_author_x_candidate",
       "normalized_location": "石川県七尾市 / 石川県能登地方 / 石川県",
-      "source_tweet_url": "https://x.com/mikiman_ak/status/2058166664068546624"
+      "source_tweet_url": "https://x.com/hkd_kokoengeki/status/2055301221922353493"
     },
     {
       "event_name": "表現集団tone!tone!tone! 第19回公演「煙が目にしみる」",
@@ -22,29 +22,29 @@
       "official_reference_url": "https://x.com/tonetoneto25403",
       "official_reference_type": "organization_official_x",
       "normalized_location": "石川県金沢市",
-      "source_tweet_url": "https://x.com/tonetoneto25403/status/2056337679470718994"
+      "source_tweet_url": "https://x.com/tonetoneto25403/status/2053754502445166690"
     },
     {
-      "event_name": "花よりタンゴ",
-      "organization_id": "",
-      "organization_name": "こまつ座",
-      "venue_name": "能登演劇堂",
-      "performance_schedule": "2026-06-20 - 2026-06-21",
-      "official_reference_url": "https://x.com/tatsudeluxe",
-      "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "石川県能登地方",
-      "source_tweet_url": "https://x.com/tatsudeluxe/status/2057994448202789208"
+      "event_name": "街 くずれた日常 2026",
+      "organization_id": "org-劇団新人類人猿",
+      "organization_name": "劇団新人類人猿",
+      "venue_name": "金沢市民芸術村PIT2ドラマ工房",
+      "performance_schedule": "2026-07-11 - 2026-07-12 14:00",
+      "official_reference_url": "https://potofu.me/rui-jin-en",
+      "official_reference_type": "organization_official_website",
+      "normalized_location": "石川県金沢市",
+      "source_tweet_url": "https://x.com/NollieSakaitaka/status/2054933723288875214"
     },
     {
-      "event_name": "のんびりユニットころころ公演「七夕の日に」",
-      "organization_id": "",
-      "organization_name": "のんびりユニットころころ",
-      "venue_name": "金沢市民芸術村 里山の家",
-      "performance_schedule": "2026-07-04",
-      "official_reference_url": "https://x.com/kolokolo3214go",
-      "official_reference_type": "source_author_x_candidate",
-      "normalized_location": "石川県金沢市 / 石川県",
-      "source_tweet_url": "https://x.com/kolokolo3214go/status/2058111827629023514"
+      "event_name": "太陽系全速力 フルスロットル",
+      "organization_id": "org-劇団羅針盤",
+      "organization_name": "劇団羅針盤",
+      "venue_name": "金沢市民芸術村PIT2ドラマ工房",
+      "performance_schedule": "2026-07-24 - 2026-07-26",
+      "official_reference_url": "https://gekirashinban.com",
+      "official_reference_type": "organization_official_website",
+      "normalized_location": "石川県金沢市",
+      "source_tweet_url": "https://x.com/GEKIRASHINBAN/status/2055531269749080382"
     }
   ]
 }

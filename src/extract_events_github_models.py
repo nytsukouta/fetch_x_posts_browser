@@ -11,7 +11,16 @@ from pathlib import Path
 import time
 from typing import Any
 from urllib.parse import urlparse
-from urllib import error, request
+from urllib import error, parse, request
+
+from x_tweet_context import (
+    COMMON_EXPANSIONS,
+    COMMON_MEDIA_FIELDS,
+    COMMON_TWEET_FIELDS,
+    COMMON_USER_FIELDS,
+    build_context_maps,
+    extract_enriched_fields,
+)
 
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
@@ -25,6 +34,7 @@ DEFAULT_ORGANIZATION_MASTER_CSV = ROOT_DIR / "data" / "output" / "organization_m
 DEFAULT_MODEL = "openai/gpt-4.1-mini"
 DEFAULT_API_VERSION = "2026-03-10"
 INFERENCE_URL = "https://models.github.ai/inference/chat/completions"
+LOOKUP_TWEET_URL = "https://api.x.com/2/tweets"
 NON_ALNUM_RE = re.compile(r"[^0-9a-zA-Z\u3040-\u30ff\u3400-\u9fff]+")
 
 CITY_ALIASES = {
@@ -93,7 +103,7 @@ THEATER_TEXT_PATTERNS = [
 
 
 SYSTEM_PROMPT = """あなたは日本語のX投稿から演劇イベント情報を構造化抽出するアシスタントです。
-本文に書かれている情報だけを使ってください。推測しないでください。
+入力として与えられた投稿本文、引用先本文、添付画像に写っている文字情報だけを使ってください。推測しないでください。
 不明な項目は null にしてください。
 出力は必ずJSONオブジェクトのみで返してください。説明文は不要です。
 
@@ -114,14 +124,32 @@ SYSTEM_PROMPT = """あなたは日本語のX投稿から演劇イベント情報
 - content_type: 演劇、映画、音楽ライブ、トーク、展示、配信、その他 のいずれか
 - is_theater_related: 演劇関連なら true、それ以外は false
 - is_recruitment: true か false
+- is_event_announcement: その投稿自体が、これから行われる公演・朗読劇・演劇ワークショップ・募集の告知なら true。感想、観劇報告、過去公演紹介、単なる引用・応援投稿なら false
+- is_impression_or_review: 観劇感想、鑑賞報告、紹介記事の共有、応援コメント、結果報告が主目的なら true
+- is_past_event_reference: 過去公演の振り返り、過去実績紹介、すでに終了した催しの言及が主目的なら true
+- has_actionable_schedule_info: 本文だけで、行く判断に必要な日程情報や開催時期が具体的に分かるなら true
+- requires_link_or_image_context: 本文だけでは不十分で、リンク先や画像を見ないと開催情報が分からないなら true
+- posting_recommendation: post / review / skip のいずれか。自動投稿対象として適切なら post、人手確認が必要なら review、投稿対象ではないなら skip
+- posting_reason: posting_recommendation の理由を短く書く
 - confidence: 0 から 1 の数値
 - exclusion_reason: 演劇関連ではない場合の短い理由。演劇関連なら null
 - reasoning: 1文で簡潔に判断根拠を書く
 """
 
+POSTING_RECOMMENDATION_PRIORITY = {
+    "": 0,
+    "skip": 1,
+    "review": 2,
+    "post": 3,
+}
+
 
 def get_github_models_token() -> str:
     return os.getenv("GH_MODELS_TOKEN", "").strip() or os.getenv("GITHUB_TOKEN", "").strip()
+
+
+def get_x_bearer_token() -> str:
+    return os.getenv("X_BEARER_TOKEN", "").strip()
 
 
 def compact_text(value: Any) -> str:
@@ -233,6 +261,86 @@ def load_rows(input_csv: Path, limit: int | None) -> list[dict[str, str]]:
     return rows
 
 
+def parse_tweet_id(row: dict[str, str]) -> str:
+    tweet_id = str(row.get("tweet_id") or "").strip()
+    if tweet_id:
+        return tweet_id
+
+    tweet_url = str(row.get("tweet_url") or "").strip().rstrip("/")
+    if not tweet_url:
+        return ""
+    return tweet_url.rsplit("/", 1)[-1]
+
+
+def split_pipe_urls(value: str) -> list[str]:
+    urls: list[str] = []
+    for item in str(value or "").split(" | "):
+        cleaned = item.strip()
+        if cleaned and cleaned not in urls:
+            urls.append(cleaned)
+    return urls
+
+
+def fetch_tweet_context(bearer_token: str, tweet_id: str) -> dict[str, str]:
+    if not bearer_token or not tweet_id:
+        return {}
+
+    params = {
+        "tweet.fields": COMMON_TWEET_FIELDS,
+        "expansions": COMMON_EXPANSIONS,
+        "user.fields": COMMON_USER_FIELDS,
+        "media.fields": COMMON_MEDIA_FIELDS,
+    }
+    api_request = request.Request(
+        f"{LOOKUP_TWEET_URL}/{tweet_id}?{parse.urlencode(params)}",
+        headers={
+            "Authorization": f"Bearer {bearer_token}",
+            "User-Agent": "hokuriku-theater-extractor",
+        },
+        method="GET",
+    )
+
+    try:
+        with request.urlopen(api_request, timeout=30) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except error.HTTPError as exc:
+        details = exc.read().decode("utf-8", errors="replace")
+        print(f"tweet context lookup failed {tweet_id}: {exc.code} {details}", file=sys.stderr)
+        return {}
+    except error.URLError as exc:
+        print(f"tweet context lookup failed {tweet_id}: {exc}", file=sys.stderr)
+        return {}
+
+    tweet = payload.get("data") or {}
+    if not isinstance(tweet, dict):
+        return {}
+
+    users_by_id, tweets_by_id, media_by_key = build_context_maps(payload)
+    return extract_enriched_fields(tweet, users_by_id, tweets_by_id, media_by_key)
+
+
+def enrich_source_row(row: dict[str, str], x_bearer_token: str) -> dict[str, str]:
+    enriched_row = dict(row)
+    enriched_fields = [
+        "media_image_urls",
+        "quoted_tweet_url",
+        "quoted_text",
+        "quoted_author_name",
+        "quoted_author_username",
+        "quoted_media_image_urls",
+    ]
+    if any(str(enriched_row.get(field) or "").strip() for field in enriched_fields):
+        return enriched_row
+
+    looked_up = fetch_tweet_context(x_bearer_token, parse_tweet_id(enriched_row))
+    for field in enriched_fields:
+        if str(looked_up.get(field) or "").strip():
+            enriched_row[field] = looked_up[field]
+    if str(looked_up.get("text") or "").strip() and not str(enriched_row.get("text") or "").strip():
+        enriched_row["text"] = looked_up["text"]
+    return enriched_row
+
+
 def build_user_prompt(row: dict[str, str]) -> str:
     return json.dumps(
         {
@@ -242,18 +350,38 @@ def build_user_prompt(row: dict[str, str]) -> str:
             "author_name": row.get("author_name"),
             "author_username": row.get("author_username"),
             "text": row.get("text"),
+            "media_image_urls": split_pipe_urls(str(row.get("media_image_urls") or "")),
+            "quoted_tweet_url": row.get("quoted_tweet_url"),
+            "quoted_author_name": row.get("quoted_author_name"),
+            "quoted_author_username": row.get("quoted_author_username"),
+            "quoted_text": row.get("quoted_text"),
+            "quoted_media_image_urls": split_pipe_urls(str(row.get("quoted_media_image_urls") or "")),
         },
         ensure_ascii=False,
         indent=2,
     )
 
 
-def call_github_models(token: str, api_version: str, model: str, prompt: str) -> dict[str, Any]:
+def build_user_content(row: dict[str, str]) -> list[dict[str, Any]]:
+    content: list[dict[str, Any]] = [{"type": "text", "text": build_user_prompt(row)}]
+
+    for index, image_url in enumerate(split_pipe_urls(str(row.get("media_image_urls") or ""))[:4], start=1):
+        content.append({"type": "text", "text": f"current_tweet_attached_image_{index}"})
+        content.append({"type": "image_url", "image_url": {"url": image_url}})
+
+    for index, image_url in enumerate(split_pipe_urls(str(row.get("quoted_media_image_urls") or ""))[:4], start=1):
+        content.append({"type": "text", "text": f"quoted_tweet_attached_image_{index}"})
+        content.append({"type": "image_url", "image_url": {"url": image_url}})
+
+    return content
+
+
+def call_github_models(token: str, api_version: str, model: str, user_content: list[dict[str, Any]]) -> dict[str, Any]:
     payload = {
         "model": model,
         "messages": [
             {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": prompt},
+            {"role": "user", "content": user_content},
         ],
         "temperature": 0,
         "response_format": {"type": "json_object"},
@@ -346,12 +474,25 @@ def write_csv(records: list[dict[str, Any]], output_path: Path) -> None:
         "content_type",
         "is_theater_related",
         "is_recruitment",
+        "is_event_announcement",
+        "is_impression_or_review",
+        "is_past_event_reference",
+        "has_actionable_schedule_info",
+        "requires_link_or_image_context",
+        "posting_recommendation",
+        "posting_reason",
         "confidence",
         "is_noise",
         "noise_reason",
         "exclusion_reason",
         "reasoning",
         "source_text",
+        "source_media_image_urls",
+        "source_quoted_tweet_url",
+        "source_quoted_text",
+        "source_quoted_author_name",
+        "source_quoted_author_username",
+        "source_quoted_media_image_urls",
     ]
     with output_path.open("w", encoding="utf-8-sig", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=fieldnames)
@@ -382,10 +523,23 @@ def normalize_record(
         "content_type": extracted.get("content_type"),
         "is_theater_related": extracted.get("is_theater_related"),
         "is_recruitment": extracted.get("is_recruitment"),
+        "is_event_announcement": extracted.get("is_event_announcement"),
+        "is_impression_or_review": extracted.get("is_impression_or_review"),
+        "is_past_event_reference": extracted.get("is_past_event_reference"),
+        "has_actionable_schedule_info": extracted.get("has_actionable_schedule_info"),
+        "requires_link_or_image_context": extracted.get("requires_link_or_image_context"),
+        "posting_recommendation": normalize_posting_recommendation(extracted.get("posting_recommendation")),
+        "posting_reason": extracted.get("posting_reason"),
         "confidence": extracted.get("confidence"),
         "exclusion_reason": extracted.get("exclusion_reason"),
         "reasoning": extracted.get("reasoning"),
         "source_text": source_row.get("text", ""),
+        "source_media_image_urls": source_row.get("media_image_urls", ""),
+        "source_quoted_tweet_url": source_row.get("quoted_tweet_url", ""),
+        "source_quoted_text": source_row.get("quoted_text", ""),
+        "source_quoted_author_name": source_row.get("quoted_author_name", ""),
+        "source_quoted_author_username": source_row.get("quoted_author_username", ""),
+        "source_quoted_media_image_urls": source_row.get("quoted_media_image_urls", ""),
     }
     record["organization"] = normalize_organization_name(
         record.get("organization"),
@@ -430,6 +584,27 @@ def normalize_location(location: Any, normalized_venue_name: Any, source_text: A
     return " / ".join(matched)
 
 
+def parse_bool(value: Any) -> bool | None:
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return None
+
+    cleaned = str(value).strip().lower()
+    if cleaned in {"true", "1", "yes"}:
+        return True
+    if cleaned in {"false", "0", "no"}:
+        return False
+    return None
+
+
+def normalize_posting_recommendation(value: Any) -> str:
+    cleaned = str(value or "").strip().lower()
+    if cleaned in POSTING_RECOMMENDATION_PRIORITY:
+        return cleaned
+    return "review"
+
+
 def classify_noise(record: dict[str, Any]) -> tuple[bool, str]:
     source_text = str(record.get("source_text") or "")
     category = str(record.get("category") or "")
@@ -439,6 +614,11 @@ def classify_noise(record: dict[str, Any]) -> tuple[bool, str]:
     organization = str(record.get("organization") or "")
     normalized_venue_name = str(record.get("normalized_venue_name") or "")
     is_theater_related = record.get("is_theater_related")
+    is_event_announcement = parse_bool(record.get("is_event_announcement"))
+    is_impression_or_review = parse_bool(record.get("is_impression_or_review"))
+    is_past_event_reference = parse_bool(record.get("is_past_event_reference"))
+    has_actionable_schedule_info = parse_bool(record.get("has_actionable_schedule_info"))
+    posting_recommendation = normalize_posting_recommendation(record.get("posting_recommendation"))
 
     if isinstance(is_theater_related, str):
         is_theater_related = is_theater_related.strip().lower() == "true"
@@ -458,6 +638,15 @@ def classify_noise(record: dict[str, Any]) -> tuple[bool, str]:
 
     if confidence < 0.55:
         return True, "low_confidence"
+
+    if posting_recommendation == "skip" and is_event_announcement is False:
+        return True, "llm_skip_recommendation"
+
+    if is_impression_or_review is True and has_actionable_schedule_info is not True:
+        return True, "impression_or_review"
+
+    if is_past_event_reference is True and is_event_announcement is not True:
+        return True, "past_event_reference"
 
     if any(pattern in source_text for pattern in REPORT_TEXT_PATTERNS):
         if not normalized_venue_name and not organization:
@@ -482,16 +671,17 @@ def extract_row(
     total: int,
     row: dict[str, str],
     github_token: str,
+    x_bearer_token: str,
     api_version: str,
     model: str,
     organization_name_lookup: dict[str, str],
     organization_handle_lookup: dict[str, str],
 ) -> dict[str, Any]:
     print(f"extracting: {index}/{total} {row.get('tweet_url', '')}")
-    prompt = build_user_prompt(row)
-    response_payload = call_github_models(github_token, api_version, model, prompt)
+    enriched_row = enrich_source_row(row, x_bearer_token)
+    response_payload = call_github_models(github_token, api_version, model, build_user_content(enriched_row))
     extracted = extract_json_content(response_payload)
-    return normalize_record(row, extracted, organization_name_lookup, organization_handle_lookup)
+    return normalize_record(enriched_row, extracted, organization_name_lookup, organization_handle_lookup)
 
 
 def main() -> int:
@@ -499,6 +689,7 @@ def main() -> int:
     args = parse_args()
 
     github_token = get_github_models_token()
+    x_bearer_token = get_x_bearer_token()
     api_version = os.getenv("GITHUB_MODELS_API_VERSION", DEFAULT_API_VERSION).strip() or DEFAULT_API_VERSION
     if not github_token:
         print("GH_MODELS_TOKEN または GITHUB_TOKEN が見つかりません。.env または Actions secrets に設定してください。", file=sys.stderr)
@@ -519,6 +710,7 @@ def main() -> int:
                 total,
                 row,
                 github_token,
+                x_bearer_token,
                 api_version,
                 args.model,
                 organization_name_lookup,

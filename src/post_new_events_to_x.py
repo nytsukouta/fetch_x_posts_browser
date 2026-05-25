@@ -7,6 +7,7 @@ import hashlib
 import hmac
 import json
 import os
+import re
 import secrets
 import sys
 import time
@@ -15,6 +16,8 @@ from pathlib import Path
 from typing import Any
 from urllib import error, parse, request
 
+from event_candidate_rules import is_schedule_eligible_event, parse_iso_date
+
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 DEFAULT_ENV_FILE = ROOT_DIR / ".env"
@@ -22,7 +25,7 @@ DEFAULT_EVENTS_CSV = ROOT_DIR / "data" / "output" / "event_cumulative.csv"
 DEFAULT_POSTED_LOG_CSV = ROOT_DIR / "data" / "output" / "posted_events.csv"
 CREATE_TWEET_URL = "https://api.x.com/2/tweets"
 DEFAULT_HASHTAG = "石川演劇"
-DEFAULT_HEADER = "新しい公演情報"
+DEFAULT_HEADER = "新しい公演が追加されましたジョキャ！"
 URL_LENGTH = 23
 MAX_TWEET_LENGTH = 280
 
@@ -46,7 +49,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--dry-run", action="store_true", help="投稿せず、作成されるポスト本文だけを表示する")
     parser.add_argument("--limit", type=int, default=None, help="投稿または dry-run 表示する件数上限")
     parser.add_argument("--hashtag", default=DEFAULT_HASHTAG, help="末尾に付けるハッシュタグ。空文字で無効化")
-    parser.add_argument("--header", default=DEFAULT_HEADER, help="投稿冒頭の見出し。括弧は自動で付く")
+    parser.add_argument("--header", default=DEFAULT_HEADER, help="投稿1行目の文言")
+    parser.add_argument("--site-url", default="", help="公開中の schedule ページ URL。未指定時は GitHub Pages URL を推定")
     return parser.parse_args()
 
 
@@ -64,16 +68,6 @@ def load_posted_event_ids(path: Path) -> set[str]:
         if event_id:
             posted_ids.add(event_id)
     return posted_ids
-
-
-def parse_iso_date(value: str) -> date | None:
-    cleaned = (value or "").strip()
-    if not cleaned:
-        return None
-    try:
-        return date.fromisoformat(cleaned)
-    except ValueError:
-        return None
 
 
 def is_current_or_upcoming_event(row: dict[str, str]) -> bool:
@@ -109,6 +103,71 @@ def choose_event_url(row: dict[str, str]) -> str:
     return ""
 
 
+def parse_github_remote(value: str) -> tuple[str, str] | None:
+    cleaned = value.strip()
+    https_match = re.match(r"https://github\.com/([^/]+)/([^/]+?)(?:\.git)?$", cleaned)
+    if https_match:
+        return https_match.group(1), https_match.group(2)
+
+    ssh_match = re.match(r"git@github\.com:([^/]+)/([^/]+?)(?:\.git)?$", cleaned)
+    if ssh_match:
+        return ssh_match.group(1), ssh_match.group(2)
+
+    return None
+
+
+def infer_public_site_url() -> str:
+    git_config_path = ROOT_DIR / ".git" / "config"
+    if not git_config_path.exists():
+        return ""
+
+    remote_url = ""
+    in_origin = False
+    for raw_line in git_config_path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if line.startswith("["):
+            in_origin = line == '[remote "origin"]'
+            continue
+        if in_origin and line.startswith("url ="):
+            remote_url = line.split("=", 1)[1].strip()
+            break
+
+    parsed_remote = parse_github_remote(remote_url)
+    if parsed_remote is None:
+        return ""
+
+    owner, repo = parsed_remote
+    if repo.lower() == f"{owner.lower()}.github.io":
+        return f"https://{repo}/"
+    return f"https://{owner}.github.io/{repo}/"
+
+
+def resolve_public_site_url(explicit_value: str) -> str:
+    candidate = explicit_value.strip()
+    if not candidate:
+        candidate = os.getenv("PUBLIC_SITE_URL", "").strip() or os.getenv("SITE_URL", "").strip()
+    if not candidate:
+        candidate = infer_public_site_url()
+    return candidate
+
+
+def build_schedule_page_url(site_url: str, row: dict[str, str]) -> str:
+    base_url = site_url.strip()
+    if not base_url:
+        return choose_event_url(row)
+
+    event_id = (row.get("event_id") or "").strip()
+    if not event_id:
+        return base_url
+
+    parsed = parse.urlsplit(base_url)
+    query_pairs = parse.parse_qsl(parsed.query, keep_blank_values=True)
+    query_pairs = [(key, value) for key, value in query_pairs if key != "event"]
+    query_pairs.append(("event", event_id))
+    new_query = parse.urlencode(query_pairs)
+    return parse.urlunsplit((parsed.scheme, parsed.netloc, parsed.path, new_query, parsed.fragment))
+
+
 def count_tweet_length(text: str) -> int:
     total = 0
     position = 0
@@ -140,46 +199,25 @@ def truncate_text(value: str, max_length: int) -> str:
     return (trimmed + "…") if trimmed else cleaned[:max_length]
 
 
-def build_post_text(row: dict[str, str], hashtag: str, header_label: str) -> str:
-    header = f"【{(header_label or DEFAULT_HEADER).strip()}】"
-    event_name = (row.get("event_name") or row.get("normalized_event_name") or "名称未設定").strip()
-    mandatory_lines: list[str] = []
-
-    event_url = choose_event_url(row)
+def build_post_text(row: dict[str, str], hashtag: str, header_label: str, site_url: str) -> str:
+    header = (header_label or DEFAULT_HEADER).strip() or DEFAULT_HEADER
+    event_url = build_schedule_page_url(site_url, row)
+    lines = [header]
     if event_url:
-        mandatory_lines.append(f"詳細: {event_url}")
+        lines.extend(["詳しくはこちら", event_url])
 
     hashtag = hashtag.strip().lstrip("#")
     if hashtag:
-        mandatory_lines.append(f"#{hashtag}")
+        lines.append(f"#{hashtag}")
 
-    optional_lines: list[str] = []
-    date_range = build_date_range(row)
-    organization = (row.get("organization") or "").strip()
-    venue_name = (row.get("normalized_venue_name") or row.get("venue_name") or "").strip()
-
-    if date_range:
-        optional_lines.append(f"日程: {date_range}")
-    if venue_name:
-        optional_lines.append(f"劇場: {venue_name}")
-    if organization:
-        optional_lines.append(f"劇団: {organization}")
-
-    chosen_optionals: list[str] = []
-    for line in optional_lines:
-        candidate = "\n".join([header, event_name, *chosen_optionals, line, *mandatory_lines])
-        if count_tweet_length(candidate) <= MAX_TWEET_LENGTH:
-            chosen_optionals.append(line)
-
-    text = "\n".join([header, event_name, *chosen_optionals, *mandatory_lines])
+    text = "\n".join(lines)
     if count_tweet_length(text) <= MAX_TWEET_LENGTH:
         return text
 
-    fixed_lines = [header, *chosen_optionals, *mandatory_lines]
-    fixed_length = count_tweet_length("\n".join([*fixed_lines, ""]))
-    allowed_for_name = MAX_TWEET_LENGTH - fixed_length
-    shortened_name = truncate_text(event_name, max(allowed_for_name, 1))
-    return "\n".join([header, shortened_name, *chosen_optionals, *mandatory_lines])
+    fixed_lines = [header]
+    if hashtag:
+        fixed_lines.append(f"#{hashtag}")
+    return "\n".join(fixed_lines)
 
 
 def sort_key(row: dict[str, str]) -> tuple[date, str, str]:
@@ -196,6 +234,8 @@ def select_candidate_rows(rows: list[dict[str, str]], posted_ids: set[str], limi
         if not event_id or event_id in posted_ids:
             continue
         if not is_current_or_upcoming_event(row):
+            continue
+        if not is_schedule_eligible_event(row):
             continue
         candidates.append(row)
 
@@ -320,12 +360,12 @@ def append_post_log(path: Path, rows: list[dict[str, str]]) -> None:
         writer.writerows(rows)
 
 
-def run_dry(candidates: list[dict[str, str]], hashtag: str, header_label: str) -> int:
+def run_dry(candidates: list[dict[str, str]], hashtag: str, header_label: str, site_url: str) -> int:
     if not candidates:
         print("dry-run: 投稿対象の新規公演はありません")
         return 0
     for index, row in enumerate(candidates, start=1):
-        text = build_post_text(row, hashtag, header_label)
+        text = build_post_text(row, hashtag, header_label, site_url)
         print(f"dry-run {index}/{len(candidates)}: {(row.get('event_id') or '').strip()}")
         print(text)
         if index != len(candidates):
@@ -341,9 +381,10 @@ def main() -> int:
     event_rows = load_csv_rows(Path(args.events_csv))
     posted_ids = load_posted_event_ids(Path(args.posted_log_csv))
     candidates = select_candidate_rows(event_rows, posted_ids, args.limit)
+    site_url = resolve_public_site_url(args.site_url)
 
     if args.dry_run:
-        return run_dry(candidates, args.hashtag, args.header)
+        return run_dry(candidates, args.hashtag, args.header, site_url)
 
     if not candidates:
         print("投稿対象の新規公演はありません")
@@ -352,7 +393,7 @@ def main() -> int:
     posted_rows: list[dict[str, str]] = []
     for index, row in enumerate(candidates, start=1):
         event_id = (row.get("event_id") or "").strip()
-        text = build_post_text(row, args.hashtag, args.header)
+        text = build_post_text(row, args.hashtag, args.header, site_url)
         print(f"posting {index}/{len(candidates)}: {event_id}")
         tweet_id = post_tweet(text)
         posted_rows.append(

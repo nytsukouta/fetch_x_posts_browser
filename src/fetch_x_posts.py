@@ -10,6 +10,16 @@ from pathlib import Path
 from typing import Any
 from urllib import error, parse, request
 
+from x_tweet_context import (
+    COMMON_EXPANSIONS,
+    COMMON_MEDIA_FIELDS,
+    COMMON_TWEET_FIELDS,
+    COMMON_USER_FIELDS,
+    build_context_maps,
+    build_tweet_url,
+    extract_enriched_fields,
+)
+
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 DEFAULT_QUERY_FILE = ROOT_DIR / "config" / "priority_queries.json"
@@ -44,9 +54,10 @@ def fetch_recent_tweets(bearer_token: str, query: str, max_results: int) -> dict
     params = {
         "query": query,
         "max_results": str(max(10, min(max_results, 100))),
-        "tweet.fields": "created_at,lang,public_metrics",
-        "expansions": "author_id",
-        "user.fields": "name,username,location",
+        "tweet.fields": COMMON_TWEET_FIELDS,
+        "expansions": COMMON_EXPANSIONS,
+        "user.fields": COMMON_USER_FIELDS,
+        "media.fields": COMMON_MEDIA_FIELDS,
     }
     url = f"{SEARCH_URL}?{parse.urlencode(params)}"
     api_request = request.Request(
@@ -69,17 +80,14 @@ def fetch_recent_tweets(bearer_token: str, query: str, max_results: int) -> dict
 
 
 def flatten_rows(query_label: str, query_text: str, payload: dict[str, Any]) -> list[dict[str, Any]]:
-    users_by_id = {
-        user["id"]: user
-        for user in payload.get("includes", {}).get("users", [])
-        if "id" in user
-    }
+    users_by_id, tweets_by_id, media_by_key = build_context_maps(payload)
 
     rows: list[dict[str, Any]] = []
     collected_at = datetime.now(timezone.utc).isoformat()
 
     for tweet in payload.get("data", []):
         user = users_by_id.get(tweet.get("author_id", ""), {})
+        enriched = extract_enriched_fields(tweet, users_by_id, tweets_by_id, media_by_key)
         rows.append(
             {
                 "query_label": query_label,
@@ -87,11 +95,17 @@ def flatten_rows(query_label: str, query_text: str, payload: dict[str, Any]) -> 
                 "tweet_id": tweet.get("id", ""),
                 "tweet_url": build_tweet_url(user.get("username", ""), tweet.get("id", "")),
                 "created_at": tweet.get("created_at", ""),
-                "text": normalize_text(tweet.get("text", "")),
+                "text": enriched["text"],
                 "lang": tweet.get("lang", ""),
                 "author_name": user.get("name", ""),
                 "author_username": user.get("username", ""),
                 "author_location": user.get("location", ""),
+                "media_image_urls": enriched["media_image_urls"],
+                "quoted_tweet_url": enriched["quoted_tweet_url"],
+                "quoted_text": enriched["quoted_text"],
+                "quoted_author_name": enriched["quoted_author_name"],
+                "quoted_author_username": enriched["quoted_author_username"],
+                "quoted_media_image_urls": enriched["quoted_media_image_urls"],
                 "retweet_count": tweet.get("public_metrics", {}).get("retweet_count", 0),
                 "reply_count": tweet.get("public_metrics", {}).get("reply_count", 0),
                 "like_count": tweet.get("public_metrics", {}).get("like_count", 0),
@@ -101,18 +115,6 @@ def flatten_rows(query_label: str, query_text: str, payload: dict[str, Any]) -> 
         )
 
     return rows
-
-
-def build_tweet_url(username: str, tweet_id: str) -> str:
-    if not username or not tweet_id:
-        return ""
-    return f"https://x.com/{username}/status/{tweet_id}"
-
-
-def normalize_text(text: str) -> str:
-    return " ".join(text.split())
-
-
 def write_csv(rows: list[dict[str, Any]], output_dir: Path) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -128,6 +130,12 @@ def write_csv(rows: list[dict[str, Any]], output_dir: Path) -> Path:
         "author_name",
         "author_username",
         "author_location",
+        "media_image_urls",
+        "quoted_tweet_url",
+        "quoted_text",
+        "quoted_author_name",
+        "quoted_author_username",
+        "quoted_media_image_urls",
         "retweet_count",
         "reply_count",
         "like_count",

@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-05-24T08:08:12+09:00",
+  "generated_at": "2026-05-25T20:23:34+09:00",
   "counts": {
     "organizations": 22,
-    "venues": 20
+    "venues": 21
   },
   "organizations": [
     {
@@ -70,11 +70,11 @@
       "query_include": false
     },
     {
-      "id": "org-かなざわ演劇人協会",
-      "name": "かなざわ演劇人協会",
+      "id": "org-のんびりユニットころころ",
+      "name": "のんびりユニットころころ",
       "location": "石川県金沢市",
-      "official_website": "https://www.geibunkyo.or.jp/about/organiz/%E3%81%8B%E3%81%AA%E3%81%96%E3%82%8F%E6%BC%94%E5%8A%87%E4%BA%BA%E5%8D%94%E4%BC%9A/",
-      "official_x": "https://x.com/kanazawa_teatre",
+      "official_website": "",
+      "official_x": "https://x.com/kolokolo3214go",
       "query_include": false
     },
     {
@@ -113,8 +113,8 @@
       "id": "org-劇団ともだおれ",
       "name": "劇団ともだおれ",
       "location": "石川県金沢市",
-      "official_website": "https://www.youtube.com/channel/UCboTc51BFjAMdizZYofidDw",
-      "official_x": "",
+      "official_website": "https://www.instagram.com/tomodaore70",
+      "official_x": "https://x.com/tomodaore70",
       "query_include": false
     },
     {
@@ -212,6 +212,12 @@
       "name": "スタジオ犀",
       "location": "〒920-0867 石川県金沢市長土塀3−24−28",
       "official_website": "https://studiosai-kanazawa.com/"
+    },
+    {
+      "id": "venue-北國新聞赤羽ホール",
+      "name": "北國新聞赤羽ホール",
+      "location": "〒920-0919 石川県金沢市南町2番1号",
+      "official_website": "http://www.akabane-hall.jp/"
     },
     {
       "id": "venue-石川県立能楽堂",
