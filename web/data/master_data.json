@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-05-25T20:23:34+09:00",
+  "generated_at": "2026-05-26T20:13:55+09:00",
   "counts": {
-    "organizations": 22,
+    "organizations": 23,
     "venues": 21
   },
   "organizations": [
@@ -44,6 +44,14 @@
       "official_website": "http://gekidan.nono1.jp/gekidan.html",
       "official_x": "https://x.com/gekidannono",
       "query_include": false
+    },
+    {
+      "id": "org-0me",
+      "name": "0ME｜ゼロミー",
+      "location": "石川県金沢市",
+      "official_website": "https://lit.link/zeromeofficial",
+      "official_x": "https://x.com/zeroMEOFFICIAL",
+      "query_include": true
     },
     {
       "id": "org-110show",
