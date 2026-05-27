@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import difflib
 from datetime import date, datetime
 import json
 from pathlib import Path
@@ -104,6 +105,37 @@ def compact_text(value: str) -> str:
     return NON_ALNUM_RE.sub("", value.strip().lower())
 
 
+def compact_terms(value: str) -> list[str]:
+    terms = [compact_text(part) for part in re.split(r"[\s|｜/／・,，（）()]+", value) if part.strip()]
+    return [term for term in terms if len(term) >= 3]
+
+
+def strip_parenthetical_text(value: str) -> str:
+    return re.sub(r"[（(][^）)]*[）)]", "", value).strip()
+
+
+def normalize_schedule_title_key(row: dict[str, str]) -> str:
+    return compact_text((row.get("event_name") or row.get("normalized_event_name") or "").strip())
+
+
+def normalize_schedule_venue_key(row: dict[str, str]) -> str:
+    venue_name = (row.get("normalized_venue_name") or row.get("venue_name") or "").strip()
+    return compact_text(strip_parenthetical_text(venue_name))
+
+
+def texts_are_compatible(first: str, second: str, minimum_contained_length: int = 4) -> bool:
+    if not first or not second:
+        return False
+    if first == second:
+        return True
+
+    shorter, longer = sorted([first, second], key=len)
+    if len(shorter) >= minimum_contained_length and shorter in longer:
+        return True
+
+    return difflib.SequenceMatcher(None, first, second).ratio() >= 0.75
+
+
 def build_schedule_identity_key(row: dict[str, str]) -> tuple[str, str, str, str, str, str]:
     event_name = compact_text((row.get("event_name") or row.get("normalized_event_name") or "").strip())
     organization_name = compact_text((row.get("organization") or "").strip())
@@ -114,13 +146,50 @@ def build_schedule_identity_key(row: dict[str, str]) -> tuple[str, str, str, str
     return (event_name, organization_name, venue_name, start_date, end_date, category)
 
 
-def schedule_row_priority(event_row: dict[str, str], reference_url: str, performance_schedule: str) -> tuple[int, int, int, int, int, str]:
+def organization_match_score(event_row: dict[str, str]) -> int:
+    organization_terms = compact_terms((event_row.get("organization") or "").strip())
+    if not organization_terms:
+        return 0
+
+    event_name = normalize_schedule_title_key(event_row)
+    source_text = compact_text((event_row.get("source_text") or "").strip())
+    score = 0
+    if any(term in event_name for term in organization_terms):
+        score += 2
+    if any(term in source_text for term in organization_terms):
+        score += 1
+    return score
+
+
+def schedule_row_priority(event_row: dict[str, str], reference_url: str, performance_schedule: str) -> tuple[int, int, int, int, int, int, str]:
+    organization_score = organization_match_score(event_row)
     has_reference_url = int(bool(reference_url))
     has_start_time = int(bool((event_row.get("start_time") or "").strip()))
     source_tweet_count = int(str(event_row.get("source_tweet_count") or "0") or "0")
+    venue_name_length = -len((event_row.get("normalized_venue_name") or event_row.get("venue_name") or "").strip())
     event_name_length = len((event_row.get("event_name") or "").strip())
     created_at = (event_row.get("created_at") or "").strip()
-    return (has_reference_url, has_start_time, source_tweet_count, len(performance_schedule), event_name_length, created_at)
+    return (organization_score, has_reference_url, has_start_time, source_tweet_count, len(performance_schedule), venue_name_length, created_at)
+
+
+def schedule_rows_look_same(existing_row: dict[str, Any], candidate_row: dict[str, Any]) -> bool:
+    if existing_row["_category"] != candidate_row["_category"]:
+        return False
+    if existing_row["_start_date"] != candidate_row["_start_date"]:
+        return False
+    if existing_row["_end_date"] != candidate_row["_end_date"]:
+        return False
+    if not texts_are_compatible(existing_row["_title_key"], candidate_row["_title_key"]):
+        return False
+
+    existing_venue = existing_row["_venue_key"]
+    candidate_venue = candidate_row["_venue_key"]
+    if existing_venue and candidate_venue and texts_are_compatible(existing_venue, candidate_venue):
+        return True
+
+    existing_org = existing_row["_organization_key"]
+    candidate_org = candidate_row["_organization_key"]
+    return bool(existing_org and candidate_org and texts_are_compatible(existing_org, candidate_org, minimum_contained_length=3))
 
 
 def build_schedule_rows(
@@ -179,7 +248,22 @@ def build_schedule_rows(
             "normalized_location": (event_row.get("normalized_location") or "").strip(),
             "source_tweet_url": (event_row.get("tweet_url") or "").strip(),
             "_priority": schedule_row_priority(event_row, reference_url, date_range),
+            "_title_key": normalize_schedule_title_key(event_row),
+            "_venue_key": normalize_schedule_venue_key(event_row),
+            "_organization_key": compact_text(organization_name),
+            "_start_date": start_date,
+            "_end_date": end_date,
+            "_category": (event_row.get("category") or "").strip(),
         }
+
+        existing_key = None
+        for key, existing_candidate in schedule_by_key.items():
+            if schedule_rows_look_same(existing_candidate, candidate_row):
+                existing_key = key
+                break
+
+        if existing_key is not None:
+            dedupe_key = existing_key
 
         existing_row = schedule_by_key.get(dedupe_key)
         if existing_row is None or candidate_row["_priority"] > existing_row["_priority"]:
@@ -196,6 +280,12 @@ def build_schedule_rows(
     rows = []
     for row in schedule_by_key.values():
         row.pop("_priority", None)
+        row.pop("_title_key", None)
+        row.pop("_venue_key", None)
+        row.pop("_organization_key", None)
+        row.pop("_start_date", None)
+        row.pop("_end_date", None)
+        row.pop("_category", None)
         rows.append(row)
     rows.sort(key=lambda row: (row["performance_schedule"], row["organization_name"], row["venue_name"], row["event_name"]))
     return rows
