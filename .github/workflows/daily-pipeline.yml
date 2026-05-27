@@ -87,6 +87,64 @@ jobs:
       - name: Rebuild query configuration
         run: python src/build_priority_queries_from_masters.py
 
+      - name: Seed cumulative history baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import csv
+          from pathlib import Path
+
+          seed_path = Path("data/bootstrap/structured_events_cumulative_seed.csv")
+          output_dir = Path("data/output")
+          structured_path = output_dir / "structured_events_cumulative.csv"
+          filtered_path = output_dir / "structured_events_filtered_cumulative.csv"
+
+          if not seed_path.exists():
+            raise SystemExit(0)
+
+          def load_rows(path: Path):
+            if not path.exists():
+              return [], []
+            with path.open("r", encoding="utf-8-sig", newline="") as handle:
+              reader = csv.DictReader(handle)
+              return list(reader), list(reader.fieldnames or [])
+
+          seed_rows, seed_fields = load_rows(seed_path)
+          current_rows, current_fields = load_rows(structured_path)
+          fieldnames = list(seed_fields or current_fields)
+          for fieldname in current_fields:
+            if fieldname not in fieldnames:
+              fieldnames.append(fieldname)
+
+          merged_by_tweet_url = {}
+          for row in seed_rows:
+            tweet_url = (row.get("tweet_url") or "").strip()
+            if tweet_url:
+              merged_by_tweet_url[tweet_url] = row
+          for row in current_rows:
+            tweet_url = (row.get("tweet_url") or "").strip()
+            if tweet_url:
+              merged_by_tweet_url[tweet_url] = row
+
+          merged_rows = sorted(
+            merged_by_tweet_url.values(),
+            key=lambda row: ((row.get("created_at") or ""), (row.get("tweet_url") or "")),
+            reverse=True,
+          )
+          filtered_rows = [row for row in merged_rows if str(row.get("is_noise") or "").lower() != "true"]
+
+          output_dir.mkdir(parents=True, exist_ok=True)
+          for path, rows in ((structured_path, merged_rows), (filtered_path, filtered_rows)):
+            with path.open("w", encoding="utf-8-sig", newline="") as handle:
+              writer = csv.DictWriter(handle, fieldnames=fieldnames)
+              writer.writeheader()
+              writer.writerows(rows)
+
+          print(f"seeded cumulative structured rows: {len(merged_rows)}")
+          print(f"seeded cumulative filtered rows: {len(filtered_rows)}")
+          PY
+
       - name: Run API pipeline
         shell: bash
         run: |
