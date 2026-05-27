@@ -76,7 +76,11 @@ jobs:
         if: env.POST_MODE != 'off'
         uses: actions/cache/restore@v4
         with:
-          path: data/output/posted_events.csv
+          path: |
+            data/output/posted_events.csv
+            data/output/structured_events_cumulative.csv
+            data/output/structured_events_filtered_cumulative.csv
+            data/output/event_cumulative.csv
           key: posted-events-${{ github.ref_name }}-${{ github.run_id }}
           restore-keys: |
             posted-events-${{ github.ref_name }}-
@@ -100,10 +104,14 @@ jobs:
           python src/run_pipeline.py "${args[@]}"
 
       - name: Save posted event log
-        if: env.POST_MODE == 'live' && success() && hashFiles('data/output/posted_events.csv') != ''
+        if: success() && (hashFiles('data/output/posted_events.csv') != '' || hashFiles('data/output/structured_events_cumulative.csv') != '' || hashFiles('data/output/structured_events_filtered_cumulative.csv') != '' || hashFiles('data/output/event_cumulative.csv') != '')
         uses: actions/cache/save@v4
         with:
-          path: data/output/posted_events.csv
+          path: |
+            data/output/posted_events.csv
+            data/output/structured_events_cumulative.csv
+            data/output/structured_events_filtered_cumulative.csv
+            data/output/event_cumulative.csv
           key: posted-events-${{ github.ref_name }}-${{ github.run_id }}
 
       - name: Configure GitHub Pages
