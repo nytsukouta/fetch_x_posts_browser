@@ -216,18 +216,17 @@ def normalize_organization_name(
     organization_name_lookup: dict[str, str],
     organization_handle_lookup: dict[str, str],
 ) -> str | None:
+    normalized = str(organization or "").strip().replace("　", " ")
+    if normalized:
+        compact = compact_text(normalized)
+        if compact in organization_name_lookup:
+            return organization_name_lookup[compact]
+        return normalized
+
     handle = normalize_handle(str(author_username or ""))
     if handle and handle in organization_handle_lookup:
         return organization_handle_lookup[handle]
-
-    normalized = str(organization or "").strip().replace("　", " ")
-    if not normalized:
-        return None
-
-    compact = compact_text(normalized)
-    if compact in organization_name_lookup:
-        return organization_name_lookup[compact]
-    return normalized
+    return None
 
 
 def load_dotenv(env_path: Path) -> None:
