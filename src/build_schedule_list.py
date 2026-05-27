@@ -5,6 +5,7 @@ import csv
 from datetime import date, datetime
 import json
 from pathlib import Path
+import re
 from typing import Any
 
 from event_candidate_rules import build_date_range, is_schedule_eligible_event
@@ -17,6 +18,7 @@ DEFAULT_VENUE_MASTER_CSV = ROOT_DIR / "data" / "output" / "venue_master.csv"
 DEFAULT_OUTPUT_CSV = ROOT_DIR / "data" / "output" / "schedule_list.csv"
 DEFAULT_OUTPUT_JSON = ROOT_DIR / "data" / "output" / "schedule_list.json"
 DEFAULT_PAGES_JSON = ROOT_DIR / "docs" / "data" / "schedule_list.json"
+NON_ALNUM_RE = re.compile(r"[^0-9a-zA-Z\u3040-\u30ff\u3400-\u9fff]+")
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Build a schedule planning list from filtered theater events")
@@ -98,6 +100,29 @@ def normalize_x_url(value: str) -> str:
     return f"https://x.com/{cleaned}"
 
 
+def compact_text(value: str) -> str:
+    return NON_ALNUM_RE.sub("", value.strip().lower())
+
+
+def build_schedule_identity_key(row: dict[str, str]) -> tuple[str, str, str, str, str, str]:
+    event_name = compact_text((row.get("event_name") or row.get("normalized_event_name") or "").strip())
+    organization_name = compact_text((row.get("organization") or "").strip())
+    venue_name = compact_text((row.get("normalized_venue_name") or row.get("venue_name") or "").strip())
+    start_date = (row.get("start_date") or "").strip()
+    end_date = (row.get("end_date") or "").strip()
+    category = (row.get("category") or "").strip()
+    return (event_name, organization_name, venue_name, start_date, end_date, category)
+
+
+def schedule_row_priority(event_row: dict[str, str], reference_url: str, performance_schedule: str) -> tuple[int, int, int, int, int, str]:
+    has_reference_url = int(bool(reference_url))
+    has_start_time = int(bool((event_row.get("start_time") or "").strip()))
+    source_tweet_count = int(str(event_row.get("source_tweet_count") or "0") or "0")
+    event_name_length = len((event_row.get("event_name") or "").strip())
+    created_at = (event_row.get("created_at") or "").strip()
+    return (has_reference_url, has_start_time, source_tweet_count, len(performance_schedule), event_name_length, created_at)
+
+
 def build_schedule_rows(
     event_rows: list[dict[str, str]],
     organization_index: dict[str, dict[str, str]],
@@ -127,7 +152,7 @@ def build_schedule_rows(
 
     candidate_rows = suppress_preview_like_duplicates(candidate_rows)
 
-    schedule_by_key: dict[tuple[str, str, str, str], dict[str, Any]] = {}
+    schedule_by_key: dict[tuple[str, str, str, str, str, str], dict[str, Any]] = {}
 
     for event_row in candidate_rows:
         organization_name = (event_row.get("organization") or "").strip()
@@ -137,32 +162,41 @@ def build_schedule_rows(
         date_range = build_date_range(event_row)
         event_name = (event_row.get("event_name") or "").strip()
 
-        dedupe_key = (event_name, organization_name, venue_name, date_range)
+        dedupe_key = build_schedule_identity_key(event_row)
 
         organization_row = organization_index.get(organization_name)
         venue_row = venue_index.get(venue_name)
         reference_url, reference_source = choose_reference_url(event_row, organization_row, venue_row)
 
-        schedule_row = schedule_by_key.setdefault(
-            dedupe_key,
-            {
-                "event_name": event_name,
-                "organization_id": (organization_row.get("organization_id") or "").strip() if organization_row else "",
-                "organization_name": organization_name,
-                "venue_name": venue_name,
-                "performance_schedule": date_range,
-                "official_reference_url": reference_url,
-                "official_reference_type": reference_source,
-                "normalized_location": (event_row.get("normalized_location") or "").strip(),
-                "source_tweet_url": (event_row.get("tweet_url") or "").strip(),
-            },
-        )
+        candidate_row = {
+            "event_name": event_name,
+            "organization_id": (organization_row.get("organization_id") or "").strip() if organization_row else "",
+            "organization_name": organization_name,
+            "venue_name": venue_name,
+            "performance_schedule": date_range,
+            "official_reference_url": reference_url,
+            "official_reference_type": reference_source,
+            "normalized_location": (event_row.get("normalized_location") or "").strip(),
+            "source_tweet_url": (event_row.get("tweet_url") or "").strip(),
+            "_priority": schedule_row_priority(event_row, reference_url, date_range),
+        }
 
-        if not schedule_row["official_reference_url"] and reference_url:
-            schedule_row["official_reference_url"] = reference_url
-            schedule_row["official_reference_type"] = reference_source
+        existing_row = schedule_by_key.get(dedupe_key)
+        if existing_row is None or candidate_row["_priority"] > existing_row["_priority"]:
+            if existing_row and not candidate_row["official_reference_url"]:
+                candidate_row["official_reference_url"] = existing_row["official_reference_url"]
+                candidate_row["official_reference_type"] = existing_row["official_reference_type"]
+            schedule_by_key[dedupe_key] = candidate_row
+            continue
 
-    rows = list(schedule_by_key.values())
+        if not existing_row["official_reference_url"] and reference_url:
+            existing_row["official_reference_url"] = reference_url
+            existing_row["official_reference_type"] = reference_source
+
+    rows = []
+    for row in schedule_by_key.values():
+        row.pop("_priority", None)
+        rows.append(row)
     rows.sort(key=lambda row: (row["performance_schedule"], row["organization_name"], row["venue_name"], row["event_name"]))
     return rows
 
