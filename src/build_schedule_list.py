@@ -117,7 +117,7 @@ def build_schedule_rows(
         if not is_current_or_upcoming_event(start_date, end_date):
             continue
 
-        date_range = build_date_range(start_date, end_date, (event_row.get("start_time") or "").strip())
+        date_range = build_date_range(event_row)
         event_name = (event_row.get("event_name") or "").strip()
 
         if not is_schedule_candidate(event_name, organization_name, venue_name, date_range, event_row):
@@ -134,7 +134,7 @@ def build_schedule_rows(
         venue_name = (event_row.get("normalized_venue_name") or event_row.get("venue_name") or "").strip()
         start_date = (event_row.get("start_date") or "").strip()
         end_date = (event_row.get("end_date") or "").strip()
-        date_range = build_date_range(start_date, end_date, (event_row.get("start_time") or "").strip())
+        date_range = build_date_range(event_row)
         event_name = (event_row.get("event_name") or "").strip()
 
         dedupe_key = (event_name, organization_name, venue_name, date_range)

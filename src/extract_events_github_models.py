@@ -144,6 +144,10 @@ POSTING_RECOMMENDATION_PRIORITY = {
 }
 
 
+class GitHubModelsContentPolicyViolation(RuntimeError):
+    pass
+
+
 def get_github_models_token() -> str:
     return os.getenv("GH_MODELS_TOKEN", "").strip() or os.getenv("GITHUB_TOKEN", "").strip()
 
@@ -362,8 +366,11 @@ def build_user_prompt(row: dict[str, str]) -> str:
     )
 
 
-def build_user_content(row: dict[str, str]) -> list[dict[str, Any]]:
+def build_user_content(row: dict[str, str], include_images: bool = True) -> list[dict[str, Any]]:
     content: list[dict[str, Any]] = [{"type": "text", "text": build_user_prompt(row)}]
+
+    if not include_images:
+        return content
 
     for index, image_url in enumerate(split_pipe_urls(str(row.get("media_image_urls") or ""))[:4], start=1):
         content.append({"type": "text", "text": f"current_tweet_attached_image_{index}"})
@@ -374,6 +381,13 @@ def build_user_content(row: dict[str, str]) -> list[dict[str, Any]]:
         content.append({"type": "image_url", "image_url": {"url": image_url}})
 
     return content
+
+
+def row_has_input_images(row: dict[str, str]) -> bool:
+    return bool(
+        split_pipe_urls(str(row.get("media_image_urls") or ""))
+        or split_pipe_urls(str(row.get("quoted_media_image_urls") or ""))
+    )
 
 
 def call_github_models(token: str, api_version: str, model: str, user_content: list[dict[str, Any]]) -> dict[str, Any]:
@@ -406,6 +420,8 @@ def call_github_models(token: str, api_version: str, model: str, user_content: l
                 return json.loads(response.read().decode("utf-8"))
         except error.HTTPError as exc:
             details = exc.read().decode("utf-8", errors="replace")
+            if exc.code == 400 and "content_policy_violation" in details:
+                raise GitHubModelsContentPolicyViolation(details) from exc
             if exc.code not in {429, 500, 502, 503, 504} or attempt == 4:
                 raise RuntimeError(f"GitHub Models API error {exc.code}: {details}") from exc
             retry_after = exc.headers.get("Retry-After") if exc.headers else None
@@ -679,7 +695,21 @@ def extract_row(
 ) -> dict[str, Any]:
     print(f"extracting: {index}/{total} {row.get('tweet_url', '')}")
     enriched_row = enrich_source_row(row, x_bearer_token)
-    response_payload = call_github_models(github_token, api_version, model, build_user_content(enriched_row))
+    try:
+        response_payload = call_github_models(github_token, api_version, model, build_user_content(enriched_row))
+    except GitHubModelsContentPolicyViolation:
+        if not row_has_input_images(enriched_row):
+            raise
+        print(
+            f"retrying without images after content policy violation: {row.get('tweet_url', '')}",
+            file=sys.stderr,
+        )
+        response_payload = call_github_models(
+            github_token,
+            api_version,
+            model,
+            build_user_content(enriched_row, include_images=False),
+        )
     extracted = extract_json_content(response_payload)
     return normalize_record(enriched_row, extracted, organization_name_lookup, organization_handle_lookup)
 
