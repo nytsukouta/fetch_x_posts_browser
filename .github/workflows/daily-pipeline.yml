@@ -72,8 +72,7 @@ jobs:
             test -n "$X_ACCESS_TOKEN_SECRET" || { echo "X_ACCESS_TOKEN_SECRET is required for live posting"; exit 1; }
           fi
 
-      - name: Restore posted event log
-        if: env.POST_MODE != 'off'
+      - name: Restore pipeline caches
         uses: actions/cache/restore@v4
         with:
           path: |
