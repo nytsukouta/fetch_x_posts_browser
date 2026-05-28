@@ -115,6 +115,48 @@ def flatten_rows(query_label: str, query_text: str, payload: dict[str, Any]) -> 
         )
 
     return rows
+
+
+def tweet_identity_key(row: dict[str, Any]) -> str:
+    tweet_url = str(row.get("tweet_url") or "").strip()
+    if tweet_url:
+        return tweet_url
+    return str(row.get("tweet_id") or "").strip()
+
+
+def dedupe_rows(rows: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], int]:
+    deduped_by_key: dict[str, dict[str, Any]] = {}
+    unique_rows_without_key: list[dict[str, Any]] = []
+    duplicate_count = 0
+
+    for row in rows:
+        key = tweet_identity_key(row)
+        if not key:
+            unique_rows_without_key.append(row)
+            continue
+
+        existing = deduped_by_key.get(key)
+        if existing is None:
+            deduped_by_key[key] = dict(row)
+            continue
+
+        duplicate_count += 1
+
+        query_labels = [item for item in str(existing.get("query_label") or "").split(" | ") if item]
+        incoming_query_label = str(row.get("query_label") or "").strip()
+        if incoming_query_label and incoming_query_label not in query_labels:
+            query_labels.append(incoming_query_label)
+            existing["query_label"] = " | ".join(query_labels)
+
+        queries = [item for item in str(existing.get("query") or "").split(" | ") if item]
+        incoming_query = str(row.get("query") or "").strip()
+        if incoming_query and incoming_query not in queries:
+            queries.append(incoming_query)
+            existing["query"] = " | ".join(queries)
+
+    return [*deduped_by_key.values(), *unique_rows_without_key], duplicate_count
+
+
 def write_csv(rows: list[dict[str, Any]], output_dir: Path) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -207,9 +249,11 @@ def main() -> int:
         print("投稿を取得できませんでした。クエリ条件かAPI権限を確認してください。")
         return 0
 
-    output_path = write_csv(all_rows, output_dir)
+    deduped_rows, duplicate_count = dedupe_rows(all_rows)
+    output_path = write_csv(deduped_rows, output_dir)
     print(f"saved: {output_path}")
-    print(f"rows: {len(all_rows)}")
+    print(f"rows: {len(deduped_rows)}")
+    print(f"deduped_duplicates: {duplicate_count}")
     return 0
 
 

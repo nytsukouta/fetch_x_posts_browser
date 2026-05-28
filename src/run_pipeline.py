@@ -22,6 +22,7 @@ DEFAULT_CUMULATIVE_FILTERED_CSV = ROOT_DIR / "data" / "output" / "structured_eve
 DEFAULT_EVENT_CUMULATIVE_CSV = ROOT_DIR / "data" / "output" / "event_cumulative.csv"
 DEFAULT_POSTED_EVENTS_CSV = ROOT_DIR / "data" / "output" / "posted_events.csv"
 DEFAULT_LOCAL_PREVIEW_DIR = DEFAULT_OUTPUT_DIR / "_local_preview"
+DEFAULT_PENDING_EXTRACT_INPUT_CSV = ROOT_DIR / "data" / "output" / "_tmp_extract_pending.csv"
 
 
 def parse_args() -> argparse.Namespace:
@@ -33,6 +34,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-results", type=int, default=None, help="各クエリの取得件数")
     parser.add_argument("--extract-limit", type=int, default=None, help="構造化抽出の件数上限")
     parser.add_argument("--model", default=None, help="GitHub Models のモデルIDを上書きする")
+    parser.add_argument("--no-images", action="store_true", help="構造化抽出で添付画像を GitHub Models に渡さない")
     parser.add_argument("--debug-outputs", action="store_true", help="抽出段階の JSONL などデバッグ用中間生成物も保存する")
     parser.add_argument("--post-new-events", action="store_true", help="新規公演を X に投稿する")
     parser.add_argument("--post-dry-run", action="store_true", help="新規公演の投稿文だけを表示し、実際には投稿しない")
@@ -122,6 +124,8 @@ def extract_events(input_csv: Path, args: argparse.Namespace) -> None:
         command.extend(["--limit", str(args.extract_limit)])
     if args.model:
         command.extend(["--model", args.model])
+    if args.no_images:
+        command.append("--no-images")
     if args.debug_outputs:
         command.append("--debug-outputs")
     run_command(command)
@@ -142,6 +146,80 @@ def write_csv_rows(path: Path, rows: list[dict[str, str]], fieldnames: list[str]
         writer = csv.DictWriter(handle, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(rows)
+
+
+def tweet_identity_key(row: dict[str, str]) -> str:
+    tweet_url = str(row.get("tweet_url") or "").strip()
+    if tweet_url:
+        return tweet_url
+    return str(row.get("tweet_id") or "").strip()
+
+
+def dedupe_tweet_rows(rows: list[dict[str, str]]) -> tuple[list[dict[str, str]], int]:
+    deduped_by_key: dict[str, dict[str, str]] = {}
+    unique_rows_without_key: list[dict[str, str]] = []
+    duplicate_count = 0
+
+    for row in rows:
+        key = tweet_identity_key(row)
+        if not key:
+            unique_rows_without_key.append(row)
+            continue
+        if key in deduped_by_key:
+            duplicate_count += 1
+            continue
+        deduped_by_key[key] = row
+
+    return [*deduped_by_key.values(), *unique_rows_without_key], duplicate_count
+
+
+def load_known_tweet_keys(path: Path) -> set[str]:
+    rows, _ = load_csv_rows(path)
+    return {key for row in rows if (key := tweet_identity_key(row))}
+
+
+def filter_known_tweet_rows(rows: list[dict[str, str]], known_keys: set[str]) -> tuple[list[dict[str, str]], int]:
+    filtered_rows: list[dict[str, str]] = []
+    skipped_count = 0
+    for row in rows:
+        key = tweet_identity_key(row)
+        if key and key in known_keys:
+            skipped_count += 1
+            continue
+        filtered_rows.append(row)
+    return filtered_rows, skipped_count
+
+
+def prepare_extraction_rows(input_csv: Path) -> tuple[list[dict[str, str]], list[str], dict[str, int]]:
+    input_rows, fieldnames = load_csv_rows(input_csv)
+    if not input_rows or not fieldnames:
+        return [], fieldnames, {"input_rows": 0, "deduped_duplicates": 0, "known_skipped": 0, "pending_rows": 0}
+
+    deduped_rows, duplicate_count = dedupe_tweet_rows(input_rows)
+    known_keys = load_known_tweet_keys(DEFAULT_CUMULATIVE_STRUCTURED_CSV)
+    pending_rows, skipped_count = filter_known_tweet_rows(deduped_rows, known_keys)
+    return pending_rows, fieldnames, {
+        "input_rows": len(input_rows),
+        "deduped_duplicates": duplicate_count,
+        "known_skipped": skipped_count,
+        "pending_rows": len(pending_rows),
+    }
+
+
+def prepare_extraction_input(input_csv: Path) -> Path | None:
+    pending_rows, fieldnames, stats = prepare_extraction_rows(input_csv)
+    print(
+        "prepare extraction input:",
+        f"input_rows={stats['input_rows']}",
+        f"deduped_duplicates={stats['deduped_duplicates']}",
+        f"known_skipped={stats['known_skipped']}",
+        f"pending_rows={stats['pending_rows']}",
+    )
+    if not pending_rows or not fieldnames:
+        return None
+
+    write_csv_rows(DEFAULT_PENDING_EXTRACT_INPUT_CSV, pending_rows, fieldnames)
+    return DEFAULT_PENDING_EXTRACT_INPUT_CSV
 
 
 def merge_cumulative_outputs() -> Path:
@@ -289,8 +367,15 @@ def main() -> int:
     else:
         input_csv = collect_posts(args, runtime_paths["query_file"])
 
-    extract_events(input_csv, args)
-    cumulative_filtered_csv = merge_cumulative_outputs()
+    extraction_input_csv = prepare_extraction_input(input_csv)
+    if extraction_input_csv is None:
+        print("extract skipped: 新規 tweet がありません")
+        if not DEFAULT_CUMULATIVE_FILTERED_CSV.exists():
+            raise FileNotFoundError("新規 tweet がなく、structured_events_filtered_cumulative.csv も見つかりません。")
+        cumulative_filtered_csv = DEFAULT_CUMULATIVE_FILTERED_CSV
+    else:
+        extract_events(extraction_input_csv, args)
+        cumulative_filtered_csv = merge_cumulative_outputs()
     event_cumulative_csv = build_event_cumulative(cumulative_filtered_csv)
     print("master update skipped: 劇団マスターと劇場マスターは既存ファイルを保持します")
     if args.post_new_events:

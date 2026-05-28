@@ -251,6 +251,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--limit", type=int, default=None, help="処理件数の上限")
     parser.add_argument("--model", default=os.getenv("GITHUB_MODELS_MODEL", DEFAULT_MODEL), help="GitHub Models のモデルID")
     parser.add_argument("--workers", type=int, default=2, help="GitHub Models 抽出の並列数")
+    parser.add_argument("--no-images", action="store_true", help="添付画像を GitHub Models へ渡さず、画像URL一覧も入力から外す")
     parser.add_argument("--debug-outputs", action="store_true", help="デバッグ用に JSONL 中間生成物も保存する")
     return parser.parse_args()
 
@@ -344,7 +345,7 @@ def enrich_source_row(row: dict[str, str], x_bearer_token: str) -> dict[str, str
     return enriched_row
 
 
-def build_user_prompt(row: dict[str, str]) -> str:
+def build_user_prompt(row: dict[str, str], include_images: bool = True) -> str:
     return json.dumps(
         {
             "query_label": row.get("query_label"),
@@ -353,12 +354,12 @@ def build_user_prompt(row: dict[str, str]) -> str:
             "author_name": row.get("author_name"),
             "author_username": row.get("author_username"),
             "text": row.get("text"),
-            "media_image_urls": split_pipe_urls(str(row.get("media_image_urls") or "")),
+            "media_image_urls": split_pipe_urls(str(row.get("media_image_urls") or "")) if include_images else [],
             "quoted_tweet_url": row.get("quoted_tweet_url"),
             "quoted_author_name": row.get("quoted_author_name"),
             "quoted_author_username": row.get("quoted_author_username"),
             "quoted_text": row.get("quoted_text"),
-            "quoted_media_image_urls": split_pipe_urls(str(row.get("quoted_media_image_urls") or "")),
+            "quoted_media_image_urls": split_pipe_urls(str(row.get("quoted_media_image_urls") or "")) if include_images else [],
         },
         ensure_ascii=False,
         indent=2,
@@ -366,7 +367,7 @@ def build_user_prompt(row: dict[str, str]) -> str:
 
 
 def build_user_content(row: dict[str, str], include_images: bool = True) -> list[dict[str, Any]]:
-    content: list[dict[str, Any]] = [{"type": "text", "text": build_user_prompt(row)}]
+    content: list[dict[str, Any]] = [{"type": "text", "text": build_user_prompt(row, include_images=include_images)}]
 
     if not include_images:
         return content
@@ -689,15 +690,21 @@ def extract_row(
     x_bearer_token: str,
     api_version: str,
     model: str,
+    include_images: bool,
     organization_name_lookup: dict[str, str],
     organization_handle_lookup: dict[str, str],
 ) -> dict[str, Any]:
     print(f"extracting: {index}/{total} {row.get('tweet_url', '')}")
     enriched_row = enrich_source_row(row, x_bearer_token)
     try:
-        response_payload = call_github_models(github_token, api_version, model, build_user_content(enriched_row))
+        response_payload = call_github_models(
+            github_token,
+            api_version,
+            model,
+            build_user_content(enriched_row, include_images=include_images),
+        )
     except GitHubModelsContentPolicyViolation:
-        if not row_has_input_images(enriched_row):
+        if not include_images or not row_has_input_images(enriched_row):
             raise
         print(
             f"retrying without images after content policy violation: {row.get('tweet_url', '')}",
@@ -742,6 +749,7 @@ def main() -> int:
                 x_bearer_token,
                 api_version,
                 args.model,
+                not args.no_images,
                 organization_name_lookup,
                 organization_handle_lookup,
             )

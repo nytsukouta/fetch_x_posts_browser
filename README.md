@@ -25,6 +25,7 @@
 - recent search が使えない契約や権限だと 403 になります
 - 既定の `max_results_per_query` は 30 件です
 - 収集CSVは `data/output/x_recent_search_*.csv` に保存されます
+- 同じ tweet が複数クエリに引っかかった場合は、保存前に `tweet_url` / `tweet_id` 単位で重複除去します
 
 ## GitHub Models で構造化抽出
 
@@ -33,6 +34,11 @@
 1. `.env` に `GH_MODELS_TOKEN` または `GITHUB_TOKEN` を設定する
 2. 必要なら `GITHUB_MODELS_MODEL` を設定する
 3. `.venv/Scripts/python.exe src/extract_events_github_models.py --limit 5` を実行する
+
+画像入力を止めたい場合:
+
+- `.venv/Scripts/python.exe src/extract_events_github_models.py --limit 5 --no-images`
+- `src/run_pipeline.py` を使う場合も `--no-images` を付ける
 
 出力先:
 
@@ -44,6 +50,7 @@
 - `structured_events.*` は生の抽出結果です
 - `structured_events_filtered.*` はノイズ除去後の結果です
 - JSONL は通常運用では保存せず、必要な時だけ `--debug-outputs` を付けて保存します
+- 既定では tweet の添付画像 URL があれば GitHub Models に画像入力として渡します。コストや入力サイズを抑えたい場合は `--no-images` を使ってください
 - `organization` は `data/output/organization_master.csv` の `official_x` と正規名に基づいて補正されます
 - `normalized_venue_name` と `normalized_location` に正規化結果が入ります
 
@@ -91,6 +98,7 @@
 - 収集ステップは API 版のみで、`.env` の `X_BEARER_TOKEN` が必要です
 - 抽出ステップでは `.env` の `GH_MODELS_TOKEN` または `GITHUB_TOKEN` が必要です
 - 実行開始時に `src/build_priority_queries_from_masters.py` を自動実行し、最新のマスターから `config/priority_queries.json` を再生成します
+- 抽出前に収集CSV内の重複 tweet を落とし、`data/output/structured_events_cumulative.csv` に既にある `tweet_url` / `tweet_id` は再抽出しません
 - 同じ `tweet_url` は累積CSVに重複追加せず、新しい投稿だけを追加します
 - 累積データは `data/output/structured_events_cumulative.csv` と `data/output/structured_events_filtered_cumulative.csv` に保存されます
 - イベント単位の統合結果は `data/output/event_cumulative.csv` に保存されます
