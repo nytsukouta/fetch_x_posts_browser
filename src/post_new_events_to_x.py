@@ -30,6 +30,12 @@ URL_LENGTH = 23
 MAX_TWEET_LENGTH = 280
 
 
+class DuplicateTweetContentError(RuntimeError):
+    def __init__(self, details: str):
+        super().__init__(details)
+        self.details = details
+
+
 def load_dotenv(env_path: Path) -> None:
     if not env_path.exists():
         return
@@ -287,6 +293,11 @@ def build_oauth1_header(consumer_key: str, consumer_secret: str, access_token: s
     return f"OAuth {header_parts}"
 
 
+def is_duplicate_content_response(details: str) -> bool:
+    normalized = str(details or "").lower()
+    return "duplicate content" in normalized
+
+
 def post_tweet(text: str) -> str:
     consumer_key = get_required_env("X_API_KEY", "X_CONSUMER_KEY")
     consumer_secret = get_required_env("X_API_SECRET", "X_CONSUMER_SECRET")
@@ -330,6 +341,8 @@ def post_tweet(text: str) -> str:
             payload = json.loads(response.read().decode("utf-8"))
     except error.HTTPError as exc:
         details = exc.read().decode("utf-8", errors="replace")
+        if exc.code == 403 and is_duplicate_content_response(details):
+            raise DuplicateTweetContentError(details) from exc
         raise RuntimeError(f"X post API error {exc.code}: {details}") from exc
     except error.URLError as exc:
         raise RuntimeError(f"X post API へ接続できません: {exc}") from exc
@@ -391,11 +404,19 @@ def main() -> int:
         return 0
 
     posted_rows: list[dict[str, str]] = []
+    posted_count = 0
+    duplicate_count = 0
     for index, row in enumerate(candidates, start=1):
         event_id = (row.get("event_id") or "").strip()
         text = build_post_text(row, args.hashtag, args.header, site_url)
         print(f"posting {index}/{len(candidates)}: {event_id}")
-        tweet_id = post_tweet(text)
+        tweet_id = ""
+        try:
+            tweet_id = post_tweet(text)
+            posted_count += 1
+        except DuplicateTweetContentError as exc:
+            duplicate_count += 1
+            print(f"skipping duplicate content: {event_id}")
         posted_rows.append(
             {
                 "event_id": event_id,
@@ -410,7 +431,9 @@ def main() -> int:
         )
 
     append_post_log(Path(args.posted_log_csv), posted_rows)
-    print(f"posted events: {len(posted_rows)}")
+    print(f"posted events: {posted_count}")
+    print(f"duplicate content skipped: {duplicate_count}")
+    print(f"logged events: {len(posted_rows)}")
     print(f"posted log: {args.posted_log_csv}")
     return 0
 
