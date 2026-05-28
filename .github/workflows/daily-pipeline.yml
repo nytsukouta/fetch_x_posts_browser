@@ -116,22 +116,22 @@ jobs:
             f"https://api.github.com/repos/{repository}/actions/artifacts?"
             f"{parse.urlencode({'name': artifact_name, 'per_page': 100})}"
           )
-            headers = {
-              "Accept": "application/vnd.github+json",
-              "Authorization": f"Bearer {token}",
-              "User-Agent": "hokuriku-theater-pipeline",
-            }
+          headers = {
+            "Accept": "application/vnd.github+json",
+            "Authorization": f"Bearer {token}",
+            "User-Agent": "hokuriku-theater-pipeline",
+          }
 
-            try:
-              api_request = request.Request(list_url, headers=headers)
-              with request.urlopen(api_request, timeout=30) as response:
-                payload = json.loads(response.read().decode("utf-8"))
-            except error.HTTPError as exc:
-              print(f"durable history restore skipped: artifact listing failed with HTTP {exc.code}")
-              raise SystemExit(0)
-            except error.URLError as exc:
-              print(f"durable history restore skipped: artifact listing failed: {exc}")
-              raise SystemExit(0)
+          try:
+            api_request = request.Request(list_url, headers=headers)
+            with request.urlopen(api_request, timeout=30) as response:
+              payload = json.loads(response.read().decode("utf-8"))
+          except error.HTTPError as exc:
+            print(f"durable history restore skipped: artifact listing failed with HTTP {exc.code}")
+            raise SystemExit(0)
+          except error.URLError as exc:
+            print(f"durable history restore skipped: artifact listing failed: {exc}")
+            raise SystemExit(0)
 
           artifacts = [artifact for artifact in payload.get("artifacts", []) if not artifact.get("expired")]
           if not artifacts:
@@ -142,43 +142,43 @@ jobs:
             artifacts,
             key=lambda artifact: str(artifact.get("updated_at") or artifact.get("created_at") or ""),
           )
-            class NoRedirectHandler(request.HTTPRedirectHandler):
-              def redirect_request(self, req, fp, code, msg, headers, newurl):
-                return None
+          class NoRedirectHandler(request.HTTPRedirectHandler):
+            def redirect_request(self, req, fp, code, msg, headers, newurl):
+              return None
 
-            redirect_opener = request.build_opener(NoRedirectHandler)
-            archive_download_url = str(latest_artifact["archive_download_url"])
-            signed_download_url = ""
-            try:
-              download_request = request.Request(archive_download_url, headers=headers)
-              with redirect_opener.open(download_request, timeout=60) as response:
-                signed_download_url = str(response.headers.get("Location") or response.geturl() or "")
-            except error.HTTPError as exc:
-              if exc.code not in {301, 302, 303, 307, 308}:
-                print(f"durable history restore skipped: artifact download handshake failed with HTTP {exc.code}")
-                raise SystemExit(0)
-              signed_download_url = str(exc.headers.get("Location") or "")
-            except error.URLError as exc:
-              print(f"durable history restore skipped: artifact download handshake failed: {exc}")
+          redirect_opener = request.build_opener(NoRedirectHandler)
+          archive_download_url = str(latest_artifact["archive_download_url"])
+          signed_download_url = ""
+          try:
+            download_request = request.Request(archive_download_url, headers=headers)
+            with redirect_opener.open(download_request, timeout=60) as response:
+              signed_download_url = str(response.headers.get("Location") or response.geturl() or "")
+          except error.HTTPError as exc:
+            if exc.code not in {301, 302, 303, 307, 308}:
+              print(f"durable history restore skipped: artifact download handshake failed with HTTP {exc.code}")
               raise SystemExit(0)
+            signed_download_url = str(exc.headers.get("Location") or "")
+          except error.URLError as exc:
+            print(f"durable history restore skipped: artifact download handshake failed: {exc}")
+            raise SystemExit(0)
 
-            if not signed_download_url:
-              print(f"durable history restore skipped: artifact {latest_artifact['id']} returned no download URL")
-              raise SystemExit(0)
+          if not signed_download_url:
+            print(f"durable history restore skipped: artifact {latest_artifact['id']} returned no download URL")
+            raise SystemExit(0)
 
-            try:
-              signed_request = request.Request(
-                signed_download_url,
-                headers={"User-Agent": "hokuriku-theater-pipeline"},
-              )
-              with request.urlopen(signed_request, timeout=60) as response:
-                artifact_bytes = response.read()
-            except error.HTTPError as exc:
-              print(f"durable history restore skipped: signed artifact download failed with HTTP {exc.code}")
-              raise SystemExit(0)
-            except error.URLError as exc:
-              print(f"durable history restore skipped: signed artifact download failed: {exc}")
-              raise SystemExit(0)
+          try:
+            signed_request = request.Request(
+              signed_download_url,
+              headers={"User-Agent": "hokuriku-theater-pipeline"},
+            )
+            with request.urlopen(signed_request, timeout=60) as response:
+              artifact_bytes = response.read()
+          except error.HTTPError as exc:
+            print(f"durable history restore skipped: signed artifact download failed with HTTP {exc.code}")
+            raise SystemExit(0)
+          except error.URLError as exc:
+            print(f"durable history restore skipped: signed artifact download failed: {exc}")
+            raise SystemExit(0)
 
           with zipfile.ZipFile(io.BytesIO(artifact_bytes)) as artifact_zip:
             artifact_members = artifact_zip.namelist()
