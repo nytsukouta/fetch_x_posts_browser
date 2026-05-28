@@ -26,6 +26,7 @@ on:
       - "src/**"
 
 permissions:
+  actions: read
   contents: read
 
 concurrency:
@@ -83,6 +84,86 @@ jobs:
           key: posted-events-${{ github.ref_name }}-${{ github.run_id }}
           restore-keys: |
             posted-events-${{ github.ref_name }}-
+
+      - name: Restore durable pipeline history
+        shell: bash
+        env:
+          ACTIONS_REPO_TOKEN: ${{ github.token }}
+          PIPELINE_HISTORY_ARTIFACT_NAME: pipeline-history-${{ github.ref_name }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import io
+          import json
+          import os
+          import zipfile
+          from pathlib import Path
+          from urllib import parse, request
+
+          output_dir = Path("data/output")
+          structured_path = output_dir / "structured_events_cumulative.csv"
+          posted_path = output_dir / "posted_events.csv"
+
+          if structured_path.exists() and posted_path.exists():
+            print("durable history restore skipped: cache already restored structured and posted logs")
+            raise SystemExit(0)
+
+          token = os.environ["ACTIONS_REPO_TOKEN"].strip()
+          artifact_name = os.environ["PIPELINE_HISTORY_ARTIFACT_NAME"].strip()
+          repository = os.environ["REPOSITORY"].strip()
+          list_url = (
+            f"https://api.github.com/repos/{repository}/actions/artifacts?"
+            f"{parse.urlencode({'name': artifact_name, 'per_page': 100})}"
+          )
+          api_request = request.Request(
+            list_url,
+            headers={
+              "Accept": "application/vnd.github+json",
+              "Authorization": f"Bearer {token}",
+              "User-Agent": "hokuriku-theater-pipeline",
+            },
+          )
+          with request.urlopen(api_request, timeout=30) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+
+          artifacts = [artifact for artifact in payload.get("artifacts", []) if not artifact.get("expired")]
+          if not artifacts:
+            print(f"durable history restore skipped: no artifact named {artifact_name}")
+            raise SystemExit(0)
+
+          latest_artifact = max(
+            artifacts,
+            key=lambda artifact: str(artifact.get("updated_at") or artifact.get("created_at") or ""),
+          )
+          download_request = request.Request(
+            str(latest_artifact["archive_download_url"]),
+            headers={
+              "Accept": "application/vnd.github+json",
+              "Authorization": f"Bearer {token}",
+              "User-Agent": "hokuriku-theater-pipeline",
+            },
+          )
+          with request.urlopen(download_request, timeout=60) as response:
+            artifact_bytes = response.read()
+
+          with zipfile.ZipFile(io.BytesIO(artifact_bytes)) as artifact_zip:
+            artifact_members = artifact_zip.namelist()
+            snapshot_name = next((name for name in artifact_members if name.endswith("pipeline_history_snapshot.zip")), "")
+            if not snapshot_name:
+              print(f"durable history restore skipped: artifact {latest_artifact['id']} has no pipeline_history_snapshot.zip")
+              raise SystemExit(0)
+            snapshot_bytes = artifact_zip.read(snapshot_name)
+
+          with zipfile.ZipFile(io.BytesIO(snapshot_bytes)) as snapshot_zip:
+            snapshot_zip.extractall(Path("."))
+
+          print(
+            "restored durable history artifact:",
+            latest_artifact.get("id"),
+            latest_artifact.get("updated_at") or latest_artifact.get("created_at") or "",
+          )
+          PY
 
       - name: Rebuild query configuration
         run: python src/build_priority_queries_from_masters.py
@@ -170,6 +251,40 @@ jobs:
             data/output/structured_events_filtered_cumulative.csv
             data/output/event_cumulative.csv
           key: posted-events-${{ github.ref_name }}-${{ github.run_id }}
+
+      - name: Build durable pipeline history snapshot
+        if: success() && (hashFiles('data/output/posted_events.csv') != '' || hashFiles('data/output/structured_events_cumulative.csv') != '' || hashFiles('data/output/structured_events_filtered_cumulative.csv') != '' || hashFiles('data/output/event_cumulative.csv') != '')
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import zipfile
+
+          snapshot_path = Path("data/output/pipeline_history_snapshot.zip")
+          snapshot_path.parent.mkdir(parents=True, exist_ok=True)
+          files = [
+              Path("data/output/posted_events.csv"),
+              Path("data/output/structured_events_cumulative.csv"),
+              Path("data/output/structured_events_filtered_cumulative.csv"),
+              Path("data/output/event_cumulative.csv"),
+          ]
+
+          with zipfile.ZipFile(snapshot_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+              for path in files:
+                  if path.exists():
+                      archive.write(path, arcname=str(path).replace("\\", "/"))
+
+          print(f"built durable history snapshot: {snapshot_path}")
+          PY
+
+      - name: Upload durable pipeline history
+        if: success() && hashFiles('data/output/pipeline_history_snapshot.zip') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: pipeline-history-${{ github.ref_name }}
+          path: data/output/pipeline_history_snapshot.zip
+          retention-days: 90
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
