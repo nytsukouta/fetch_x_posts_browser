@@ -1,9 +1,20 @@
 const DATA_URL = "../data/output/schedule_list.json";
 
+const URL_PARAM_KEYS = {
+  search: "q",
+  month: "month",
+  location: "loc",
+  scope: "scope",
+  event: "event",
+};
+
 const state = {
   allItems: [],
   items: [],
   filteredItems: [],
+  initialEventId: "",
+  pendingMonth: "",
+  pendingLocation: "",
 };
 
 const elements = {
@@ -14,11 +25,13 @@ const elements = {
   locationFilter: document.getElementById("locationFilter"),
   searchInput: document.getElementById("searchInput"),
   resultSummary: document.getElementById("resultSummary"),
+  clearFiltersButton: document.getElementById("clearFiltersButton"),
   scheduleGrid: document.getElementById("scheduleGrid"),
   cardTemplate: document.getElementById("cardTemplate"),
 };
 
 async function main() {
+  restoreFiltersFromUrl();
   bindEvents();
 
   try {
@@ -31,7 +44,15 @@ async function main() {
     state.allItems = Array.isArray(payload.items) ? payload.items : [];
     elements.generatedAt.textContent = formatGeneratedAt(payload.generated_at);
 
+    if (state.initialEventId) {
+      const target = state.allItems.find((item) => (item.event_id || "") === state.initialEventId);
+      if (target && elements.dateScopeFilter.value === "upcoming" && !isUpcomingSchedule(target.performance_schedule)) {
+        elements.dateScopeFilter.value = "all";
+      }
+    }
+
     applyFilters();
+    focusInitialEvent();
   } catch (error) {
     elements.resultSummary.textContent = "データを読み込めませんでした。HTTP サーバー経由で開いているか確認してください。";
     elements.scheduleGrid.innerHTML = `<section class="empty-state"><p>${escapeHtml(String(error))}</p></section>`;
@@ -43,11 +64,57 @@ function bindEvents() {
   elements.dateScopeFilter.addEventListener("change", applyFilters);
   elements.monthFilter.addEventListener("change", applyFilters);
   elements.locationFilter.addEventListener("change", applyFilters);
+  if (elements.clearFiltersButton) {
+    elements.clearFiltersButton.addEventListener("click", clearFilters);
+  }
+}
+
+function restoreFiltersFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const search = params.get(URL_PARAM_KEYS.search);
+  const month = params.get(URL_PARAM_KEYS.month);
+  const location = params.get(URL_PARAM_KEYS.location);
+  const scope = params.get(URL_PARAM_KEYS.scope);
+  const eventId = params.get(URL_PARAM_KEYS.event);
+
+  if (search) elements.searchInput.value = search;
+  if (scope === "all" || scope === "upcoming") elements.dateScopeFilter.value = scope;
+  state.pendingMonth = month || "";
+  state.pendingLocation = location || "";
+  state.initialEventId = (eventId || "").trim();
+}
+
+function writeFiltersToUrl() {
+  const params = new URLSearchParams();
+  const keyword = elements.searchInput.value.trim();
+  if (keyword) params.set(URL_PARAM_KEYS.search, keyword);
+  if (elements.dateScopeFilter.value && elements.dateScopeFilter.value !== "upcoming") {
+    params.set(URL_PARAM_KEYS.scope, elements.dateScopeFilter.value);
+  }
+  if (elements.monthFilter.value) params.set(URL_PARAM_KEYS.month, elements.monthFilter.value);
+  if (elements.locationFilter.value) params.set(URL_PARAM_KEYS.location, elements.locationFilter.value);
+  if (state.initialEventId) params.set(URL_PARAM_KEYS.event, state.initialEventId);
+
+  const query = params.toString();
+  const newUrl = query ? `${window.location.pathname}?${query}` : window.location.pathname;
+  window.history.replaceState(null, "", newUrl);
+}
+
+function clearFilters() {
+  elements.searchInput.value = "";
+  elements.dateScopeFilter.value = "upcoming";
+  elements.monthFilter.value = "";
+  elements.locationFilter.value = "";
+  state.initialEventId = "";
+  applyFilters();
 }
 
 function populateFilters(items) {
-  const selectedMonth = elements.monthFilter.value;
-  const selectedLocation = elements.locationFilter.value;
+  const selectedMonth = elements.monthFilter.value || state.pendingMonth || "";
+  const selectedLocation = elements.locationFilter.value || state.pendingLocation || "";
+  state.pendingMonth = "";
+  state.pendingLocation = "";
+
   const months = unique(items.map((item) => extractMonth(item.performance_schedule)).filter(Boolean));
   const locations = unique(items.map((item) => item.normalized_location).filter(Boolean));
 
@@ -106,7 +173,14 @@ function applyFilters() {
 
   renderCards(state.filteredItems);
   elements.countValue.textContent = String(state.items.length);
+
+  const hasFilter = Boolean(keyword || month || location || elements.dateScopeFilter.value !== "upcoming");
   elements.resultSummary.textContent = `${state.filteredItems.length} 件を表示中 / 全 ${state.items.length} 件`;
+  if (elements.clearFiltersButton) {
+    elements.clearFiltersButton.hidden = !hasFilter;
+  }
+
+  writeFiltersToUrl();
 }
 
 function getScopedItems() {
@@ -128,6 +202,13 @@ function renderCards(items) {
     const fragment = elements.cardTemplate.content.cloneNode(true);
     const card = fragment.querySelector(".event-card");
     card.style.animationDelay = `${Math.min(index * 55, 420)}ms`;
+    if (item.event_id) {
+      card.dataset.eventId = item.event_id;
+      card.id = `event-${item.event_id}`;
+    }
+    if (state.initialEventId && item.event_id === state.initialEventId) {
+      card.classList.add("is-highlighted");
+    }
 
     const eventChip = fragment.querySelector(".event-chip");
     if (hasOfficialReference(item)) {
@@ -135,6 +216,18 @@ function renderCards(items) {
     } else {
       eventChip.remove();
     }
+
+    const countdownChip = fragment.querySelector(".event-countdown");
+    const countdown = buildCountdownLabel(item.performance_schedule);
+    if (countdownChip) {
+      if (countdown) {
+        countdownChip.textContent = countdown.label;
+        countdownChip.classList.add(`is-${countdown.tone}`);
+      } else {
+        countdownChip.remove();
+      }
+    }
+
     fragment.querySelector(".event-date").textContent = item.performance_schedule || "日程未設定";
     fragment.querySelector(".event-title").textContent = item.event_name || item.organization_name || "名称未設定";
     fragment.querySelector(".organization-name").textContent = item.organization_name || "未設定";
@@ -165,6 +258,46 @@ function renderCards(items) {
 
     elements.scheduleGrid.append(fragment);
   });
+}
+
+function focusInitialEvent() {
+  if (!state.initialEventId) return;
+  const target = elements.scheduleGrid.querySelector(`[data-event-id="${cssEscape(state.initialEventId)}"]`);
+  if (!target) return;
+  requestAnimationFrame(() => {
+    target.scrollIntoView({ behavior: "smooth", block: "center" });
+  });
+}
+
+function cssEscape(value) {
+  if (window.CSS && typeof window.CSS.escape === "function") {
+    return window.CSS.escape(value);
+  }
+  return String(value).replace(/[^a-zA-Z0-9_-]/g, "\\$&");
+}
+
+function buildCountdownLabel(schedule) {
+  const text = String(schedule || "");
+  const allMatches = [...text.matchAll(/(\d{4})-(\d{2})-(\d{2})/g)];
+  if (!allMatches.length) return null;
+  const first = allMatches[0];
+  const last = allMatches[allMatches.length - 1];
+  const start = new Date(Number(first[1]), Number(first[2]) - 1, Number(first[3]));
+  const end = new Date(Number(last[1]), Number(last[2]) - 1, Number(last[3]));
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const dayMs = 24 * 60 * 60 * 1000;
+  const daysToStart = Math.round((start - today) / dayMs);
+  const daysToEnd = Math.round((end - today) / dayMs);
+
+  if (daysToEnd < 0) return { label: "終了", tone: "ended" };
+  if (daysToStart <= 0 && daysToEnd >= 0) return { label: "開催中", tone: "live" };
+  if (daysToStart === 1) return { label: "あす", tone: "soon" };
+  if (daysToStart <= 7) return { label: `あと${daysToStart}日`, tone: "soon" };
+  if (daysToStart <= 30) return { label: `あと${daysToStart}日`, tone: "near" };
+  return null;
 }
 
 function buildReferenceLabel(referenceType) {
@@ -206,10 +339,10 @@ function extractMonth(schedule) {
 }
 
 function isUpcomingSchedule(schedule) {
-  const match = String(schedule || "").match(/^(\d{4}-\d{2}-\d{2})/);
-  if (!match) {
-    return false;
-  }
+  const text = String(schedule || "");
+  const matches = [...text.matchAll(/(\d{4}-\d{2}-\d{2})/g)];
+  if (!matches.length) return false;
+  const last = matches[matches.length - 1][1];
 
   const today = new Date();
   const todayKey = [
@@ -218,7 +351,7 @@ function isUpcomingSchedule(schedule) {
     String(today.getDate()).padStart(2, "0"),
   ].join("-");
 
-  return match[1] >= todayKey;
+  return last >= todayKey;
 }
 
 function formatGeneratedAt(value) {
