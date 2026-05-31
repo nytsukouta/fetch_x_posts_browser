@@ -141,7 +141,7 @@ function renderCards(items, type) {
     fragment.querySelector(".master-chip").textContent = type === "organizations" ? "劇団マスター" : "劇場マスター";
     fragment.querySelector(".master-id").textContent = item.id || "ID未設定";
     fragment.querySelector(".master-title").textContent = item.name || "名称未設定";
-    fragment.querySelector(".location-name").textContent = item.location || "未設定";
+    fillLocationValue(fragment.querySelector(".location-name"), item.location);
 
     fillLinkValue(fragment.querySelector(".website-value"), item.official_website, "公式サイトを開く");
 
@@ -169,6 +169,21 @@ function fillLinkValue(container, href, label) {
   link.target = "_blank";
   link.rel = "noreferrer";
   link.textContent = label;
+  container.replaceChildren(link);
+}
+
+function fillLocationValue(container, location) {
+  if (!location) {
+    container.textContent = "未設定";
+    return;
+  }
+  const link = document.createElement("a");
+  link.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}`;
+  link.target = "_blank";
+  link.rel = "noreferrer";
+  link.className = "location-link";
+  link.title = "Google マップで開く";
+  link.textContent = `📍 ${location}`;
   container.replaceChildren(link);
 }
 
