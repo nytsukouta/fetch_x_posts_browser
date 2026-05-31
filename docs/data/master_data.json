@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-05-31T21:48:00+09:00",
+  "generated_at": "2026-05-31T21:50:56+09:00",
   "counts": {
-    "organizations": 24,
+    "organizations": 25,
     "venues": 24
   },
   "organizations": [
@@ -139,6 +139,14 @@
       "location": "石川県金沢市",
       "official_website": "https://theaterangelus.com/",
       "official_x": "https://x.com/angels_gekidan",
+      "query_include": false
+    },
+    {
+      "id": "org-劇団ドリームチョップ",
+      "name": "劇団ドリームチョップ",
+      "location": "石川県金沢市",
+      "official_website": "https://monthly-pro-geki.online/",
+      "official_x": "https://x.com/dreamchop",
       "query_include": false
     },
     {
