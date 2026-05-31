@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-05-31T21:38:40+09:00",
+  "generated_at": "2026-05-31T21:47:35+09:00",
   "counts": {
-    "organizations": 23,
+    "organizations": 24,
     "venues": 24
   },
   "organizations": [
@@ -19,6 +19,14 @@
       "location": "富山県射水市",
       "official_website": "https://blood-panda.net/",
       "official_x": "https://x.com/BP_chipanda",
+      "query_include": false
+    },
+    {
+      "id": "org-演芸列車-東西本線",
+      "name": "演芸列車「東西本線」",
+      "location": "石川県",
+      "official_website": "https://touzaihonsen.com/",
+      "official_x": "https://x.com/touzaihonsen",
       "query_include": false
     },
     {
