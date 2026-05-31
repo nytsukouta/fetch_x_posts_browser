@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-31T15:23:43+09:00",
+  "generated_at": "2026-05-31T16:33:55+09:00",
   "counts": {
     "organizations": 23,
     "venues": 21
@@ -204,6 +204,18 @@
       "official_website": "https://www.artvillage.gr.jp/"
     },
     {
+      "id": "venue-内灘町文化会館",
+      "name": "内灘町文化会館",
+      "location": "〒920-0267 石川県河北郡内灘町大清台140",
+      "official_website": ""
+    },
+    {
+      "id": "venue-宇多須神社",
+      "name": "宇多須神社",
+      "location": "〒920-0831 石川県金沢市東山1丁目30-8",
+      "official_website": ""
+    },
+    {
       "id": "venue-石川県立音楽堂",
       "name": "石川県立音楽堂",
       "location": "〒920-0856 石川県金沢市昭和町20番1号",
@@ -240,10 +252,22 @@
       "official_website": "http://www.eighthall.com/"
     },
     {
+      "id": "venue-白山市鶴来総合文化会館クレイン",
+      "name": "白山市鶴来総合文化会館クレイン",
+      "location": "〒920-2143 石川県白山市七原町77番地",
+      "official_website": ""
+    },
+    {
       "id": "venue-学びの杜ののいち-カレード",
       "name": "学びの杜ののいち カレード",
       "location": "〒921-8845 石川県野々市市太平寺4-156",
       "official_website": "https://www.kaleido-nono1.jp/"
+    },
+    {
+      "id": "venue-加賀市文化会館",
+      "name": "加賀市文化会館",
+      "location": "〒922-0243 石川県加賀市山代温泉北部2丁目68",
+      "official_website": ""
     },
     {
       "id": "venue-小松市團十郎芸術劇場うらら",
@@ -252,10 +276,34 @@
       "official_website": "https://komatsu-urara.com/"
     },
     {
+      "id": "venue-白山市松任文化会館",
+      "name": "白山市松任文化会館",
+      "location": "〒924-0872 石川県白山市古城町2",
+      "official_website": ""
+    },
+    {
+      "id": "venue-志賀町文化ホール",
+      "name": "志賀町文化ホール",
+      "location": "〒925-0141 石川県羽咋郡志賀町高浜町カの1番地1",
+      "official_website": ""
+    },
+    {
       "id": "venue-七尾市文化ホール",
       "name": "七尾市文化ホール",
       "location": "〒926-0021 石川県七尾市本府中町ヲ部38番地",
       "official_website": "https://shisetsu.sports-nanao.or.jp/shisetsu/%E4%B8%83%E5%B0%BE%E5%B8%82%E6%96%87%E5%8C%96%E3%83%9B%E3%83%BC%E3%83%AB/"
+    },
+    {
+      "id": "venue-輪島市文化会館",
+      "name": "輪島市文化会館",
+      "location": "〒928-0001 石川県輪島市河井町20部1-1",
+      "official_website": ""
+    },
+    {
+      "id": "venue-能美市根上総合文化会館",
+      "name": "能美市根上総合文化会館",
+      "location": "〒929-0113 石川県能美市大成町ヌ118",
+      "official_website": ""
     },
     {
       "id": "venue-津幡町文化会館シグナス",
@@ -268,54 +316,6 @@
       "name": "能登演劇堂",
       "location": "〒929-2222 石川県七尾市中島町中島上部9番地",
       "official_website": "https://engekido.com/"
-    },
-    {
-      "id": "venue-加賀市文化会館",
-      "name": "加賀市文化会館",
-      "location": "石川県加賀市",
-      "official_website": ""
-    },
-    {
-      "id": "venue-内灘町文化会館",
-      "name": "内灘町文化会館",
-      "location": "石川県河北郡内灘町",
-      "official_website": ""
-    },
-    {
-      "id": "venue-白山市松任文化会館",
-      "name": "白山市松任文化会館",
-      "location": "石川県白山市",
-      "official_website": ""
-    },
-    {
-      "id": "venue-白山市鶴来総合文化会館クレイン",
-      "name": "白山市鶴来総合文化会館クレイン",
-      "location": "石川県白山市",
-      "official_website": ""
-    },
-    {
-      "id": "venue-志賀町文化ホール",
-      "name": "志賀町文化ホール",
-      "location": "石川県羽咋郡志賀町",
-      "official_website": ""
-    },
-    {
-      "id": "venue-能美市根上総合文化会館",
-      "name": "能美市根上総合文化会館",
-      "location": "石川県能美市",
-      "official_website": ""
-    },
-    {
-      "id": "venue-輪島市文化会館",
-      "name": "輪島市文化会館",
-      "location": "石川県輪島市",
-      "official_website": ""
-    },
-    {
-      "id": "venue-宇多須神社",
-      "name": "宇多須神社",
-      "location": "石川県金沢市東山1丁目30-8",
-      "official_website": ""
     }
   ]
 }
