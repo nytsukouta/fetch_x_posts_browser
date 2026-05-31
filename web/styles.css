@@ -94,6 +94,18 @@ body::before {
   line-height: 1.8;
 }
 
+.hero-disclaimer {
+  max-width: 58ch;
+  margin: 10px 0 0;
+  padding: 10px 14px;
+  border-left: 3px solid var(--accent);
+  border-radius: 4px;
+  background: rgba(164, 59, 47, 0.08);
+  color: var(--text-sub);
+  font-size: 0.85rem;
+  line-height: 1.65;
+}
+
 .hero-meta {
   display: flex;
   gap: 16px;
