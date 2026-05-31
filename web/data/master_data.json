@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-05-31T21:37:27+09:00",
+  "generated_at": "2026-05-31T21:38:40+09:00",
   "counts": {
     "organizations": 23,
-    "venues": 23
+    "venues": 24
   },
   "organizations": [
     {
@@ -256,6 +256,12 @@
       "name": "金沢EIGHT HALL",
       "location": "〒920-0981 石川県金沢市片町1-6-10 ブラザービル2F",
       "official_website": "http://www.eighthall.com/"
+    },
+    {
+      "id": "venue-金沢歌劇座",
+      "name": "金沢歌劇座",
+      "location": "〒920-0993 石川県金沢市下本多町6番丁27番地",
+      "official_website": "http://www.kagekiza.gr.jp/"
     },
     {
       "id": "venue-白山市鶴来総合文化会館クレイン",
