@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-05-31T16:33:55+09:00",
+  "generated_at": "2026-05-31T21:35:57+09:00",
   "counts": {
     "organizations": 23,
-    "venues": 21
+    "venues": 22
   },
   "organizations": [
     {
@@ -238,6 +238,12 @@
       "name": "北國新聞赤羽ホール",
       "location": "〒920-0919 石川県金沢市南町2番1号",
       "official_website": "http://www.akabane-hall.jp/"
+    },
+    {
+      "id": "venue-本多の森北電ホール",
+      "name": "本多の森 北電ホール",
+      "location": "〒920-0935 石川県金沢市石引4-17-1",
+      "official_website": "http://www.hondanomori-hall.com/"
     },
     {
       "id": "venue-石川県立能楽堂",
