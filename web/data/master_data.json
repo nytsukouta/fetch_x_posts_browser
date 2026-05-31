@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-05-31T21:35:57+09:00",
+  "generated_at": "2026-05-31T21:37:27+09:00",
   "counts": {
     "organizations": 23,
-    "venues": 22
+    "venues": 23
   },
   "organizations": [
     {
@@ -262,6 +262,12 @@
       "name": "白山市鶴来総合文化会館クレイン",
       "location": "〒920-2143 石川県白山市七原町77番地",
       "official_website": ""
+    },
+    {
+      "id": "venue-金沢21世紀美術館-シアター21",
+      "name": "金沢21世紀美術館 シアター21",
+      "location": "〒920-8509 石川県金沢市広坂1-2-1",
+      "official_website": "https://www.kanazawa21.jp/"
     },
     {
       "id": "venue-学びの杜ののいち-カレード",
