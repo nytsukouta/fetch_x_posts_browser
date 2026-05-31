@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-31T21:47:35+09:00",
+  "generated_at": "2026-05-31T21:48:00+09:00",
   "counts": {
     "organizations": 24,
     "venues": 24
@@ -27,7 +27,7 @@
       "location": "石川県",
       "official_website": "https://touzaihonsen.com/",
       "official_x": "https://x.com/touzaihonsen",
-      "query_include": false
+      "query_include": true
     },
     {
       "id": "org-七尾市民劇団n",
