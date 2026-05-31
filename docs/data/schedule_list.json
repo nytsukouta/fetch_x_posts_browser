@@ -1,8 +1,9 @@
 {
-  "generated_at": "2026-05-28T19:33:35+09:00",
+  "generated_at": "2026-05-31T15:23:42+09:00",
   "count": 8,
   "items": [
     {
+      "event_id": "event-0me-presents-第二回定期公演-誰が為に",
       "event_name": "0ME presents 第二回定期公演 【誰が為に】",
       "organization_id": "org-0me",
       "organization_name": "0ME｜ゼロミー",
@@ -14,6 +15,7 @@
       "source_tweet_url": "https://x.com/jokya_official/status/2059234779397337284"
     },
     {
+      "event_id": "event-七尾東雲高校演劇科-定期公演-ドン・キホーテは故郷に帰り-サンチョ・パンサは旅に出る",
       "event_name": "七尾東雲高校演劇科 第17回 定期公演 『ドン・キホーテは故郷に帰り、サンチョ・パンサは旅に出る。』",
       "organization_id": "",
       "organization_name": "七尾東雲高校演劇科",
@@ -25,6 +27,7 @@
       "source_tweet_url": "https://x.com/jokya_official/status/2058467180430430591"
     },
     {
+      "event_id": "event-煙が目にしみる",
       "event_name": "表現集団tone!tone!tone! 第19回公演「煙が目にしみる」",
       "organization_id": "org-表現集団tone-tone-tone",
       "organization_name": "表現集団tone!tone!tone!",
@@ -36,6 +39,7 @@
       "source_tweet_url": "https://x.com/jokya_official/status/2058687884761219403"
     },
     {
+      "event_id": "event-劇団飛行船-シンドバッドの大冒険",
       "event_name": "劇団飛行船 マスクプレイミュージカル『シンドバッドの大冒険』",
       "organization_id": "",
       "organization_name": "劇団飛行船",
@@ -47,6 +51,7 @@
       "source_tweet_url": "https://x.com/kanazawa_teatre/status/2055055168270716939"
     },
     {
+      "event_id": "event-花よりタンゴ",
       "event_name": "こまつ座『花よりタンゴ』",
       "organization_id": "",
       "organization_name": "こまつ座",
@@ -58,6 +63,7 @@
       "source_tweet_url": "https://x.com/elecutewim/status/2059617809274200518"
     },
     {
+      "event_id": "event-七夕の日に",
       "event_name": "のんびりユニットころころ公演「七夕の日に」",
       "organization_id": "org-のんびりユニットころころ",
       "organization_name": "のんびりユニットころころ",
@@ -66,9 +72,10 @@
       "official_reference_url": "https://x.com/kolokolo3214go",
       "official_reference_type": "organization_official_x",
       "normalized_location": "石川県金沢市 / 石川県",
-      "source_tweet_url": "https://x.com/jokya_official/status/2058687885692301446"
+      "source_tweet_url": "https://x.com/YNGHRmisato/status/2060195393796026656"
     },
     {
+      "event_id": "event-街2026",
       "event_name": "街 くずれた日常 2026",
       "organization_id": "org-劇団新人類人猿",
       "organization_name": "劇団新人類人猿",
@@ -80,6 +87,7 @@
       "source_tweet_url": "https://x.com/NollieSakaitaka/status/2054933723288875214"
     },
     {
+      "event_id": "event-太陽系全速力",
       "event_name": "太陽系全速力 フルスロットル",
       "organization_id": "org-劇団羅針盤",
       "organization_name": "劇団羅針盤",

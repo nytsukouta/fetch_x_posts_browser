@@ -10,6 +10,8 @@ from pathlib import Path
 from typing import Any
 from urllib import error, parse, request
 
+from github_models_client import load_dotenv
+from atomic_io import atomic_open
 from x_tweet_context import (
     COMMON_EXPANSIONS,
     COMMON_MEDIA_FIELDS,
@@ -24,20 +26,9 @@ from x_tweet_context import (
 ROOT_DIR = Path(__file__).resolve().parent.parent
 DEFAULT_QUERY_FILE = ROOT_DIR / "config" / "priority_queries.json"
 DEFAULT_OUTPUT_DIR = ROOT_DIR / "data" / "output"
+DEFAULT_EXCLUDED_IDS_CSV = ROOT_DIR / "data" / "output" / "excluded_tweet_ids.csv"
 DEFAULT_ENV_FILE = ROOT_DIR / ".env"
 SEARCH_URL = "https://api.x.com/2/tweets/search/recent"
-
-
-def load_dotenv(env_path: Path) -> None:
-    if not env_path.exists():
-        return
-
-    for raw_line in env_path.read_text(encoding="utf-8").splitlines():
-        line = raw_line.strip()
-        if not line or line.startswith("#") or "=" not in line:
-            continue
-        key, value = line.split("=", 1)
-        os.environ.setdefault(key.strip(), value.strip())
 
 
 def load_queries(query_file: Path) -> tuple[list[dict[str, str]], int]:
@@ -157,6 +148,37 @@ def dedupe_rows(rows: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], int]:
     return [*deduped_by_key.values(), *unique_rows_without_key], duplicate_count
 
 
+def load_excluded_tweet_keys(path: Path) -> set[str]:
+    if not path.exists():
+        return set()
+    keys: set[str] = set()
+    with path.open("r", encoding="utf-8-sig", newline="") as handle:
+        reader = csv.DictReader(handle)
+        for row in reader:
+            tweet_id = str(row.get("tweet_id") or "").strip()
+            tweet_url = str(row.get("tweet_url") or "").strip()
+            if tweet_id:
+                keys.add(tweet_id)
+            if tweet_url:
+                keys.add(tweet_url)
+    return keys
+
+
+def filter_excluded_rows(rows: list[dict[str, Any]], excluded_keys: set[str]) -> tuple[list[dict[str, Any]], int]:
+    if not excluded_keys:
+        return rows, 0
+    kept_rows: list[dict[str, Any]] = []
+    skipped = 0
+    for row in rows:
+        tweet_id = str(row.get("tweet_id") or "").strip()
+        tweet_url = str(row.get("tweet_url") or "").strip()
+        if (tweet_id and tweet_id in excluded_keys) or (tweet_url and tweet_url in excluded_keys):
+            skipped += 1
+            continue
+        kept_rows.append(row)
+    return kept_rows, skipped
+
+
 def write_csv(rows: list[dict[str, Any]], output_dir: Path) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -185,7 +207,7 @@ def write_csv(rows: list[dict[str, Any]], output_dir: Path) -> Path:
         "collected_at",
     ]
 
-    with output_path.open("w", encoding="utf-8-sig", newline="") as handle:
+    with atomic_open(output_path, "w", encoding="utf-8-sig", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(rows)
@@ -210,6 +232,11 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=None,
         help="各クエリの取得件数。未指定なら設定ファイルの値を使用",
+    )
+    parser.add_argument(
+        "--excluded-ids-csv",
+        default=str(DEFAULT_EXCLUDED_IDS_CSV),
+        help="除外すべき tweet_id 一覧 CSV (tweet_id / tweet_url 列)。取得結果から事前に除外して保存される CSV を小さく保つ",
     )
     return parser.parse_args()
 
@@ -250,10 +277,13 @@ def main() -> int:
         return 0
 
     deduped_rows, duplicate_count = dedupe_rows(all_rows)
-    output_path = write_csv(deduped_rows, output_dir)
+    excluded_keys = load_excluded_tweet_keys(Path(args.excluded_ids_csv))
+    filtered_rows, excluded_count = filter_excluded_rows(deduped_rows, excluded_keys)
+    output_path = write_csv(filtered_rows, output_dir)
     print(f"saved: {output_path}")
-    print(f"rows: {len(deduped_rows)}")
+    print(f"rows: {len(filtered_rows)}")
     print(f"deduped_duplicates: {duplicate_count}")
+    print(f"excluded_known_noise: {excluded_count}")
     return 0
 
 

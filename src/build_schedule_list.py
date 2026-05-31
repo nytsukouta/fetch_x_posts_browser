@@ -9,6 +9,7 @@ from pathlib import Path
 import re
 from typing import Any
 
+from atomic_io import atomic_open
 from event_candidate_rules import build_date_range, is_schedule_eligible_event
 
 
@@ -238,6 +239,7 @@ def build_schedule_rows(
         reference_url, reference_source = choose_reference_url(event_row, organization_row, venue_row)
 
         candidate_row = {
+            "event_id": (event_row.get("event_id") or "").strip(),
             "event_name": event_name,
             "organization_id": (organization_row.get("organization_id") or "").strip() if organization_row else "",
             "organization_name": organization_name,
@@ -389,6 +391,7 @@ def is_current_or_upcoming_event(start_date: str, end_date: str) -> bool:
 def write_csv(rows: list[dict[str, Any]], output_path: Path) -> None:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fieldnames = [
+        "event_id",
         "event_name",
         "organization_id",
         "organization_name",
@@ -399,20 +402,19 @@ def write_csv(rows: list[dict[str, Any]], output_path: Path) -> None:
         "normalized_location",
         "source_tweet_url",
     ]
-    with output_path.open("w", encoding="utf-8-sig", newline="") as handle:
+    with atomic_open(output_path, "w", encoding="utf-8-sig", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(rows)
 
 
 def write_json(rows: list[dict[str, Any]], output_path: Path) -> None:
-    output_path.parent.mkdir(parents=True, exist_ok=True)
     payload = {
         "generated_at": datetime.now().astimezone().isoformat(timespec="seconds"),
         "count": len(rows),
         "items": rows,
     }
-    with output_path.open("w", encoding="utf-8") as handle:
+    with atomic_open(output_path, "w", encoding="utf-8") as handle:
         json.dump(payload, handle, ensure_ascii=False, indent=2)
 
 

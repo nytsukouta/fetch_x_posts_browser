@@ -17,6 +17,7 @@ from typing import Any
 from urllib import error, parse, request
 
 from event_candidate_rules import is_schedule_eligible_event, parse_iso_date
+from github_models_client import load_dotenv
 
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
@@ -36,18 +37,6 @@ class DuplicateTweetContentError(RuntimeError):
         self.details = details
 
 
-def load_dotenv(env_path: Path) -> None:
-    if not env_path.exists():
-        return
-
-    for raw_line in env_path.read_text(encoding="utf-8").splitlines():
-        line = raw_line.strip()
-        if not line or line.startswith("#") or "=" not in line:
-            continue
-        key, value = line.split("=", 1)
-        os.environ.setdefault(key.strip(), value.strip())
-
-
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Post newly discovered theater events to X")
     parser.add_argument("--events-csv", default=str(DEFAULT_EVENTS_CSV), help="event_cumulative.csv のパス")
@@ -57,6 +46,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--hashtag", default=DEFAULT_HASHTAG, help="末尾に付けるハッシュタグ。空文字で無効化")
     parser.add_argument("--header", default=DEFAULT_HEADER, help="投稿1行目の文言")
     parser.add_argument("--site-url", default="", help="公開中の schedule ページ URL。未指定時は GitHub Pages URL を推定")
+    parser.add_argument(
+        "--allowed-event-ids-csv",
+        default="",
+        help="投稿候補をこの CSV の event_id 集合だけに限定し重複を防ぐ (例: schedule_list.csv)。空ならフィルターしない",
+    )
     return parser.parse_args()
 
 
@@ -74,6 +68,15 @@ def load_posted_event_ids(path: Path) -> set[str]:
         if event_id:
             posted_ids.add(event_id)
     return posted_ids
+
+
+def load_allowed_event_ids(path: Path) -> set[str]:
+    allowed_ids: set[str] = set()
+    for row in load_csv_rows(path):
+        event_id = (row.get("event_id") or "").strip()
+        if event_id:
+            allowed_ids.add(event_id)
+    return allowed_ids
 
 
 def is_current_or_upcoming_event(row: dict[str, str]) -> bool:
@@ -393,6 +396,11 @@ def main() -> int:
 
     event_rows = load_csv_rows(Path(args.events_csv))
     posted_ids = load_posted_event_ids(Path(args.posted_log_csv))
+    allowed_ids = load_allowed_event_ids(Path(args.allowed_event_ids_csv)) if args.allowed_event_ids_csv else None
+    if allowed_ids is not None:
+        before = len(event_rows)
+        event_rows = [row for row in event_rows if (row.get("event_id") or "").strip() in allowed_ids]
+        print(f"allowed-event-ids filter: {before} -> {len(event_rows)} rows")
     candidates = select_candidate_rows(event_rows, posted_ids, args.limit)
     site_url = resolve_public_site_url(args.site_url)
 

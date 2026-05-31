@@ -7,6 +7,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from atomic_io import atomic_open
+
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 DEFAULT_ORGANIZATION_MASTER_CSV = ROOT_DIR / "data" / "output" / "organization_master.csv"
@@ -91,8 +93,7 @@ def build_payload(organization_rows: list[dict[str, str]], venue_rows: list[dict
 
 
 def write_json(payload: dict[str, Any], output_path: Path) -> None:
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    with output_path.open("w", encoding="utf-8") as handle:
+    with atomic_open(output_path, "w", encoding="utf-8") as handle:
         json.dump(payload, handle, ensure_ascii=False, indent=2)
 
 

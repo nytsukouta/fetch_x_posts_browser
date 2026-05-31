@@ -83,6 +83,14 @@
 - データは `data/output/schedule_list.json` を読み込みます
 - そのまま GitHub Pages や Cloudflare Pages に置きたい場合も、同じ静的ファイル構成を流用できます
 
+## docs/ への配信
+
+`docs/` は GitHub Pages 配信用で、`web/` から生成します。HTML/CSS/JS を編集するときは `web/` 側だけを直接編集し、次のコマンドで `docs/` を再生成します。
+
+1. `.venv/Scripts/python.exe src/sync_web_to_docs.py`
+
+`docs/data/` 配下の公開 JSON は通常パイプライン（`run_pipeline.py`）が直接更新します。スキーマは [docs/SCHEMA.md](docs/SCHEMA.md) を参照してください。
+
 ## 一括実行
 
 情報収集から構造化抽出、累積統合、スケジュール生成までを 1 コマンドで順番に実行できます。

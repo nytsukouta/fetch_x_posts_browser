@@ -6,6 +6,8 @@ import json
 from pathlib import Path
 from urllib.parse import urlparse
 
+from atomic_io import atomic_write_text
+
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 DEFAULT_ORGANIZATION_MASTER_CSV = ROOT_DIR / "data" / "output" / "organization_master.csv"
@@ -153,8 +155,7 @@ def main() -> int:
         "queries": queries,
     }
     output_path = Path(args.output_json)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(json.dumps(output_payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    atomic_write_text(output_path, json.dumps(output_payload, ensure_ascii=False, indent=2) + "\n")
 
     print(f"saved query config: {output_path}")
     print(f"queries: {len(queries)}")

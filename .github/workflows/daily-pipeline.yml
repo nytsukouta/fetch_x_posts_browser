@@ -28,6 +28,7 @@ on:
 permissions:
   actions: read
   contents: read
+  issues: write
 
 concurrency:
   group: daily-theater-pipeline
@@ -59,6 +60,12 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: "3.13"
+
+      - name: Install test dependencies
+        run: pip install pytest
+
+      - name: Run unit tests
+        run: python -m pytest tests/ -q
 
       - name: Validate required secrets
         shell: bash
@@ -322,10 +329,31 @@ jobs:
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
+      - name: Sync web/ to docs/
+        run: python src/sync_web_to_docs.py
+
       - name: Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@v4
         with:
           path: docs
+
+      - name: Notify failure via Issue
+        if: failure() && github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          title="Daily pipeline failed: $(date -u +%Y-%m-%dT%H:%MZ)"
+          body=$'Daily Theater Pipeline が失敗しました。\n\nRun: '"$RUN_URL"$'\nTrigger: ${{ github.event_name }}\nRef: ${{ github.ref_name }}'
+          existing=$(gh issue list --state open --label pipeline-failure --search "Daily pipeline failed in:title" --json number --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "$body"
+          else
+            gh issue create --title "$title" --body "$body" --label pipeline-failure || \
+              gh issue create --title "$title" --body "$body"
+          fi
 
   deploy:
     needs: build

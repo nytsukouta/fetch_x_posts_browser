@@ -7,6 +7,8 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+from atomic_io import atomic_open
+
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 DEFAULT_OUTPUT_DIR = ROOT_DIR / "data" / "output"
@@ -21,8 +23,10 @@ DEFAULT_CUMULATIVE_STRUCTURED_CSV = ROOT_DIR / "data" / "output" / "structured_e
 DEFAULT_CUMULATIVE_FILTERED_CSV = ROOT_DIR / "data" / "output" / "structured_events_filtered_cumulative.csv"
 DEFAULT_EVENT_CUMULATIVE_CSV = ROOT_DIR / "data" / "output" / "event_cumulative.csv"
 DEFAULT_POSTED_EVENTS_CSV = ROOT_DIR / "data" / "output" / "posted_events.csv"
-DEFAULT_LOCAL_PREVIEW_DIR = DEFAULT_OUTPUT_DIR / "_local_preview"
-DEFAULT_PENDING_EXTRACT_INPUT_CSV = ROOT_DIR / "data" / "output" / "_tmp_extract_pending.csv"
+DEFAULT_EXCLUDED_IDS_CSV = ROOT_DIR / "data" / "output" / "excluded_tweet_ids.csv"
+DEFAULT_TMP_DIR = DEFAULT_OUTPUT_DIR / "_tmp"
+DEFAULT_LOCAL_PREVIEW_DIR = DEFAULT_TMP_DIR / "local_preview"
+DEFAULT_PENDING_EXTRACT_INPUT_CSV = DEFAULT_TMP_DIR / "extract_pending.csv"
 
 
 def parse_args() -> argparse.Namespace:
@@ -106,6 +110,7 @@ def collect_posts(args: argparse.Namespace, query_file: Path) -> Path:
     command = [sys.executable, str(ROOT_DIR / "src" / "fetch_x_posts.py")]
     command.extend(["--query-file", str(query_file)])
     command.extend(["--output-dir", args.output_dir])
+    command.extend(["--excluded-ids-csv", str(DEFAULT_EXCLUDED_IDS_CSV)])
     if args.max_results is not None:
         command.extend(["--max-results", str(args.max_results)])
 
@@ -141,8 +146,7 @@ def load_csv_rows(path: Path) -> tuple[list[dict[str, str]], list[str]]:
 
 
 def write_csv_rows(path: Path, rows: list[dict[str, str]], fieldnames: list[str]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8-sig", newline="") as handle:
+    with atomic_open(path, "w", encoding="utf-8-sig", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(rows)
@@ -218,6 +222,7 @@ def prepare_extraction_input(input_csv: Path) -> Path | None:
     if not pending_rows or not fieldnames:
         return None
 
+    DEFAULT_TMP_DIR.mkdir(parents=True, exist_ok=True)
     write_csv_rows(DEFAULT_PENDING_EXTRACT_INPUT_CSV, pending_rows, fieldnames)
     return DEFAULT_PENDING_EXTRACT_INPUT_CSV
 
@@ -275,6 +280,17 @@ def build_event_cumulative(input_csv: Path) -> Path:
     return DEFAULT_EVENT_CUMULATIVE_CSV
 
 
+def build_excluded_tweet_ids() -> None:
+    run_command([
+        sys.executable,
+        str(ROOT_DIR / "src" / "build_excluded_tweet_ids.py"),
+        "--input-csv",
+        str(DEFAULT_CUMULATIVE_STRUCTURED_CSV),
+        "--output-csv",
+        str(DEFAULT_EXCLUDED_IDS_CSV),
+    ])
+
+
 def build_schedule(input_csv: Path, pages_json: Path) -> None:
     run_command([
         sys.executable,
@@ -297,7 +313,7 @@ def build_master_pages_data(pages_json: Path, web_json: Path) -> None:
     ])
 
 
-def post_new_events(input_csv: Path, args: argparse.Namespace) -> None:
+def post_new_events(input_csv: Path, args: argparse.Namespace, allowed_event_ids_csv: Path | None = None) -> None:
     command = [
         sys.executable,
         str(ROOT_DIR / "src" / "post_new_events_to_x.py"),
@@ -308,6 +324,8 @@ def post_new_events(input_csv: Path, args: argparse.Namespace) -> None:
         "--hashtag",
         args.post_hashtag,
     ]
+    if allowed_event_ids_csv is not None:
+        command.extend(["--allowed-event-ids-csv", str(allowed_event_ids_csv)])
     if args.post_dry_run:
         command.append("--dry-run")
     if args.post_limit is not None:
@@ -376,11 +394,13 @@ def main() -> int:
     else:
         extract_events(extraction_input_csv, args)
         cumulative_filtered_csv = merge_cumulative_outputs()
+    build_excluded_tweet_ids()
     event_cumulative_csv = build_event_cumulative(cumulative_filtered_csv)
     print("master update skipped: 劇団マスターと劇場マスターは既存ファイルを保持します")
-    if args.post_new_events:
-        post_new_events(event_cumulative_csv, args)
     build_schedule(event_cumulative_csv, runtime_paths["schedule_pages_json"])
+    schedule_csv = ROOT_DIR / "data" / "output" / "schedule_list.csv"
+    if args.post_new_events:
+        post_new_events(event_cumulative_csv, args, allowed_event_ids_csv=schedule_csv)
     build_master_pages_data(runtime_paths["master_pages_json"], runtime_paths["master_web_json"])
     if args.publish:
         publish_pages_data(args)

@@ -8,11 +8,19 @@ import re
 import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-import time
 from typing import Any
 from urllib.parse import urlparse
 from urllib import error, parse, request
 
+from github_models_client import (
+    DEFAULT_API_VERSION,
+    GitHubModelsContentPolicyViolation,
+    call_chat_completion,
+    filter_safe_image_urls,
+    get_github_models_token,
+    load_dotenv,
+)
+from atomic_io import atomic_open
 from x_tweet_context import (
     COMMON_EXPANSIONS,
     COMMON_MEDIA_FIELDS,
@@ -32,8 +40,6 @@ DEFAULT_FILTERED_JSONL = ROOT_DIR / "data" / "output" / "structured_events_filte
 DEFAULT_FILTERED_CSV = ROOT_DIR / "data" / "output" / "structured_events_filtered.csv"
 DEFAULT_ORGANIZATION_MASTER_CSV = ROOT_DIR / "data" / "output" / "organization_master.csv"
 DEFAULT_MODEL = "openai/gpt-4.1-mini"
-DEFAULT_API_VERSION = "2026-03-10"
-INFERENCE_URL = "https://models.github.ai/inference/chat/completions"
 LOOKUP_TWEET_URL = "https://api.x.com/2/tweets"
 NON_ALNUM_RE = re.compile(r"[^0-9a-zA-Z\u3040-\u30ff\u3400-\u9fff]+")
 
@@ -144,14 +150,6 @@ POSTING_RECOMMENDATION_PRIORITY = {
 }
 
 
-class GitHubModelsContentPolicyViolation(RuntimeError):
-    pass
-
-
-def get_github_models_token() -> str:
-    return os.getenv("GH_MODELS_TOKEN", "").strip() or os.getenv("GITHUB_TOKEN", "").strip()
-
-
 def get_x_bearer_token() -> str:
     return os.getenv("X_BEARER_TOKEN", "").strip()
 
@@ -227,18 +225,6 @@ def normalize_organization_name(
     if handle and handle in organization_handle_lookup:
         return organization_handle_lookup[handle]
     return None
-
-
-def load_dotenv(env_path: Path) -> None:
-    if not env_path.exists():
-        return
-
-    for raw_line in env_path.read_text(encoding="utf-8").splitlines():
-        line = raw_line.strip()
-        if not line or line.startswith("#") or "=" not in line:
-            continue
-        key, value = line.split("=", 1)
-        os.environ.setdefault(key.strip(), value.strip())
 
 
 def parse_args() -> argparse.Namespace:
@@ -372,11 +358,13 @@ def build_user_content(row: dict[str, str], include_images: bool = True) -> list
     if not include_images:
         return content
 
-    for index, image_url in enumerate(split_pipe_urls(str(row.get("media_image_urls") or ""))[:4], start=1):
+    media_urls = filter_safe_image_urls(split_pipe_urls(str(row.get("media_image_urls") or "")))
+    for index, image_url in enumerate(media_urls[:4], start=1):
         content.append({"type": "text", "text": f"current_tweet_attached_image_{index}"})
         content.append({"type": "image_url", "image_url": {"url": image_url}})
 
-    for index, image_url in enumerate(split_pipe_urls(str(row.get("quoted_media_image_urls") or ""))[:4], start=1):
+    quoted_urls = filter_safe_image_urls(split_pipe_urls(str(row.get("quoted_media_image_urls") or "")))
+    for index, image_url in enumerate(quoted_urls[:4], start=1):
         content.append({"type": "text", "text": f"quoted_tweet_attached_image_{index}"})
         content.append({"type": "image_url", "image_url": {"url": image_url}})
 
@@ -385,66 +373,24 @@ def build_user_content(row: dict[str, str], include_images: bool = True) -> list
 
 def row_has_input_images(row: dict[str, str]) -> bool:
     return bool(
-        split_pipe_urls(str(row.get("media_image_urls") or ""))
-        or split_pipe_urls(str(row.get("quoted_media_image_urls") or ""))
+        filter_safe_image_urls(split_pipe_urls(str(row.get("media_image_urls") or "")))
+        or filter_safe_image_urls(split_pipe_urls(str(row.get("quoted_media_image_urls") or "")))
     )
 
 
 def call_github_models(token: str, api_version: str, model: str, user_content: list[dict[str, Any]]) -> dict[str, Any]:
-    payload = {
-        "model": model,
-        "messages": [
+    return call_chat_completion(
+        token=token,
+        api_version=api_version,
+        model=model,
+        messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": user_content},
         ],
-        "temperature": 0,
-        "response_format": {"type": "json_object"},
-    }
-
-    last_error: Exception | None = None
-    for attempt in range(5):
-        api_request = request.Request(
-            INFERENCE_URL,
-            data=json.dumps(payload).encode("utf-8"),
-            headers={
-                "Accept": "application/vnd.github+json",
-                "Authorization": f"Bearer {token}",
-                "Content-Type": "application/json",
-                "X-GitHub-Api-Version": api_version,
-            },
-            method="POST",
-        )
-
-        try:
-            with request.urlopen(api_request, timeout=60) as response:
-                return json.loads(response.read().decode("utf-8"))
-        except error.HTTPError as exc:
-            details = exc.read().decode("utf-8", errors="replace")
-            if exc.code == 400 and "content_policy_violation" in details:
-                raise GitHubModelsContentPolicyViolation(details) from exc
-            if exc.code not in {429, 500, 502, 503, 504} or attempt == 4:
-                raise RuntimeError(f"GitHub Models API error {exc.code}: {details}") from exc
-            retry_after = exc.headers.get("Retry-After") if exc.headers else None
-            wait_seconds = float(retry_after) if retry_after else min(30, 2 * (attempt + 1))
-            print(f"retrying after API error {exc.code}: wait {wait_seconds:.0f}s", file=sys.stderr)
-            time.sleep(wait_seconds)
-            last_error = exc
-        except error.URLError as exc:
-            if attempt == 4:
-                raise RuntimeError(f"GitHub Models API へ接続できません: {exc}") from exc
-            wait_seconds = min(30, 2 * (attempt + 1))
-            print(f"retrying after connection error: wait {wait_seconds:.0f}s", file=sys.stderr)
-            time.sleep(wait_seconds)
-            last_error = exc
-        except TimeoutError as exc:
-            if attempt == 4:
-                raise RuntimeError(f"GitHub Models API の応答待ちがタイムアウトしました: {exc}") from exc
-            wait_seconds = min(30, 2 * (attempt + 1))
-            print(f"retrying after read timeout: wait {wait_seconds:.0f}s", file=sys.stderr)
-            time.sleep(wait_seconds)
-            last_error = exc
-
-    raise RuntimeError(f"GitHub Models API の呼び出しに失敗しました: {last_error}")
+        response_format={"type": "json_object"},
+        temperature=0,
+        retry_label="extract",
+    )
 
 
 def extract_json_content(response_payload: dict[str, Any]) -> dict[str, Any]:
@@ -463,8 +409,7 @@ def extract_json_content(response_payload: dict[str, Any]) -> dict[str, Any]:
 
 
 def write_jsonl(records: list[dict[str, Any]], output_path: Path) -> None:
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    with output_path.open("w", encoding="utf-8") as handle:
+    with atomic_open(output_path, "w", encoding="utf-8") as handle:
         for record in records:
             handle.write(json.dumps(record, ensure_ascii=False) + "\n")
 
@@ -510,7 +455,7 @@ def write_csv(records: list[dict[str, Any]], output_path: Path) -> None:
         "source_quoted_author_username",
         "source_quoted_media_image_urls",
     ]
-    with output_path.open("w", encoding="utf-8-sig", newline="") as handle:
+    with atomic_open(output_path, "w", encoding="utf-8-sig", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(records)
@@ -756,7 +701,10 @@ def main() -> int:
             for index, row in enumerate(rows, start=1)
         ]
         for future in futures:
-            structured_records.append(future.result())
+            try:
+                structured_records.append(future.result())
+            except Exception as exc:
+                print(f"extract failed, skipping row: {exc}", file=sys.stderr)
 
     filtered_records = [record for record in structured_records if not record.get("is_noise")]
 
