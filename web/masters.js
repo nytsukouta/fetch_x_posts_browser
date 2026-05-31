@@ -22,6 +22,7 @@ const elements = {
 async function main() {
   bindEvents();
   readInitialQuery();
+  enhanceAllSelects();
 
   try {
     const response = await fetch(DATA_URL, { cache: "no-store" });
@@ -90,6 +91,7 @@ function populateLocations(items) {
   if (locations.includes(currentValue)) {
     elements.locationFilter.value = currentValue;
   }
+  syncEnhancedSelects();
 }
 
 function applyFilters() {
@@ -205,6 +207,110 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
+}
+
+const enhancedSelects = [];
+
+function enhanceAllSelects() {
+  document.querySelectorAll("select").forEach((select) => enhanceSelect(select));
+}
+
+function enhanceSelect(select) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "custom-select";
+
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "custom-select-button";
+  button.setAttribute("aria-haspopup", "listbox");
+  button.setAttribute("aria-expanded", "false");
+
+  const label = document.createElement("span");
+  label.className = "custom-select-label";
+
+  const chevron = document.createElement("span");
+  chevron.className = "custom-select-chevron";
+  chevron.setAttribute("aria-hidden", "true");
+
+  button.append(label, chevron);
+
+  const panel = document.createElement("div");
+  panel.className = "custom-select-panel";
+  panel.setAttribute("role", "listbox");
+  panel.hidden = true;
+
+  select.parentNode.insertBefore(wrapper, select);
+  wrapper.append(select, button, panel);
+  select.classList.add("is-enhanced");
+
+  function sync() {
+    const opt = select.options[select.selectedIndex];
+    label.textContent = opt ? opt.textContent : "";
+    panel.innerHTML = "";
+    Array.from(select.options).forEach((option) => {
+      const item = document.createElement("button");
+      item.type = "button";
+      item.className = "custom-select-option";
+      item.setAttribute("role", "option");
+      item.textContent = option.textContent;
+      item.dataset.value = option.value;
+      if (option.value === select.value) {
+        item.classList.add("is-selected");
+        item.setAttribute("aria-selected", "true");
+      }
+      item.addEventListener("click", () => {
+        if (select.value !== option.value) {
+          select.value = option.value;
+          select.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+        close();
+        button.focus();
+      });
+      panel.append(item);
+    });
+  }
+
+  function open() {
+    sync();
+    panel.hidden = false;
+    button.setAttribute("aria-expanded", "true");
+    wrapper.classList.add("is-open");
+  }
+
+  function close() {
+    panel.hidden = true;
+    button.setAttribute("aria-expanded", "false");
+    wrapper.classList.remove("is-open");
+  }
+
+  button.addEventListener("click", (event) => {
+    event.stopPropagation();
+    if (panel.hidden) {
+      enhancedSelects.forEach((entry) => entry !== api && entry.close());
+      open();
+    } else {
+      close();
+    }
+  });
+
+  document.addEventListener("click", (event) => {
+    if (!wrapper.contains(event.target)) close();
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !panel.hidden) {
+      close();
+      button.focus();
+    }
+  });
+
+  const api = { sync, close };
+  enhancedSelects.push(api);
+  sync();
+}
+
+function syncEnhancedSelects() {
+  enhancedSelects.forEach((entry) => entry.sync());
 }
 
 main();
