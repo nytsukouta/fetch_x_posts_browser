@@ -212,13 +212,6 @@ function renderCards(items) {
       card.classList.add("is-highlighted");
     }
 
-    const eventChip = fragment.querySelector(".event-chip");
-    if (hasOfficialReference(item)) {
-      eventChip.textContent = buildReferenceLabel(item.official_reference_type);
-    } else {
-      eventChip.remove();
-    }
-
     const countdownChip = fragment.querySelector(".event-countdown");
     const countdown = buildCountdownLabel(item.performance_schedule);
     if (countdownChip) {
