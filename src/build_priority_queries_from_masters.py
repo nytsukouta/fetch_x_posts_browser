@@ -138,6 +138,10 @@ def build_queries(organization_rows: list[dict[str, str]], venue_rows: list[dict
             continue
         if not force_include and any(term in name for term in DEFAULT_EXCLUDE_TERMS):
             continue
+        official_handle = normalize_handle(row.get("official_x") or "")
+        if official_handle:
+            handle_query = f'from:{official_handle} {venue_context_suffix} {exclusion_suffix}'.strip()
+            add_query(queries, seen, f"劇場 {name} 公式X", handle_query)
         query = f'"{name}" {venue_context_suffix} {exclusion_suffix}'.strip()
         add_query(queries, seen, f"劇場 {name}", query)
 
