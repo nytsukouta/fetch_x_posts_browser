@@ -117,7 +117,7 @@ function populateFilters(items) {
   state.pendingLocation = "";
 
   const months = unique(items.map((item) => extractMonth(item.performance_schedule)).filter(Boolean));
-  const locations = unique(items.map((item) => item.normalized_location).filter(Boolean));
+  const locations = unique(items.map((item) => normalizeLocation(item.normalized_location)).filter(Boolean));
 
   elements.monthFilter.innerHTML = "<option value=\"\">すべて</option>";
   elements.locationFilter.innerHTML = "<option value=\"\">すべて</option>";
@@ -151,7 +151,7 @@ function applyFilters() {
       item.event_name,
       item.organization_name,
       item.venue_name,
-      item.normalized_location,
+      normalizeLocation(item.normalized_location),
     ]
       .filter(Boolean)
       .join(" ")
@@ -165,7 +165,7 @@ function applyFilters() {
       return false;
     }
 
-    if (location && item.normalized_location !== location) {
+    if (location && normalizeLocation(item.normalized_location) !== location) {
       return false;
     }
 
@@ -227,7 +227,7 @@ function renderCards(items) {
     fragment.querySelector(".event-title").textContent = item.event_name || item.organization_name || "名称未設定";
     fragment.querySelector(".organization-name").textContent = item.organization_name || "未設定";
     fragment.querySelector(".venue-name").textContent = item.venue_name || "未設定";
-    fragment.querySelector(".location-name").textContent = item.normalized_location || "未設定";
+    fragment.querySelector(".location-name").textContent = normalizeLocation(item.normalized_location) || "未設定";
 
     const primaryLink = fragment.querySelector(".primary-link");
     if (hasOfficialReference(item)) {
@@ -331,6 +331,25 @@ function createOption(value, label) {
 function extractMonth(schedule) {
   const match = String(schedule || "").match(/^(\d{4}-\d{2})/);
   return match ? match[1] : "";
+}
+
+function normalizeLocation(value) {
+  const tokens = String(value || "")
+    .split("/")
+    .map((token) => token.trim())
+    .filter(Boolean);
+  const cities = [];
+  const fallback = [];
+  for (const token of tokens) {
+    const match = token.match(/^(.+?[都道府県])(.+?[市区町村])/);
+    if (match) {
+      const key = `${match[1]}${match[2]}`;
+      if (!cities.includes(key)) cities.push(key);
+    } else if (!fallback.includes(token)) {
+      fallback.push(token);
+    }
+  }
+  return (cities.length ? cities : fallback).join(" / ");
 }
 
 function isUpcomingSchedule(schedule) {
