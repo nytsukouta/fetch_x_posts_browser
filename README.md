@@ -110,6 +110,7 @@
 - 同じ `tweet_url` は累積CSVに重複追加せず、新しい投稿だけを追加します
 - 累積データは `data/output/structured_events_cumulative.csv` と `data/output/structured_events_filtered_cumulative.csv` に保存されます
 - イベント単位の統合結果は `data/output/event_cumulative.csv` に保存されます
+- `config/event_aliases.csv` に `canonical_event_id,alias_event_id` を書き足すと、別 event として分かれてしまった同一公演を `event_cumulative.csv` 段階で手動マージできます。canonical 側の `event_id` を残し、tweet 一覧や venue などは値のある側を優先して統合します
 - 劇団マスターと劇場マスターはパイプラインでは自動更新せず、既存ファイルを参照します
 - 最後にイベント単位データから `data/output/schedule_list.csv` と `docs/data/schedule_list.json` を更新します
 - 抽出段階の JSONL は通常運用では保存せず、必要な時だけ `--debug-outputs` を付けて保存します
