@@ -238,12 +238,13 @@ jobs:
             if fieldname not in fieldnames:
               fieldnames.append(fieldname)
 
+          # seed は手動で正した baseline。cache/artifact 由来の current より優先させる。
           merged_by_tweet_url = {}
-          for row in seed_rows:
+          for row in current_rows:
             tweet_url = (row.get("tweet_url") or "").strip()
             if tweet_url:
               merged_by_tweet_url[tweet_url] = row
-          for row in current_rows:
+          for row in seed_rows:
             tweet_url = (row.get("tweet_url") or "").strip()
             if tweet_url:
               merged_by_tweet_url[tweet_url] = row
