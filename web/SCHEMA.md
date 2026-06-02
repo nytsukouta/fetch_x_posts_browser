@@ -79,4 +79,4 @@
 ## 互換性ポリシー
 
 - 既存フィールド名・型は破壊的変更を避ける
-- 追加は許容、削除は `docs/SCHEMA.md` と `web/app.js` / `docs/app.js` を同時更新
+- 追加は許容、削除は `web/SCHEMA.md` と `web/app.js` を同時更新

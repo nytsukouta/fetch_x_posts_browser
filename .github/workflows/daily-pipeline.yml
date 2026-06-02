@@ -22,7 +22,7 @@ on:
       - "config/**"
       - "data/output/organization_master.csv"
       - "data/output/venue_master.csv"
-      - "docs/**"
+      - "web/**"
       - "src/**"
 
 permissions:

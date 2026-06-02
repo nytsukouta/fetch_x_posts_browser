@@ -12,7 +12,6 @@ from atomic_io import atomic_open
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 DEFAULT_OUTPUT_DIR = ROOT_DIR / "data" / "output"
-DEFAULT_EXISTING_INPUT_CSV = ROOT_DIR / "data" / "output" / "x_recent_search_20260509_173241.csv"
 DEFAULT_QUERY_FILE = ROOT_DIR / "config" / "priority_queries.json"
 DEFAULT_PAGES_JSON = ROOT_DIR / "docs" / "data" / "schedule_list.json"
 DEFAULT_MASTER_PAGES_JSON = ROOT_DIR / "docs" / "data" / "master_data.json"
@@ -32,7 +31,7 @@ DEFAULT_PENDING_EXTRACT_INPUT_CSV = DEFAULT_TMP_DIR / "extract_pending.csv"
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run collection and data shaping pipeline in one command")
     parser.add_argument("--skip-collect", action="store_true", help="情報収集を飛ばして既存CSVから続行する")
-    parser.add_argument("--input-csv", default=str(DEFAULT_EXISTING_INPUT_CSV), help="--skip-collect 時に使う収集済みCSV")
+    parser.add_argument("--input-csv", default=None, help="--skip-collect 時に使う収集済みCSV（--skip-collect 指定時は必須）")
     parser.add_argument("--query-file", default=str(DEFAULT_QUERY_FILE), help="収集に使うクエリJSON")
     parser.add_argument("--output-dir", default=str(DEFAULT_OUTPUT_DIR), help="収集CSVの出力先")
     parser.add_argument("--max-results", type=int, default=None, help="各クエリの取得件数")
@@ -379,6 +378,8 @@ def main() -> int:
     runtime_paths = resolve_runtime_paths(args)
     rebuild_query_configuration(runtime_paths["query_file"])
     if args.skip_collect:
+        if not args.input_csv:
+            raise ValueError("--skip-collect を使う場合は --input-csv で収集済み CSV を指定してください。")
         input_csv = Path(args.input_csv)
         if not input_csv.exists():
             raise FileNotFoundError(f"input csv not found: {input_csv}")
