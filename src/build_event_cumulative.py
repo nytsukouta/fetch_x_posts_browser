@@ -19,6 +19,7 @@ from event_cumulative_core import (  # noqa: F401
     NON_ALNUM_RE,
     TITLE_SIMILARITY_THRESHOLD,
     VENUE_GROUP_ALIASES,
+    apply_event_aliases,
     bool_to_csv,
     build_event_key,
     build_event_records,
@@ -58,6 +59,7 @@ from event_cumulative_llm import (  # noqa: F401
 ROOT_DIR = Path(__file__).resolve().parent.parent
 DEFAULT_INPUT_CSV = ROOT_DIR / "data" / "output" / "structured_events_filtered_cumulative.csv"
 DEFAULT_OUTPUT_CSV = ROOT_DIR / "data" / "output" / "event_cumulative.csv"
+DEFAULT_ALIASES_CSV = ROOT_DIR / "config" / "event_aliases.csv"
 
 OUTPUT_FIELDS = [
     "event_id",
@@ -100,6 +102,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Build event-level cumulative records from filtered cumulative tweet records")
     parser.add_argument("--input-csv", default=str(DEFAULT_INPUT_CSV), help="filtered cumulative CSV のパス")
     parser.add_argument("--output-csv", default=str(DEFAULT_OUTPUT_CSV), help="イベント累積CSVの保存先")
+    parser.add_argument("--aliases-csv", default=str(DEFAULT_ALIASES_CSV), help="手動マージ対応表 CSV (canonical_event_id,alias_event_id)")
     parser.add_argument("--model", default=os.getenv("GITHUB_MODELS_MODEL", DEFAULT_MODEL), help="二次統合で使う GitHub Models のモデルID")
     return parser.parse_args()
 
@@ -107,6 +110,20 @@ def parse_args() -> argparse.Namespace:
 def load_rows(path: Path) -> list[dict[str, str]]:
     with path.open("r", encoding="utf-8-sig", newline="") as handle:
         return list(csv.DictReader(handle))
+
+
+def load_event_aliases(path: Path) -> list[tuple[str, str]]:
+    if not path.exists():
+        return []
+    pairs: list[tuple[str, str]] = []
+    with path.open("r", encoding="utf-8-sig", newline="") as handle:
+        reader = csv.DictReader(handle)
+        for row in reader:
+            canonical = (row.get("canonical_event_id") or "").strip()
+            alias = (row.get("alias_event_id") or "").strip()
+            if canonical and alias:
+                pairs.append((canonical, alias))
+    return pairs
 
 
 def write_csv(records: list[dict[str, Any]], output_path: Path) -> None:
@@ -122,10 +139,14 @@ def main() -> int:
     rows = load_rows(Path(args.input_csv))
     records = build_event_records(rows)
     records = secondary_dedupe(records, args.model)
+    alias_pairs = load_event_aliases(Path(args.aliases_csv))
+    records = apply_event_aliases(records, alias_pairs)
     write_csv(records, Path(args.output_csv))
 
     print(f"saved event cumulative: {args.output_csv}")
     print(f"rows: {len(records)}")
+    if alias_pairs:
+        print(f"applied event aliases: {len(alias_pairs)} pair(s)")
     return 0
 
 

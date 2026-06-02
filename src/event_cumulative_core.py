@@ -260,6 +260,59 @@ def choose_canonical_name(records: list[dict[str, Any]], suggested_name: str) ->
     return max(candidates, key=len)
 
 
+def apply_event_aliases(
+    records: list[dict[str, Any]],
+    alias_pairs: list[tuple[str, str]],
+) -> list[dict[str, Any]]:
+    """canonical_event_id ← alias_event_id の対応で重複公演をマージする。
+
+    canonical 側の event_id をそのまま残し、alias 側の record を捨てて
+    マージ済み 1 行に置き換える。両 id が現存する場合のみ動く。
+    """
+    if not alias_pairs:
+        return records
+
+    by_id: dict[str, dict[str, Any]] = {}
+    for record in records:
+        event_id = str(record.get("event_id") or "").strip()
+        if event_id:
+            by_id[event_id] = record
+
+    canonical_to_aliases: dict[str, list[str]] = {}
+    for canonical, alias in alias_pairs:
+        canonical = canonical.strip()
+        alias = alias.strip()
+        if not canonical or not alias or canonical == alias:
+            continue
+        if canonical not in by_id or alias not in by_id:
+            continue
+        canonical_to_aliases.setdefault(canonical, []).append(alias)
+
+    if not canonical_to_aliases:
+        return records
+
+    dropped_ids: set[str] = set()
+    for aliases in canonical_to_aliases.values():
+        dropped_ids.update(aliases)
+
+    new_records: list[dict[str, Any]] = []
+    for record in records:
+        event_id = str(record.get("event_id") or "").strip()
+        if event_id in dropped_ids:
+            continue
+        aliases = canonical_to_aliases.get(event_id)
+        if not aliases:
+            new_records.append(record)
+            continue
+        group = [record] + [by_id[alias_id] for alias_id in aliases]
+        canonical_name = str(record.get("normalized_event_name") or record.get("event_name") or "")
+        merged = merge_event_group(group, canonical_name)
+        merged["event_id"] = event_id
+        merged["event_key"] = build_event_key(merged)
+        new_records.append(merged)
+    return new_records
+
+
 def merge_event_group(records: list[dict[str, Any]], canonical_name: str) -> dict[str, Any]:
     best_record = max(records, key=row_quality)
     merged = dict(best_record)
