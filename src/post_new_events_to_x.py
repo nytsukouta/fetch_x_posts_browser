@@ -211,17 +211,31 @@ def truncate_text(value: str, max_length: int) -> str:
 def build_post_text(row: dict[str, str], hashtag: str, header_label: str, site_url: str) -> str:
     header = (header_label or DEFAULT_HEADER).strip() or DEFAULT_HEADER
     event_url = build_schedule_page_url(site_url, row)
-    lines = [header]
-    if event_url:
-        lines.extend(["詳しくはこちら", event_url])
-
+    event_name = (row.get("event_name") or "").strip()
     hashtag = hashtag.strip().lstrip("#")
-    if hashtag:
-        lines.append(f"#{hashtag}")
 
-    text = "\n".join(lines)
+    def assemble(name: str) -> str:
+        lines = [header]
+        if name:
+            lines.append(name)
+        if event_url:
+            lines.extend(["詳しくはこちら", event_url])
+        if hashtag:
+            lines.append(f"#{hashtag}")
+        return "\n".join(lines)
+
+    text = assemble(event_name)
     if count_tweet_length(text) <= MAX_TWEET_LENGTH:
         return text
+
+    # event_name が長すぎる場合は他の固定要素ぶんを確保して切り詰める
+    fixed_length = count_tweet_length(assemble(""))
+    remaining = MAX_TWEET_LENGTH - fixed_length - 1  # 改行ぶん
+    if event_name and remaining > 0:
+        truncated = truncate_text(event_name, remaining)
+        text = assemble(truncated)
+        if count_tweet_length(text) <= MAX_TWEET_LENGTH:
+            return text
 
     fixed_lines = [header]
     if hashtag:
