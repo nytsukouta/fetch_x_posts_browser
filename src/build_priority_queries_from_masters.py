@@ -25,7 +25,7 @@ DEFAULT_EXCLUDE_TERMS = [
     "アイドル",
     "ダンス",
 ]
-THEATER_ORGANIZATION_CONTEXT_TERMS = ["演劇", "舞台", "公演", "上演", "朗読劇"]
+THEATER_ORGANIZATION_CONTEXT_TERMS = ["演劇", "舞台", "公演", "上演", "朗読劇", "芝居", "小劇場", "稽古", "戯曲"]
 THEATER_VENUE_CONTEXT_TERMS = ["演劇", "劇団", "上演", "朗読劇", "歌舞伎", "芝居"]
 THEATER_ORGANIZATION_INCLUDE_KEYWORDS = ["劇団", "演劇", "朗読", "鑑賞会", "表現集団", "theater", "show"]
 THEATER_ORGANIZATION_EXCLUDE_KEYWORDS = ["アイドル", "アンサンブル", "オーケストラ", "楽団", "吹奏楽", "ダンス"]
@@ -38,7 +38,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--organization-master-csv", default=str(DEFAULT_ORGANIZATION_MASTER_CSV))
     parser.add_argument("--venue-master-csv", default=str(DEFAULT_VENUE_MASTER_CSV))
     parser.add_argument("--output-json", default=str(DEFAULT_OUTPUT_JSON))
-    parser.add_argument("--max-results-per-query", type=int, default=30)
+    parser.add_argument("--max-results-per-query", type=int, default=10)
     return parser.parse_args()
 
 
@@ -53,7 +53,8 @@ def load_rows(path: Path) -> list[dict[str, str]]:
 
 
 def build_exclusion_suffix() -> str:
-    return " ".join(f'-"{term}"' for term in DEFAULT_EXCLUDE_TERMS if term)
+    terms = " ".join(f'-"{term}"' for term in DEFAULT_EXCLUDE_TERMS if term)
+    return f"{terms} -is:retweet".strip()
 
 
 def build_context_suffix(terms: list[str]) -> str:
@@ -120,6 +121,8 @@ def build_queries(organization_rows: list[dict[str, str]], venue_rows: list[dict
 
     for row in organization_rows:
         name = (row.get("organization_name_normalized") or row.get("organization_name") or "").strip()
+        if is_truthy(row.get("query_exclude") or ""):
+            continue
         force_include = is_truthy(row.get("query_include") or row.get("query_enabled") or "")
         if not name or (not force_include and not is_theater_organization(name)):
             continue
@@ -127,12 +130,14 @@ def build_queries(organization_rows: list[dict[str, str]], venue_rows: list[dict
         if official_handle:
             handle_query = f'from:{official_handle} {organization_context_suffix} {exclusion_suffix}'.strip()
             add_query(queries, seen, f"劇団 {name} 公式X", handle_query)
-        if not official_handle or force_include:
+        else:
             query = f'"{name}" {organization_context_suffix} {exclusion_suffix}'.strip()
             add_query(queries, seen, f"劇団 {name}", query)
 
     for row in venue_rows:
         name = (row.get("venue_name_normalized") or row.get("venue_name") or "").strip()
+        if is_truthy(row.get("query_exclude") or ""):
+            continue
         force_include = is_truthy(row.get("query_include") or row.get("query_enabled") or "")
         if not name or (not force_include and not is_theater_venue(name)):
             continue
@@ -142,8 +147,9 @@ def build_queries(organization_rows: list[dict[str, str]], venue_rows: list[dict
         if official_handle:
             handle_query = f'from:{official_handle} {venue_context_suffix} {exclusion_suffix}'.strip()
             add_query(queries, seen, f"劇場 {name} 公式X", handle_query)
-        query = f'"{name}" {venue_context_suffix} {exclusion_suffix}'.strip()
-        add_query(queries, seen, f"劇場 {name}", query)
+        else:
+            query = f'"{name}" {venue_context_suffix} {exclusion_suffix}'.strip()
+            add_query(queries, seen, f"劇場 {name}", query)
 
     return queries
 

@@ -27,6 +27,7 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 DEFAULT_QUERY_FILE = ROOT_DIR / "config" / "priority_queries.json"
 DEFAULT_OUTPUT_DIR = ROOT_DIR / "data" / "output"
 DEFAULT_EXCLUDED_IDS_CSV = ROOT_DIR / "data" / "output" / "excluded_tweet_ids.csv"
+DEFAULT_STATE_FILE = ROOT_DIR / "data" / "output" / "_state" / "last_seen_tweet_ids.json"
 DEFAULT_ENV_FILE = ROOT_DIR / ".env"
 SEARCH_URL = "https://api.x.com/2/tweets/search/recent"
 
@@ -41,7 +42,12 @@ def load_queries(query_file: Path) -> tuple[list[dict[str, str]], int]:
     return queries, max_results
 
 
-def fetch_recent_tweets(bearer_token: str, query: str, max_results: int) -> dict[str, Any]:
+def fetch_recent_tweets(
+    bearer_token: str,
+    query: str,
+    max_results: int,
+    since_id: str | None = None,
+) -> dict[str, Any]:
     params = {
         "query": query,
         "max_results": str(max(10, min(max_results, 100))),
@@ -50,6 +56,8 @@ def fetch_recent_tweets(bearer_token: str, query: str, max_results: int) -> dict
         "user.fields": COMMON_USER_FIELDS,
         "media.fields": COMMON_MEDIA_FIELDS,
     }
+    if since_id:
+        params["since_id"] = since_id
     url = f"{SEARCH_URL}?{parse.urlencode(params)}"
     api_request = request.Request(
         url,
@@ -148,6 +156,38 @@ def dedupe_rows(rows: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], int]:
     return [*deduped_by_key.values(), *unique_rows_without_key], duplicate_count
 
 
+def load_since_id_state(path: Path) -> dict[str, str]:
+    if not path.exists():
+        return {}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return {}
+    if not isinstance(data, dict):
+        return {}
+    return {str(key): str(value) for key, value in data.items() if value}
+
+
+def save_since_id_state(path: Path, state: dict[str, str]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = json.dumps(state, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+    path.write_text(payload, encoding="utf-8")
+
+
+def newest_tweet_id(payload: dict[str, Any]) -> str:
+    meta_newest = str((payload.get("meta") or {}).get("newest_id") or "").strip()
+    if meta_newest:
+        return meta_newest
+    best = ""
+    for tweet in payload.get("data") or []:
+        tid = str(tweet.get("id") or "").strip()
+        if not tid:
+            continue
+        if not best or len(tid) > len(best) or (len(tid) == len(best) and tid > best):
+            best = tid
+    return best
+
+
 def load_excluded_tweet_keys(path: Path) -> set[str]:
     if not path.exists():
         return set()
@@ -238,6 +278,16 @@ def parse_args() -> argparse.Namespace:
         default=str(DEFAULT_EXCLUDED_IDS_CSV),
         help="除外すべき tweet_id 一覧 CSV (tweet_id / tweet_url 列)。取得結果から事前に除外して保存される CSV を小さく保つ",
     )
+    parser.add_argument(
+        "--state-file",
+        default=str(DEFAULT_STATE_FILE),
+        help="クエリごとの最新取得 tweet_id を保持する JSON。次回以降 since_id として利用される",
+    )
+    parser.add_argument(
+        "--ignore-state",
+        action="store_true",
+        help="since_id state を無視して全件取得する（初回・強制再取得用）",
+    )
     return parser.parse_args()
 
 
@@ -252,17 +302,27 @@ def main() -> int:
 
     query_file = Path(args.query_file)
     output_dir = Path(args.output_dir)
+    state_file = Path(args.state_file)
     queries, configured_max_results = load_queries(query_file)
     max_results = args.max_results or configured_max_results
+
+    since_state = {} if args.ignore_state else load_since_id_state(state_file)
+    next_state = dict(since_state)
 
     all_rows: list[dict[str, Any]] = []
     try:
         for item in queries:
             query_label = item["label"]
             query_text = item["query"]
-            print(f"searching: {query_label}")
-            payload = fetch_recent_tweets(bearer_token, query_text, max_results)
-            all_rows.extend(flatten_rows(query_label, query_text, payload))
+            since_id = since_state.get(query_label) or None
+            suffix = f" (since_id={since_id})" if since_id else ""
+            print(f"searching: {query_label}{suffix}")
+            payload = fetch_recent_tweets(bearer_token, query_text, max_results, since_id=since_id)
+            rows = flatten_rows(query_label, query_text, payload)
+            all_rows.extend(rows)
+            latest_id = newest_tweet_id(payload)
+            if latest_id:
+                next_state[query_label] = latest_id
     except RuntimeError as exc:
         print(str(exc), file=sys.stderr)
         if "client-not-enrolled" in str(exc):
@@ -272,8 +332,11 @@ def main() -> int:
             )
         return 1
 
+    if next_state != since_state:
+        save_since_id_state(state_file, next_state)
+
     if not all_rows:
-        print("投稿を取得できませんでした。クエリ条件かAPI権限を確認してください。")
+        print("新規投稿はありませんでした。")
         return 0
 
     deduped_rows, duplicate_count = dedupe_rows(all_rows)
