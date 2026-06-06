@@ -6,3 +6,5 @@ data/output/*
 !data/output/venue_master.csv
 data/session/
 docs/
+.vscode/mcp.json
+.playwright-mcp/
