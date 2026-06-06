@@ -705,3 +705,343 @@ body::before {
     color: var(--text-sub);
   }
 }
+
+/* === FullCalendar container === */
+.calendar-root {
+  margin-top: 8px;
+  padding: 18px;
+  border-radius: 24px;
+  border: 1px solid var(--card-border);
+  background: var(--card-bg);
+  box-shadow: var(--shadow);
+  --fc-border-color: rgba(34, 57, 74, 0.08);
+  --fc-page-bg-color: transparent;
+  --fc-neutral-bg-color: rgba(255, 255, 255, 0.4);
+  --fc-today-bg-color: rgba(164, 59, 47, 0.08);
+  --fc-button-bg-color: var(--deep);
+  --fc-button-border-color: var(--deep);
+  --fc-button-hover-bg-color: var(--accent);
+  --fc-button-hover-border-color: var(--accent);
+  --fc-button-active-bg-color: var(--accent);
+  --fc-button-active-border-color: var(--accent);
+  --fc-list-event-hover-bg-color: rgba(164, 59, 47, 0.08);
+}
+
+.calendar-root .fc {
+  font-family: inherit;
+  color: var(--text-main);
+}
+
+.calendar-root .fc .fc-toolbar.fc-header-toolbar {
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.calendar-root .fc .fc-toolbar-title {
+  font-family: "Yu Mincho", "Hiragino Mincho ProN", serif;
+  font-size: 1.4rem;
+  color: var(--deep);
+}
+
+.calendar-root .fc .fc-button {
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  text-transform: none;
+  box-shadow: none;
+}
+
+.calendar-root .fc .fc-button:focus {
+  box-shadow: 0 0 0 4px rgba(164, 59, 47, 0.18);
+}
+
+.calendar-root .fc .fc-button-group > .fc-button {
+  border-radius: 0;
+}
+
+.calendar-root .fc .fc-button-group > .fc-button:first-child {
+  border-top-left-radius: 999px;
+  border-bottom-left-radius: 999px;
+}
+
+.calendar-root .fc .fc-button-group > .fc-button:last-child {
+  border-top-right-radius: 999px;
+  border-bottom-right-radius: 999px;
+}
+
+.calendar-root .fc-daygrid-day-number,
+.calendar-root .fc-col-header-cell-cushion {
+  color: var(--text-sub);
+  text-decoration: none;
+}
+
+.calendar-root .fc-day-today .fc-daygrid-day-number {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.calendar-root .event-pill {
+  border: none;
+  border-radius: 8px;
+  padding: 2px 6px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  background: var(--deep);
+  color: #fff;
+}
+
+.calendar-root .event-pill .fc-event-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.calendar-root .event-pill--live {
+  background: var(--accent);
+  color: #fff;
+}
+
+.calendar-root .event-pill--soon {
+  background: #d68431;
+  color: #fff;
+}
+
+.calendar-root .event-pill--near {
+  background: #3a6ea5;
+  color: #fff;
+}
+
+.calendar-root .event-pill--ended {
+  background: rgba(120, 120, 120, 0.6);
+  color: #fff;
+}
+
+.calendar-root .fc-list-event.event-pill {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+}
+
+.calendar-root .fc-list-event-dot {
+  border-color: var(--deep);
+}
+
+.calendar-root .event-pill--live .fc-list-event-dot {
+  border-color: var(--accent);
+}
+
+.calendar-root .event-pill--soon .fc-list-event-dot {
+  border-color: #d68431;
+}
+
+.calendar-root .event-pill--near .fc-list-event-dot {
+  border-color: #3a6ea5;
+}
+
+.calendar-root .event-pill--ended .fc-list-event-dot {
+  border-color: rgba(120, 120, 120, 0.7);
+}
+
+.calendar-root .fc-list-day-cushion {
+  background: rgba(32, 57, 71, 0.06);
+}
+
+.calendar-root .fc-list-empty {
+  color: var(--text-sub);
+}
+
+/* All events are all-day; hide the empty time column. */
+.calendar-root .fc-list-event-time,
+.calendar-root .fc-list-table > colgroup > col:first-child,
+.calendar-root .fc-list-table thead .fc-list-table th:first-child {
+  display: none;
+}
+
+/* === Event detail dialog === */
+.event-dialog {
+  width: min(560px, calc(100vw - 32px));
+  max-height: calc(100vh - 48px);
+  padding: 0;
+  border: 1px solid var(--card-border);
+  border-radius: 24px;
+  background: var(--card-bg);
+  color: var(--text-main);
+  box-shadow: var(--shadow);
+}
+
+.event-dialog::backdrop {
+  background: rgba(15, 22, 30, 0.45);
+  backdrop-filter: blur(2px);
+}
+
+.event-dialog-inner {
+  position: relative;
+  padding: 24px 24px 22px;
+  margin: 0;
+}
+
+.event-dialog-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(32, 57, 71, 0.1);
+  color: var(--deep);
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.event-dialog-close:hover {
+  background: rgba(32, 57, 71, 0.18);
+}
+
+.event-dialog-body {
+  display: grid;
+  gap: 16px;
+}
+
+.event-dialog-countdown {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 11px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: rgba(32, 57, 71, 0.1);
+  color: var(--deep);
+}
+
+.event-dialog-countdown.is-live { background: rgba(164, 59, 47, 0.18); color: var(--accent); }
+.event-dialog-countdown.is-soon { background: rgba(214, 132, 49, 0.22); color: #8a4a0c; }
+.event-dialog-countdown.is-near { background: rgba(58, 110, 165, 0.18); color: #1f4877; }
+.event-dialog-countdown.is-ended { background: rgba(120, 120, 120, 0.18); color: #4f5860; }
+
+.event-dialog-date {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-sub);
+}
+
+.event-dialog-title {
+  margin: 0;
+  font-size: 1.3rem;
+  line-height: 1.5;
+  padding-right: 36px;
+}
+
+.event-dialog-details {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+}
+
+.event-dialog-details > div {
+  display: grid;
+  gap: 4px;
+}
+
+.event-dialog-details dt {
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-sub);
+}
+
+.event-dialog-details dd {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.event-dialog-links {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.event-dialog-links a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 16px;
+  border-radius: 999px;
+  text-decoration: none;
+  transition: transform 180ms ease, background-color 180ms ease;
+}
+
+.event-dialog-links a:hover {
+  transform: translateY(-1px);
+}
+
+.event-dialog-links a[hidden] {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .calendar-root {
+    padding: 12px;
+    border-radius: 18px;
+  }
+
+  .calendar-root .fc .fc-toolbar-title {
+    font-size: 1.15rem;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .calendar-root {
+    --fc-border-color: rgba(255, 255, 255, 0.08);
+    --fc-neutral-bg-color: rgba(255, 255, 255, 0.04);
+    --fc-today-bg-color: rgba(239, 139, 124, 0.12);
+    --fc-button-bg-color: rgba(255, 255, 255, 0.1);
+    --fc-button-border-color: rgba(255, 255, 255, 0.12);
+    --fc-button-hover-bg-color: var(--accent);
+    --fc-button-hover-border-color: var(--accent);
+    --fc-button-active-bg-color: var(--accent);
+    --fc-button-active-border-color: var(--accent);
+    --fc-list-event-hover-bg-color: rgba(239, 139, 124, 0.12);
+  }
+
+  .calendar-root .fc {
+    color: var(--text-main);
+  }
+
+  .calendar-root .fc-day-today .fc-daygrid-day-number {
+    color: var(--accent);
+  }
+
+  .calendar-root .event-pill {
+    background: var(--accent);
+    color: #1a1d24;
+  }
+
+  .calendar-root .event-pill--live { background: var(--accent); color: #1a1d24; }
+  .calendar-root .event-pill--soon { background: #f0b770; color: #1a1d24; }
+  .calendar-root .event-pill--near { background: #9cc1ec; color: #1a1d24; }
+  .calendar-root .event-pill--ended { background: rgba(255, 255, 255, 0.18); color: var(--text-main); }
+
+  .calendar-root .fc-list-day-cushion {
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .event-dialog-close {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-main);
+  }
+  .event-dialog-close:hover {
+    background: rgba(255, 255, 255, 0.18);
+  }
+  .event-dialog-countdown {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-main);
+  }
+  .event-dialog-countdown.is-live { background: rgba(239, 139, 124, 0.24); color: var(--accent); }
+  .event-dialog-countdown.is-soon { background: rgba(255, 178, 102, 0.22); color: #f0b770; }
+  .event-dialog-countdown.is-near { background: rgba(120, 170, 230, 0.2); color: #9cc1ec; }
+  .event-dialog-countdown.is-ended { background: rgba(255, 255, 255, 0.08); color: var(--text-sub); }
+}

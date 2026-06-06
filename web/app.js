@@ -2,32 +2,34 @@ const DATA_URL = "../data/output/schedule_list.json";
 
 const URL_PARAM_KEYS = {
   search: "q",
-  month: "month",
   location: "loc",
   scope: "scope",
+  view: "view",
   event: "event",
 };
 
+const VIEW_STORAGE_KEY = "schedule.view";
+const VALID_VIEWS = new Set(["dayGridMonth", "listMonth"]);
+
 const state = {
   allItems: [],
-  items: [],
-  filteredItems: [],
+  itemById: new Map(),
   initialEventId: "",
-  pendingMonth: "",
+  initialView: "",
   pendingLocation: "",
+  calendar: null,
 };
 
 const elements = {
   countValue: document.getElementById("countValue"),
   generatedAt: document.getElementById("generatedAt"),
   dateScopeFilter: document.getElementById("dateScopeFilter"),
-  monthFilter: document.getElementById("monthFilter"),
   locationFilter: document.getElementById("locationFilter"),
   searchInput: document.getElementById("searchInput"),
   resultSummary: document.getElementById("resultSummary"),
   clearFiltersButton: document.getElementById("clearFiltersButton"),
-  scheduleGrid: document.getElementById("scheduleGrid"),
-  cardTemplate: document.getElementById("cardTemplate"),
+  calendarRoot: document.getElementById("calendarRoot"),
+  dialog: document.getElementById("eventDialog"),
 };
 
 async function main() {
@@ -43,46 +45,75 @@ async function main() {
 
     const payload = await response.json();
     state.allItems = Array.isArray(payload.items) ? payload.items : [];
+    state.itemById.clear();
+    for (const item of state.allItems) {
+      if (item.event_id) state.itemById.set(item.event_id, item);
+    }
     elements.generatedAt.textContent = formatGeneratedAt(payload.generated_at);
 
     if (state.initialEventId) {
-      const target = state.allItems.find((item) => (item.event_id || "") === state.initialEventId);
+      const target = state.itemById.get(state.initialEventId);
       if (target && elements.dateScopeFilter.value === "upcoming" && !isUpcomingSchedule(target.performance_schedule)) {
         elements.dateScopeFilter.value = "all";
       }
     }
 
+    populateLocations(state.allItems);
+    initCalendar();
     applyFilters();
     focusInitialEvent();
   } catch (error) {
     elements.resultSummary.textContent = "データを読み込めませんでした。HTTP サーバー経由で開いているか確認してください。";
-    elements.scheduleGrid.innerHTML = `<section class="empty-state"><p>${escapeHtml(String(error))}</p></section>`;
+    elements.calendarRoot.innerHTML = `<section class="empty-state"><p>${escapeHtml(String(error))}</p></section>`;
   }
 }
 
 function bindEvents() {
   elements.searchInput.addEventListener("input", applyFilters);
   elements.dateScopeFilter.addEventListener("change", applyFilters);
-  elements.monthFilter.addEventListener("change", applyFilters);
   elements.locationFilter.addEventListener("change", applyFilters);
   if (elements.clearFiltersButton) {
     elements.clearFiltersButton.addEventListener("click", clearFilters);
+  }
+  if (elements.dialog) {
+    elements.dialog.addEventListener("close", () => {
+      state.initialEventId = "";
+      writeFiltersToUrl();
+    });
+    elements.dialog.addEventListener("click", (event) => {
+      if (event.target === elements.dialog) {
+        elements.dialog.close();
+      }
+    });
   }
 }
 
 function restoreFiltersFromUrl() {
   const params = new URLSearchParams(window.location.search);
   const search = params.get(URL_PARAM_KEYS.search);
-  const month = params.get(URL_PARAM_KEYS.month);
   const location = params.get(URL_PARAM_KEYS.location);
   const scope = params.get(URL_PARAM_KEYS.scope);
+  const view = params.get(URL_PARAM_KEYS.view);
   const eventId = params.get(URL_PARAM_KEYS.event);
 
   if (search) elements.searchInput.value = search;
   if (scope === "all" || scope === "upcoming") elements.dateScopeFilter.value = scope;
-  state.pendingMonth = month || "";
   state.pendingLocation = location || "";
   state.initialEventId = (eventId || "").trim();
+
+  let resolvedView = "";
+  if (view && VALID_VIEWS.has(view)) {
+    resolvedView = view;
+  } else {
+    try {
+      const stored = window.localStorage.getItem(VIEW_STORAGE_KEY);
+      if (stored && VALID_VIEWS.has(stored)) resolvedView = stored;
+    } catch (_e) { /* ignore */ }
+  }
+  if (!resolvedView) {
+    resolvedView = isMobileViewport() ? "listMonth" : "dayGridMonth";
+  }
+  state.initialView = resolvedView;
 }
 
 function writeFiltersToUrl() {
@@ -92,8 +123,13 @@ function writeFiltersToUrl() {
   if (elements.dateScopeFilter.value && elements.dateScopeFilter.value !== "upcoming") {
     params.set(URL_PARAM_KEYS.scope, elements.dateScopeFilter.value);
   }
-  if (elements.monthFilter.value) params.set(URL_PARAM_KEYS.month, elements.monthFilter.value);
   if (elements.locationFilter.value) params.set(URL_PARAM_KEYS.location, elements.locationFilter.value);
+  if (state.calendar) {
+    const currentView = state.calendar.view ? state.calendar.view.type : "";
+    if (currentView && currentView !== "dayGridMonth") {
+      params.set(URL_PARAM_KEYS.view, currentView);
+    }
+  }
   if (state.initialEventId) params.set(URL_PARAM_KEYS.event, state.initialEventId);
 
   const query = params.toString();
@@ -104,79 +140,67 @@ function writeFiltersToUrl() {
 function clearFilters() {
   elements.searchInput.value = "";
   elements.dateScopeFilter.value = "upcoming";
-  elements.monthFilter.value = "";
   elements.locationFilter.value = "";
   state.initialEventId = "";
   applyFilters();
 }
 
-function populateFilters(items) {
-  const selectedMonth = elements.monthFilter.value || state.pendingMonth || "";
+function populateLocations(items) {
   const selectedLocation = elements.locationFilter.value || state.pendingLocation || "";
-  state.pendingMonth = "";
   state.pendingLocation = "";
 
-  const months = unique(items.map((item) => extractMonth(item.performance_schedule)).filter(Boolean));
   const locations = unique(items.map((item) => normalizeLocation(item.normalized_location)).filter(Boolean));
-
-  elements.monthFilter.innerHTML = "<option value=\"\">すべて</option>";
   elements.locationFilter.innerHTML = "<option value=\"\">すべて</option>";
-
-  for (const month of months) {
-    elements.monthFilter.append(createOption(month, month));
-  }
-
   for (const location of locations) {
     elements.locationFilter.append(createOption(location, location));
-  }
-
-  if (selectedMonth && months.includes(selectedMonth)) {
-    elements.monthFilter.value = selectedMonth;
   }
   if (selectedLocation && locations.includes(selectedLocation)) {
     elements.locationFilter.value = selectedLocation;
   }
 }
 
-function applyFilters() {
-  state.items = getScopedItems();
-  populateFilters(state.items);
-
+function getFilteredItems() {
   const keyword = elements.searchInput.value.trim().toLowerCase();
-  const month = elements.monthFilter.value;
   const location = elements.locationFilter.value;
+  const scope = elements.dateScopeFilter.value;
 
-  state.filteredItems = state.items.filter((item) => {
-    const haystack = [
-      item.event_name,
-      item.organization_name,
-      item.venue_name,
-      normalizeLocation(item.normalized_location),
-    ]
-      .filter(Boolean)
-      .join(" ")
-      .toLowerCase();
-
-    if (keyword && !haystack.includes(keyword)) {
+  return state.allItems.filter((item) => {
+    if (scope === "upcoming" && !isUpcomingSchedule(item.performance_schedule)) {
       return false;
     }
-
-    if (month && extractMonth(item.performance_schedule) !== month) {
-      return false;
-    }
-
     if (location && normalizeLocation(item.normalized_location) !== location) {
       return false;
     }
-
+    if (keyword) {
+      const haystack = [
+        item.event_name,
+        item.organization_name,
+        item.venue_name,
+        normalizeLocation(item.normalized_location),
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      if (!haystack.includes(keyword)) return false;
+    }
     return true;
   });
+}
 
-  renderCards(state.filteredItems);
-  elements.countValue.textContent = String(state.items.length);
+function applyFilters() {
+  const items = getFilteredItems();
+  const totalScope = state.allItems.filter((item) =>
+    elements.dateScopeFilter.value === "upcoming" ? isUpcomingSchedule(item.performance_schedule) : true,
+  );
 
-  const hasFilter = Boolean(keyword || month || location || elements.dateScopeFilter.value !== "upcoming");
-  elements.resultSummary.textContent = `${state.filteredItems.length} 件を表示中 / 全 ${state.items.length} 件`;
+  refreshCalendarEvents(items);
+
+  elements.countValue.textContent = String(totalScope.length);
+
+  const keyword = elements.searchInput.value.trim();
+  const location = elements.locationFilter.value;
+  const hasFilter = Boolean(keyword || location || elements.dateScopeFilter.value !== "upcoming");
+  elements.resultSummary.textContent = `${items.length} 件を表示中 / 全 ${totalScope.length} 件`;
   if (elements.clearFiltersButton) {
     elements.clearFiltersButton.hidden = !hasFilter;
   }
@@ -185,90 +209,190 @@ function applyFilters() {
   writeFiltersToUrl();
 }
 
-function getScopedItems() {
-  if (elements.dateScopeFilter.value === "all") {
-    return [...state.allItems];
-  }
-  return state.allItems.filter((item) => isUpcomingSchedule(item.performance_schedule));
-}
-
-function renderCards(items) {
-  elements.scheduleGrid.innerHTML = "";
-
-  if (!items.length) {
-    elements.scheduleGrid.innerHTML = '<section class="empty-state"><p>条件に合う公演はありません。</p></section>';
+function initCalendar() {
+  if (!window.FullCalendar) {
+    elements.calendarRoot.innerHTML = '<section class="empty-state"><p>カレンダーライブラリの読み込みに失敗しました。</p></section>';
     return;
   }
 
-  items.forEach((item, index) => {
-    const fragment = elements.cardTemplate.content.cloneNode(true);
-    const card = fragment.querySelector(".event-card");
-    card.style.animationDelay = `${Math.min(index * 55, 420)}ms`;
-    if (item.event_id) {
-      card.dataset.eventId = item.event_id;
-      card.id = `event-${item.event_id}`;
-    }
-    if (state.initialEventId && item.event_id === state.initialEventId) {
-      card.classList.add("is-highlighted");
-    }
-
-    const countdownChip = fragment.querySelector(".event-countdown");
-    const countdown = buildCountdownLabel(item.performance_schedule);
-    if (countdownChip) {
-      if (countdown) {
-        countdownChip.textContent = countdown.label;
-        countdownChip.classList.add(`is-${countdown.tone}`);
-      } else {
-        countdownChip.remove();
-      }
-    }
-
-    fragment.querySelector(".event-date").textContent = item.performance_schedule || "日程未設定";
-    fragment.querySelector(".event-title").textContent = item.event_name || item.organization_name || "名称未設定";
-    fragment.querySelector(".organization-name").textContent = item.organization_name || "未設定";
-    fragment.querySelector(".venue-name").textContent = item.venue_name || "未設定";
-    fragment.querySelector(".location-name").textContent = normalizeLocation(item.normalized_location) || "未設定";
-
-    const primaryLink = fragment.querySelector(".primary-link");
-    if (hasOfficialReference(item)) {
-      primaryLink.href = item.official_reference_url;
-      primaryLink.textContent = buildReferenceCta(item.official_reference_type);
-    } else {
-      primaryLink.remove();
-    }
-
-    const organizationLink = fragment.querySelector(".organization-link");
-    if (item.organization_id) {
-      organizationLink.href = buildOrganizationLink(item.organization_id);
-    } else {
-      organizationLink.remove();
-    }
-
-    const secondaryLink = fragment.querySelector(".secondary-link");
-    if (item.source_tweet_url) {
-      secondaryLink.href = item.source_tweet_url;
-    } else {
-      secondaryLink.remove();
-    }
-
-    elements.scheduleGrid.append(fragment);
+  const calendar = new FullCalendar.Calendar(elements.calendarRoot, {
+    locale: "ja",
+    initialView: state.initialView || "dayGridMonth",
+    headerToolbar: {
+      left: "prev,next today",
+      center: "title",
+      right: "dayGridMonth,listMonth",
+    },
+    buttonText: {
+      today: "今日",
+      month: "月",
+      list: "リスト",
+    },
+    height: "auto",
+    expandRows: true,
+    fixedWeekCount: false,
+    dayMaxEventRows: 4,
+    displayEventTime: false,
+    noEventsContent: "条件に合う公演はありません。",
+    events: [],
+    eventClick: (info) => {
+      info.jsEvent.preventDefault();
+      const eventId = info.event.id;
+      if (eventId) openEventDialog(eventId);
+    },
+    viewDidMount: () => {
+      try {
+        window.localStorage.setItem(VIEW_STORAGE_KEY, calendar.view.type);
+      } catch (_e) { /* ignore */ }
+      writeFiltersToUrl();
+    },
   });
+
+  state.calendar = calendar;
+  calendar.render();
+}
+
+function refreshCalendarEvents(items) {
+  if (!state.calendar) return;
+  const events = items.map(toCalendarEvent).filter(Boolean);
+  state.calendar.removeAllEvents();
+  state.calendar.addEventSource(events);
+}
+
+function toCalendarEvent(item) {
+  const range = parseScheduleRange(item.performance_schedule);
+  if (!range) return null;
+  const tone = buildCountdownTone(item.performance_schedule);
+  const classes = ["event-pill"];
+  if (tone) classes.push(`event-pill--${tone}`);
+  return {
+    id: item.event_id || "",
+    title: item.event_name || item.organization_name || "名称未設定",
+    start: range.start,
+    end: range.end,
+    allDay: true,
+    classNames: classes,
+    extendedProps: { item },
+  };
+}
+
+function parseScheduleRange(schedule) {
+  const text = String(schedule || "");
+  const matches = [...text.matchAll(/(\d{4})-(\d{2})-(\d{2})/g)];
+  if (!matches.length) return null;
+  const first = matches[0];
+  const last = matches[matches.length - 1];
+  const start = `${first[1]}-${first[2]}-${first[3]}`;
+  const lastDate = `${last[1]}-${last[2]}-${last[3]}`;
+  if (lastDate === start) {
+    return { start, end: undefined };
+  }
+  // FullCalendar all-day end is exclusive — add 1 day to last date.
+  const endExclusive = addOneDay(lastDate);
+  return { start, end: endExclusive };
+}
+
+function addOneDay(dateStr) {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d));
+  date.setUTCDate(date.getUTCDate() + 1);
+  const yy = date.getUTCFullYear();
+  const mm = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(date.getUTCDate()).padStart(2, "0");
+  return `${yy}-${mm}-${dd}`;
+}
+
+function openEventDialog(eventId) {
+  const item = state.itemById.get(eventId);
+  if (!item || !elements.dialog) return;
+
+  const dialog = elements.dialog;
+  const setText = (selector, value) => {
+    const node = dialog.querySelector(selector);
+    if (node) node.textContent = value || "未設定";
+  };
+  const setLink = (selector, href, text) => {
+    const node = dialog.querySelector(selector);
+    if (!node) return;
+    if (href) {
+      node.href = href;
+      if (text) node.textContent = text;
+      node.hidden = false;
+    } else {
+      node.hidden = true;
+      node.removeAttribute("href");
+    }
+  };
+
+  const countdown = buildCountdownLabel(item.performance_schedule);
+  const countdownEl = dialog.querySelector(".event-dialog-countdown");
+  if (countdownEl) {
+    countdownEl.className = "event-dialog-countdown";
+    if (countdown) {
+      countdownEl.textContent = countdown.label;
+      countdownEl.classList.add(`is-${countdown.tone}`);
+      countdownEl.hidden = false;
+    } else {
+      countdownEl.textContent = "";
+      countdownEl.hidden = true;
+    }
+  }
+
+  setText(".event-dialog-date", item.performance_schedule || "日程未設定");
+  setText(".event-dialog-title", item.event_name || item.organization_name || "名称未設定");
+  setText(".event-dialog-org", item.organization_name);
+  setText(".event-dialog-venue", item.venue_name);
+  setText(".event-dialog-location", normalizeLocation(item.normalized_location));
+
+  if (hasOfficialReference(item)) {
+    setLink(".primary-link", item.official_reference_url, buildReferenceCta(item.official_reference_type));
+  } else {
+    setLink(".primary-link", "");
+  }
+
+  if (item.organization_id) {
+    setLink(".organization-link", buildOrganizationLink(item.organization_id), "劇団情報を見る");
+  } else {
+    setLink(".organization-link", "");
+  }
+
+  if (item.source_tweet_url) {
+    setLink(".secondary-link", item.source_tweet_url, "元投稿を見る");
+  } else {
+    setLink(".secondary-link", "");
+  }
+
+  state.initialEventId = eventId;
+  writeFiltersToUrl();
+
+  if (typeof dialog.showModal === "function" && !dialog.open) {
+    dialog.showModal();
+  } else if (!dialog.open) {
+    dialog.setAttribute("open", "");
+  }
 }
 
 function focusInitialEvent() {
   if (!state.initialEventId) return;
-  const target = elements.scheduleGrid.querySelector(`[data-event-id="${cssEscape(state.initialEventId)}"]`);
-  if (!target) return;
-  requestAnimationFrame(() => {
-    target.scrollIntoView({ behavior: "smooth", block: "center" });
-  });
+  const item = state.itemById.get(state.initialEventId);
+  if (!item) return;
+  if (state.calendar) {
+    const range = parseScheduleRange(item.performance_schedule);
+    if (range && range.start) {
+      try { state.calendar.gotoDate(range.start); } catch (_e) { /* ignore */ }
+    }
+  }
+  openEventDialog(state.initialEventId);
 }
 
-function cssEscape(value) {
-  if (window.CSS && typeof window.CSS.escape === "function") {
-    return window.CSS.escape(value);
-  }
-  return String(value).replace(/[^a-zA-Z0-9_-]/g, "\\$&");
+function isMobileViewport() {
+  if (typeof window.matchMedia !== "function") return false;
+  return window.matchMedia("(max-width: 760px)").matches;
+}
+
+function buildCountdownTone(schedule) {
+  const info = buildCountdownLabel(schedule);
+  return info ? info.tone : "";
 }
 
 function buildCountdownLabel(schedule) {
@@ -295,17 +419,8 @@ function buildCountdownLabel(schedule) {
   return null;
 }
 
-function buildReferenceLabel(referenceType) {
-  if (referenceType.startsWith("organization_official") || referenceType.startsWith("venue_official")) {
-    return "公式リンク";
-  }
-  return "";
-}
-
 function hasOfficialReference(item) {
-  if (!item.official_reference_url || !item.official_reference_type) {
-    return false;
-  }
+  if (!item.official_reference_url || !item.official_reference_type) return false;
   return item.official_reference_type.startsWith("organization_official") || item.official_reference_type.startsWith("venue_official");
 }
 
@@ -326,11 +441,6 @@ function createOption(value, label) {
   option.value = value;
   option.textContent = label;
   return option;
-}
-
-function extractMonth(schedule) {
-  const match = String(schedule || "").match(/^(\d{4}-\d{2})/);
-  return match ? match[1] : "";
 }
 
 function normalizeLocation(value) {
@@ -369,13 +479,9 @@ function isUpcomingSchedule(schedule) {
 }
 
 function formatGeneratedAt(value) {
-  if (!value) {
-    return "-";
-  }
+  if (!value) return "-";
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
+  if (Number.isNaN(date.getTime())) return value;
   return new Intl.DateTimeFormat("ja-JP", {
     year: "numeric",
     month: "2-digit",
@@ -475,7 +581,6 @@ function enhanceSelect(select) {
   button.addEventListener("click", (event) => {
     event.stopPropagation();
     if (panel.hidden) {
-      // close other open panels
       enhancedSelects.forEach((entry) => entry !== api && entry.close());
       open();
     } else {

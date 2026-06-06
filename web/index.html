@@ -3,8 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>石川の演劇スケジュール</title>
+    <title>北陸の演劇スケジュール</title>
     <link rel="stylesheet" href="./styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/locales/ja.global.min.js"></script>
   </head>
   <body>
     <div class="page-shell">
@@ -14,7 +16,7 @@
           <a class="page-nav-link is-current" href="./index.html">スケジュール</a>
           <a class="page-nav-link" href="./masters.html">劇団・劇場マスター</a>
         </nav>
-        <h1>石川の演劇スケジュール</h1>
+        <h1>北陸の演劇スケジュール</h1>
         <p class="hero-copy">
           X から収集して整形した公演情報を、予定確認しやすい一覧で表示します。
         </p>
@@ -46,12 +48,6 @@
           </select>
         </label>
         <label class="control">
-          <span>月</span>
-          <select id="monthFilter">
-            <option value="">すべて</option>
-          </select>
-        </label>
-        <label class="control">
           <span>地域</span>
           <select id="locationFilter">
             <option value="">すべて</option>
@@ -65,38 +61,39 @@
       </section>
 
       <main>
-        <div id="scheduleGrid" class="schedule-grid" aria-live="polite"></div>
+        <div id="calendarRoot" class="calendar-root" aria-live="polite"></div>
       </main>
     </div>
 
-    <template id="cardTemplate">
-      <article class="event-card">
-        <div class="event-card-header">
-          <span class="event-countdown"></span>
-          <p class="event-date"></p>
+    <dialog id="eventDialog" class="event-dialog" aria-label="公演詳細">
+      <form method="dialog" class="event-dialog-inner">
+        <button type="submit" class="event-dialog-close" value="close" aria-label="閉じる">×</button>
+        <div class="event-dialog-body">
+          <span class="event-dialog-countdown" hidden></span>
+          <p class="event-dialog-date"></p>
+          <h2 class="event-dialog-title"></h2>
+          <dl class="event-dialog-details">
+            <div>
+              <dt>劇団</dt>
+              <dd class="event-dialog-org"></dd>
+            </div>
+            <div>
+              <dt>劇場</dt>
+              <dd class="event-dialog-venue"></dd>
+            </div>
+            <div>
+              <dt>地域</dt>
+              <dd class="event-dialog-location"></dd>
+            </div>
+          </dl>
+          <div class="event-dialog-links">
+            <a class="primary-link" target="_blank" rel="noreferrer" hidden>参照先を開く</a>
+            <a class="organization-link" hidden>劇団情報を見る</a>
+            <a class="secondary-link" target="_blank" rel="noreferrer" hidden>元投稿を見る</a>
+          </div>
         </div>
-        <h2 class="event-title"></h2>
-        <dl class="event-details">
-          <div>
-            <dt>劇団</dt>
-            <dd class="organization-name"></dd>
-          </div>
-          <div>
-            <dt>劇場</dt>
-            <dd class="venue-name"></dd>
-          </div>
-          <div>
-            <dt>地域</dt>
-            <dd class="location-name"></dd>
-          </div>
-        </dl>
-        <div class="event-links">
-          <a class="primary-link" target="_blank" rel="noreferrer">参照先を開く</a>
-          <a class="organization-link">劇団情報を見る</a>
-          <a class="secondary-link" target="_blank" rel="noreferrer">元投稿を見る</a>
-        </div>
-      </article>
-    </template>
+      </form>
+    </dialog>
 
     <script src="./app.js"></script>
   </body>
