@@ -208,6 +208,21 @@ def truncate_text(value: str, max_length: int) -> str:
     return (trimmed + "…") if trimmed else cleaned[:max_length]
 
 
+def _format_event_name_for_post(name: str) -> str:
+    """投稿用に event_name を整形する。
+
+    既に鉤括弧/二重鉤括弧/隅付き括弧などで主題が囲まれている場合は、
+    二重括弧を避けるため外側に『』を付けない。
+    """
+    stripped = name.strip()
+    if not stripped:
+        return ""
+    bracket_chars = "『「【〈《"
+    if any(char in stripped for char in bracket_chars):
+        return stripped
+    return f"『{stripped}』"
+
+
 def build_post_text(row: dict[str, str], hashtag: str, header_label: str, site_url: str) -> str:
     header = (header_label or DEFAULT_HEADER).strip() or DEFAULT_HEADER
     event_url = build_schedule_page_url(site_url, row)
@@ -215,14 +230,14 @@ def build_post_text(row: dict[str, str], hashtag: str, header_label: str, site_u
     hashtag = hashtag.strip().lstrip("#")
 
     def assemble(name: str) -> str:
-        lines = [header]
+        sections: list[list[str]] = [[header]]
         if name:
-            lines.append(name)
+            sections.append([_format_event_name_for_post(name)])
         if event_url:
-            lines.extend(["詳しくはこちら", event_url])
+            sections.append(["詳しくはこちら↓", event_url])
         if hashtag:
-            lines.append(f"#{hashtag}")
-        return "\n".join(lines)
+            sections.append([f"#{hashtag}"])
+        return "\n\n".join("\n".join(section) for section in sections)
 
     text = assemble(event_name)
     if count_tweet_length(text) <= MAX_TWEET_LENGTH:
@@ -230,7 +245,8 @@ def build_post_text(row: dict[str, str], hashtag: str, header_label: str, site_u
 
     # event_name が長すぎる場合は他の固定要素ぶんを確保して切り詰める
     fixed_length = count_tweet_length(assemble(""))
-    remaining = MAX_TWEET_LENGTH - fixed_length - 1  # 改行ぶん
+    # 『』ぶん 2 文字 + 空行ぶん 2 文字を確保
+    remaining = MAX_TWEET_LENGTH - fixed_length - 4
     if event_name and remaining > 0:
         truncated = truncate_text(event_name, remaining)
         text = assemble(truncated)
