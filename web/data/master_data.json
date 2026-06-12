@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-05-31T21:50:56+09:00",
+  "generated_at": "2026-06-12T21:19:20+09:00",
   "counts": {
-    "organizations": 25,
-    "venues": 24
+    "organizations": 40,
+    "venues": 25
   },
   "organizations": [
     {
@@ -14,12 +14,100 @@
       "query_include": false
     },
     {
+      "id": "org-び-めんぷろじぇくと",
+      "name": "び〜めんぷろじぇくと",
+      "location": "富山県",
+      "official_website": "https://b-men-project.jimdofree.com/",
+      "official_x": "https://x.com/b_men_project",
+      "query_include": true
+    },
+    {
+      "id": "org-劇団ココロ跡",
+      "name": "劇団ココロ跡",
+      "location": "富山県",
+      "official_website": "https://kokoroato.com/",
+      "official_x": "https://x.com/kokoro_art2",
+      "query_include": false
+    },
+    {
+      "id": "org-東京富山パフォーミングアーツプロジェクト",
+      "name": "東京富山パフォーミングアーツプロジェクト",
+      "location": "富山県",
+      "official_website": "",
+      "official_x": "https://x.com/TsproToyama",
+      "query_include": true
+    },
+    {
+      "id": "org-演人全開",
+      "name": "演人全開「血が滾ってきたぜ！」",
+      "location": "富山県",
+      "official_website": "https://chigatagi.net/",
+      "official_x": "https://x.com/chigatagi",
+      "query_include": true
+    },
+    {
+      "id": "org-表現実験bashow",
+      "name": "表現実験BASHOW",
+      "location": "富山県",
+      "official_website": "https://note.com/hyougenbashow",
+      "official_x": "https://x.com/BASHOW1104",
+      "query_include": false
+    },
+    {
+      "id": "org-魔導演劇結社インポッシブル",
+      "name": "魔導演劇結社インポッシブル",
+      "location": "富山県",
+      "official_website": "",
+      "official_x": "https://x.com/Unit_INP",
+      "query_include": false
+    },
+    {
+      "id": "org-演劇集団富山舞台",
+      "name": "演劇集団富山舞台",
+      "location": "富山県富山市",
+      "official_website": "",
+      "official_x": "https://x.com/toyama_butai",
+      "query_include": false
+    },
+    {
       "id": "org-血パンダ",
       "name": "血パンダ",
       "location": "富山県射水市",
       "official_website": "https://blood-panda.net/",
       "official_x": "https://x.com/BP_chipanda",
       "query_include": false
+    },
+    {
+      "id": "org-劇団すばる",
+      "name": "劇団すばる",
+      "location": "富山県砺波市",
+      "official_website": "https://subaru1971tonami.sunnyday.jp/",
+      "official_x": "https://x.com/gekisuba1971",
+      "query_include": false
+    },
+    {
+      "id": "org-劇団p-o-d",
+      "name": "劇団P.O.D.",
+      "location": "富山県高岡市",
+      "official_website": "http://www.pod-world.com/",
+      "official_x": "https://x.com/pod_world",
+      "query_include": false
+    },
+    {
+      "id": "org-劇団フロンティア",
+      "name": "劇団フロンティア",
+      "location": "富山県黒部市",
+      "official_website": "http://www.theater-frontier.com/",
+      "official_x": "https://x.com/theaterfrontier",
+      "query_include": false
+    },
+    {
+      "id": "org-ririproject-act",
+      "name": "RiRiぷろじぇくと",
+      "location": "石川県",
+      "official_website": "",
+      "official_x": "https://x.com/RiRiproject_act",
+      "query_include": true
     },
     {
       "id": "org-演芸列車-東西本線",
@@ -204,6 +292,38 @@
       "official_website": "https://www.kanazawa-gu.ac.jp/club-tag/%E6%BC%94%E5%8A%87%E9%83%A8/",
       "official_x": "https://x.com/kg_drama",
       "query_include": false
+    },
+    {
+      "id": "org-さよならキャンプ",
+      "name": "さよならキャンプ",
+      "location": "福井県",
+      "official_website": "https://sayonara-camp.com/",
+      "official_x": "https://x.com/sayonara_camp",
+      "query_include": true
+    },
+    {
+      "id": "org-フガフガラボラトリー",
+      "name": "フガフガLaboratory",
+      "location": "福井県福井市",
+      "official_website": "https://blog636.wixsite.com/fugalabo",
+      "official_x": "https://x.com/fugalabo",
+      "query_include": true
+    },
+    {
+      "id": "org-劇団福井自由舞台",
+      "name": "劇団福井自由舞台",
+      "location": "福井県福井市",
+      "official_website": "",
+      "official_x": "https://x.com/jiyuubutai",
+      "query_include": false
+    },
+    {
+      "id": "org-演衆やむなし",
+      "name": "演衆やむなし",
+      "location": "福井県福井市",
+      "official_website": "https://www.yamunashi.com/",
+      "official_x": "https://x.com/fukui_yamunashi",
+      "query_include": false
     }
   ],
   "venues": [
@@ -290,6 +410,12 @@
       "name": "金沢21世紀美術館 シアター21",
       "location": "〒920-8509 石川県金沢市広坂1-2-1",
       "official_website": "https://www.kanazawa21.jp/"
+    },
+    {
+      "id": "venue-にぎわいの里ののいちカミーノ",
+      "name": "にぎわいの里ののいち カミーノ",
+      "location": "〒921-8815 石川県野々市市本町二丁目1番20号",
+      "official_website": "https://www.city.nonoichi.lg.jp/site/camino/"
     },
     {
       "id": "venue-学びの杜ののいち-カレード",
