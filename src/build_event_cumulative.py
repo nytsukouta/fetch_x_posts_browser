@@ -17,21 +17,29 @@ from atomic_io import atomic_open
 from event_cumulative_core import (  # noqa: F401
     MERGE_FIELDS,
     NON_ALNUM_RE,
+    PLACEHOLDER_TITLE_PATTERNS,
     TITLE_SIMILARITY_THRESHOLD,
     VENUE_GROUP_ALIASES,
     apply_event_aliases,
+    apply_organization_canonicalization,
     bool_to_csv,
     build_event_key,
     build_event_records,
+    build_organization_lookup,
     build_preview_group_key,
     build_similarity_clusters,
+    canonicalize_organization,
     choose_canonical_name,
     choose_group_posting_recommendation,
     choose_value,
     compact_text,
+    is_placeholder_title,
     is_preview_subsumed,
     merge_date_range,
     merge_event_group,
+    merge_placeholder_records,
+    merge_records_by_event_id,
+    normalize_handle,
     normalize_venue_group_key,
     parse_bool,
     parse_created_at_date,
@@ -60,6 +68,7 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 DEFAULT_INPUT_CSV = ROOT_DIR / "data" / "output" / "structured_events_filtered_cumulative.csv"
 DEFAULT_OUTPUT_CSV = ROOT_DIR / "data" / "output" / "event_cumulative.csv"
 DEFAULT_ALIASES_CSV = ROOT_DIR / "config" / "event_aliases.csv"
+DEFAULT_ORGANIZATION_MASTER_CSV = ROOT_DIR / "data" / "output" / "organization_master.csv"
 
 OUTPUT_FIELDS = [
     "event_id",
@@ -103,11 +112,23 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--input-csv", default=str(DEFAULT_INPUT_CSV), help="filtered cumulative CSV のパス")
     parser.add_argument("--output-csv", default=str(DEFAULT_OUTPUT_CSV), help="イベント累積CSVの保存先")
     parser.add_argument("--aliases-csv", default=str(DEFAULT_ALIASES_CSV), help="手動マージ対応表 CSV (canonical_event_id,alias_event_id)")
+    parser.add_argument(
+        "--organization-master-csv",
+        default=str(DEFAULT_ORGANIZATION_MASTER_CSV),
+        help="劇団マスターCSVのパス (組織名の正規化に使用)",
+    )
     parser.add_argument("--model", default=os.getenv("GITHUB_MODELS_MODEL", DEFAULT_MODEL), help="二次統合で使う GitHub Models のモデルID")
     return parser.parse_args()
 
 
 def load_rows(path: Path) -> list[dict[str, str]]:
+    with path.open("r", encoding="utf-8-sig", newline="") as handle:
+        return list(csv.DictReader(handle))
+
+
+def load_organization_master_rows(path: Path) -> list[dict[str, str]]:
+    if not path.exists():
+        return []
     with path.open("r", encoding="utf-8-sig", newline="") as handle:
         return list(csv.DictReader(handle))
 
@@ -137,10 +158,15 @@ def write_csv(records: list[dict[str, Any]], output_path: Path) -> None:
 def main() -> int:
     args = parse_args()
     rows = load_rows(Path(args.input_csv))
+    master_rows = load_organization_master_rows(Path(args.organization_master_csv))
+    name_lookup, handle_lookup = build_organization_lookup(master_rows)
+    rows = apply_organization_canonicalization(rows, name_lookup, handle_lookup)
     records = build_event_records(rows)
     records = secondary_dedupe(records, args.model)
     alias_pairs = load_event_aliases(Path(args.aliases_csv))
     records = apply_event_aliases(records, alias_pairs)
+    records = merge_placeholder_records(records)
+    records = merge_records_by_event_id(records)
     write_csv(records, Path(args.output_csv))
 
     print(f"saved event cumulative: {args.output_csv}")

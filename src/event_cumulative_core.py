@@ -12,6 +12,12 @@ from typing import Any
 
 NON_ALNUM_RE = re.compile(r"[^0-9a-zA-Z\u3040-\u30ff\u3400-\u9fff]+")
 TITLE_SIMILARITY_THRESHOLD = 0.6
+PLACEHOLDER_TITLE_PATTERNS = [
+    # 「6/27(土)の定期公演」「6月27日の本公演」など、日付＋公演種別だけのタイトル
+    re.compile(r"^\d{1,2}\s*[/／月]\s*\d{1,2}\s*(?:日|[(（][^)）]{0,3}[)）])?\s*の?\s*(?:定期公演|本公演|公演|お披露目公演)\s*$"),
+    # 「次回公演」「今度の定期公演」「今月の本公演」など、修飾語＋公演種別だけ
+    re.compile(r"^(?:次回|今回|今度|今月|今週|来週|来月)?の?\s*(?:定期公演|本公演|公演|お披露目公演)\s*$"),
+]
 VENUE_GROUP_ALIASES = {
     compact: canonical
     for compact, canonical in {
@@ -51,6 +57,91 @@ MERGE_FIELDS = [
 def compact_text(value: str) -> str:
     cleaned = NON_ALNUM_RE.sub("", value.strip().lower())
     return cleaned
+
+
+_HANDLE_PATH_RE = re.compile(r"(?:x\.com|twitter\.com)/(?:@)?([^/?#]+)", re.IGNORECASE)
+
+
+def normalize_handle(value: Any) -> str:
+    candidate = str(value or "").strip()
+    if not candidate:
+        return ""
+    if "://" in candidate or candidate.lower().startswith("x.com/") or candidate.lower().startswith("twitter.com/"):
+        match = _HANDLE_PATH_RE.search(candidate)
+        candidate = match.group(1) if match else ""
+    if candidate.startswith("@"):
+        candidate = candidate[1:]
+    return candidate.strip().strip("/").lower()
+
+
+def build_organization_lookup(
+    master_rows: list[dict[str, str]],
+) -> tuple[dict[str, str], dict[str, str]]:
+    """マスター CSV から (compact 名前→正式名, X handle→正式名) を作る。"""
+    name_lookup: dict[str, str] = {}
+    handle_lookup: dict[str, str] = {}
+    for row in master_rows:
+        canonical = (row.get("organization_name_normalized") or row.get("organization_name") or "").strip()
+        if not canonical:
+            continue
+        for candidate in [row.get("organization_name_normalized") or "", row.get("organization_name") or ""]:
+            compact = compact_text(candidate)
+            if compact and compact not in name_lookup:
+                name_lookup[compact] = canonical
+        handle = normalize_handle(row.get("official_x") or "")
+        if handle and handle not in handle_lookup:
+            handle_lookup[handle] = canonical
+    return name_lookup, handle_lookup
+
+
+def canonicalize_organization(
+    row: dict[str, str],
+    name_lookup: dict[str, str],
+    handle_lookup: dict[str, str],
+) -> str:
+    """抽出済み organization をマスターの正式名に寄せる。"""
+    org = (row.get("organization") or "").strip()
+    compact_org = compact_text(org)
+    if compact_org and compact_org in name_lookup:
+        return name_lookup[compact_org]
+
+    handle = normalize_handle(row.get("author_username") or "")
+    if handle and handle in handle_lookup:
+        canonical = handle_lookup[handle]
+        canonical_compact = compact_text(canonical)
+        if not compact_org:
+            return canonical
+        # 抽出名と正式名が同じ団体を指していそうな場合のみハンドルで上書きする
+        if compact_org in canonical_compact or canonical_compact in compact_org:
+            return canonical
+        prefix_length = 3
+        if (
+            len(compact_org) >= prefix_length
+            and len(canonical_compact) >= prefix_length
+            and compact_org[:prefix_length] == canonical_compact[:prefix_length]
+        ):
+            return canonical
+    return org
+
+
+def apply_organization_canonicalization(
+    rows: list[dict[str, str]],
+    name_lookup: dict[str, str],
+    handle_lookup: dict[str, str],
+) -> list[dict[str, str]]:
+    if not name_lookup and not handle_lookup:
+        return rows
+    result: list[dict[str, str]] = []
+    for row in rows:
+        canonical = canonicalize_organization(row, name_lookup, handle_lookup)
+        original = (row.get("organization") or "").strip()
+        if canonical and canonical != original:
+            new_row = dict(row)
+            new_row["organization"] = canonical
+            result.append(new_row)
+        else:
+            result.append(row)
+    return result
 
 
 def normalize_venue_group_key(value: str) -> str:
@@ -311,6 +402,159 @@ def apply_event_aliases(
         merged["event_key"] = build_event_key(merged)
         new_records.append(merged)
     return new_records
+
+
+def is_placeholder_title(value: Any) -> bool:
+    """『6/27(土)の定期公演』『次回公演』のような汎用タイトルかを判定する。"""
+    text = str(value or "").strip()
+    if not text:
+        return False
+    # 全角→半角の最小限の正規化
+    normalized = text.replace("　", " ").replace("（", "(").replace("）", ")").replace("／", "/")
+    normalized = re.sub(r"\s+", "", normalized)
+    return any(pattern.match(normalized) for pattern in PLACEHOLDER_TITLE_PATTERNS)
+
+
+def _date_ranges_overlap(
+    left_start: str, left_end: str, right_start: str, right_end: str
+) -> bool:
+    ls = parse_iso_date(left_start)
+    le = parse_iso_date(left_end) or ls
+    rs = parse_iso_date(right_start)
+    re_ = parse_iso_date(right_end) or rs
+    if not ls or not rs:
+        return False
+    if le is None:
+        le = ls
+    if re_ is None:
+        re_ = rs
+    return ls <= re_ and rs <= le
+
+
+def merge_placeholder_records(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """placeholder タイトル record を、同団体×日付重複の named record にマージする。
+
+    placeholder = 『6/27(土)の定期公演』『次回公演』など、固有名詞を含まない汎用タイトル。
+    マージ条件 (全て満たすこと):
+      - placeholder 側のタイトルが is_placeholder_title=True
+      - 同じ organization (compact_text 比較)
+      - 開催日範囲が重なる (片方が単日でも可)
+      - 会場が両方欠落、または compact 一致、または片方が欠落
+    """
+    placeholders: list[dict[str, Any]] = []
+    named_records: list[dict[str, Any]] = []
+    passthrough: list[dict[str, Any]] = []
+
+    for record in records:
+        title = str(record.get("normalized_event_name") or record.get("event_name") or "").strip()
+        organization = compact_text(record.get("organization") or "")
+        start_date = str(record.get("start_date") or "").strip()
+        if not title or not organization or not start_date:
+            passthrough.append(record)
+            continue
+        if is_placeholder_title(title):
+            placeholders.append(record)
+        else:
+            named_records.append(record)
+
+    if not placeholders:
+        return records
+
+    consumed_placeholder_ids: set[int] = set()
+    merge_groups: dict[int, list[dict[str, Any]]] = {}
+
+    for placeholder in placeholders:
+        placeholder_id = id(placeholder)
+        placeholder_org = compact_text(placeholder.get("organization") or "")
+        placeholder_venue = compact_text(
+            placeholder.get("normalized_venue_name") or placeholder.get("venue_name") or ""
+        )
+        placeholder_start = str(placeholder.get("start_date") or "").strip()
+        placeholder_end = str(placeholder.get("end_date") or "").strip() or placeholder_start
+
+        best_named: dict[str, Any] | None = None
+        for named in named_records:
+            named_org = compact_text(named.get("organization") or "")
+            if not named_org or named_org != placeholder_org:
+                continue
+            named_start = str(named.get("start_date") or "").strip()
+            named_end = str(named.get("end_date") or "").strip() or named_start
+            if not named_start:
+                continue
+            if not _date_ranges_overlap(placeholder_start, placeholder_end, named_start, named_end):
+                continue
+            named_venue = compact_text(named.get("normalized_venue_name") or named.get("venue_name") or "")
+            if placeholder_venue and named_venue and placeholder_venue != named_venue:
+                continue
+            if best_named is None or row_quality(named) > row_quality(best_named):
+                best_named = named
+
+        if best_named is None:
+            continue
+        consumed_placeholder_ids.add(placeholder_id)
+        merge_groups.setdefault(id(best_named), [best_named]).append(placeholder)
+
+    if not consumed_placeholder_ids:
+        return records
+
+    merged_records: list[dict[str, Any]] = []
+    handled_named_ids: set[int] = set()
+    for record in records:
+        record_id = id(record)
+        if record_id in consumed_placeholder_ids:
+            continue
+        if record_id in merge_groups:
+            group = merge_groups[record_id]
+            canonical_name = choose_canonical_name(
+                group, str(record.get("normalized_event_name") or record.get("event_name") or "")
+            )
+            merged = merge_event_group(group, canonical_name)
+            merged["event_id"] = str(record.get("event_id") or "").strip()
+            merged["event_key"] = build_event_key(merged)
+            merged_records.append(merged)
+            handled_named_ids.add(record_id)
+            continue
+        merged_records.append(record)
+
+    return merged_records
+
+
+def merge_records_by_event_id(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """event_id が重複している record 群をまとめる。
+
+    `renumber_records` は normalized_event_name から event_id を作るため、
+    同じ event_id が複数残るのは「会場や日付の欠落で event_key が分かれただけの同一公演」
+    である可能性が高い。安全側で同 event_id を 1 件にマージする。
+    """
+    seen_order: list[str] = []
+    groups: dict[str, list[dict[str, Any]]] = {}
+    passthrough: list[dict[str, Any]] = []
+    for record in records:
+        event_id = str(record.get("event_id") or "").strip()
+        if not event_id:
+            passthrough.append(record)
+            continue
+        if event_id not in groups:
+            groups[event_id] = []
+            seen_order.append(event_id)
+        groups[event_id].append(record)
+
+    merged_records: list[dict[str, Any]] = []
+    for event_id in seen_order:
+        group = groups[event_id]
+        if len(group) == 1:
+            merged_records.append(group[0])
+            continue
+        canonical_name = choose_canonical_name(
+            group,
+            str(max(group, key=row_quality).get("normalized_event_name") or ""),
+        )
+        merged = merge_event_group(group, canonical_name)
+        merged["event_id"] = event_id
+        merged["event_key"] = build_event_key(merged)
+        merged_records.append(merged)
+    merged_records.extend(passthrough)
+    return merged_records
 
 
 def merge_event_group(records: list[dict[str, Any]], canonical_name: str) -> dict[str, Any]:
