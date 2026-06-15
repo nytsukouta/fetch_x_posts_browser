@@ -206,11 +206,6 @@ def build_schedule_rows(
 
         organization_name = (event_row.get("organization") or "").strip()
         venue_name = (event_row.get("normalized_venue_name") or event_row.get("venue_name") or "").strip()
-        start_date = (event_row.get("start_date") or "").strip()
-        end_date = (event_row.get("end_date") or "").strip()
-
-        if not is_current_or_upcoming_event(start_date, end_date):
-            continue
 
         date_range = build_date_range(event_row)
         event_name = (event_row.get("event_name") or "").strip()
@@ -379,13 +374,6 @@ def parse_iso_date(value: str) -> date | None:
         return date.fromisoformat(cleaned)
     except ValueError:
         return None
-
-
-def is_current_or_upcoming_event(start_date: str, end_date: str) -> bool:
-    effective_end_date = parse_iso_date(end_date) or parse_iso_date(start_date)
-    if effective_end_date is None:
-        return True
-    return effective_end_date >= date.today()
 
 
 def write_csv(rows: list[dict[str, Any]], output_path: Path) -> None:

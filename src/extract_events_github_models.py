@@ -331,7 +331,21 @@ def enrich_source_row(row: dict[str, str], x_bearer_token: str) -> dict[str, str
     return enriched_row
 
 
+AGGREGATOR_FREEPAPER_KEYWORDS = ("観劇しまっし",)
+
+
+def should_skip_images(row: dict[str, str]) -> bool:
+    haystack = " ".join(
+        [
+            str(row.get("text") or ""),
+            str(row.get("quoted_text") or ""),
+        ]
+    )
+    return any(keyword in haystack for keyword in AGGREGATOR_FREEPAPER_KEYWORDS)
+
+
 def build_user_prompt(row: dict[str, str], include_images: bool = True) -> str:
+    pass_images = include_images and not should_skip_images(row)
     return json.dumps(
         {
             "query_label": row.get("query_label"),
@@ -340,12 +354,12 @@ def build_user_prompt(row: dict[str, str], include_images: bool = True) -> str:
             "author_name": row.get("author_name"),
             "author_username": row.get("author_username"),
             "text": row.get("text"),
-            "media_image_urls": split_pipe_urls(str(row.get("media_image_urls") or "")) if include_images else [],
+            "media_image_urls": split_pipe_urls(str(row.get("media_image_urls") or "")) if pass_images else [],
             "quoted_tweet_url": row.get("quoted_tweet_url"),
             "quoted_author_name": row.get("quoted_author_name"),
             "quoted_author_username": row.get("quoted_author_username"),
             "quoted_text": row.get("quoted_text"),
-            "quoted_media_image_urls": split_pipe_urls(str(row.get("quoted_media_image_urls") or "")) if include_images else [],
+            "quoted_media_image_urls": split_pipe_urls(str(row.get("quoted_media_image_urls") or "")) if pass_images else [],
         },
         ensure_ascii=False,
         indent=2,
@@ -355,7 +369,7 @@ def build_user_prompt(row: dict[str, str], include_images: bool = True) -> str:
 def build_user_content(row: dict[str, str], include_images: bool = True) -> list[dict[str, Any]]:
     content: list[dict[str, Any]] = [{"type": "text", "text": build_user_prompt(row, include_images=include_images)}]
 
-    if not include_images:
+    if not include_images or should_skip_images(row):
         return content
 
     media_urls = filter_safe_image_urls(split_pipe_urls(str(row.get("media_image_urls") or "")))
