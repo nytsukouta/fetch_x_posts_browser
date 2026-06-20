@@ -106,12 +106,13 @@ def canonicalize_organization(
         return name_lookup[compact_org]
 
     handle = normalize_handle(row.get("author_username") or "")
-    if handle and handle in handle_lookup:
+    if handle and compact_org and handle in handle_lookup:
         canonical = handle_lookup[handle]
         canonical_compact = compact_text(canonical)
-        if not compact_org:
-            return canonical
-        # 抽出名と正式名が同じ団体を指していそうな場合のみハンドルで上書きする
+        # 抽出名と正式名が同じ団体を指していそうな場合のみハンドルで上書きする。
+        # 抽出名が空のときに投稿者ハンドルへ寄せると、紹介・告知投稿で
+        # 投稿者そのものが主催者として循環アトリビューションされてしまうため
+        # fallback は行わない。
         if compact_org in canonical_compact or canonical_compact in compact_org:
             return canonical
         prefix_length = 3

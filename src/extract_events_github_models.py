@@ -120,7 +120,7 @@ SYSTEM_PROMPT = """あなたは日本語のX投稿から演劇イベント情報
 抽出項目:
 - event_name: 公演名や企画名
 - normalized_event_name: 同一公演の表記揺れ統合用の名称。副題、装飾記号、告知用の余分な説明はなるべく外し、同じ公演なら同じ名前に寄せる
-- organization: 劇団名、主催名、出演団体名
+- organization: 劇団名、主催名、出演団体名。投稿者(author_name)が他団体・他企画を告知・宣伝・引用紹介しているだけの場合、投稿者そのものを organization に入れないでください。本文・引用・画像から主催・出演団体が特定できなければ null にしてください
 - venue_name: 会場名
 - location: 地域名、住所、都市名
 - start_date: YYYY-MM-DD 形式。年が明示されない場合は投稿日時を基準に補ってよい
@@ -221,9 +221,12 @@ def normalize_organization_name(
             return organization_name_lookup[compact]
         return normalized
 
-    handle = normalize_handle(str(author_username or ""))
-    if handle and handle in organization_handle_lookup:
-        return organization_handle_lookup[handle]
+    # 投稿者ハンドルから自動的に organization を埋めると、紹介・告知投稿で
+    # 投稿者そのものが主催者として循環アトリビューションされてしまうため、
+    # ここでは fallback しない。投稿者=主催者であることを意図して埋めたい
+    # ケースは seed CSV か LLM 抽出で明示する。
+    _ = author_username
+    _ = organization_handle_lookup
     return None
 
 

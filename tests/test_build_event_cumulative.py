@@ -139,9 +139,12 @@ class TestCanonicalizeOrganization:
         row = {"organization": "全く違う団体名", "author_username": "tonetoneto25403"}
         assert canonicalize_organization(row, self.name_lookup, self.handle_lookup) == "全く違う団体名"
 
-    def test_handle_fills_blank_org(self):
+    def test_handle_does_not_fill_blank_org(self):
+        # 投稿者ハンドルがマスターにあっても organization が空なら埋めない。
+        # 紹介・告知投稿で投稿者そのものが主催者として循環アトリビューションされてしまう
+        # ため、空のままにする。
         row = {"organization": "", "author_username": "tonetoneto25403"}
-        assert canonicalize_organization(row, self.name_lookup, self.handle_lookup) == "表現集団tone!tone!tone!"
+        assert canonicalize_organization(row, self.name_lookup, self.handle_lookup) == ""
 
     def test_apply_returns_new_rows_with_canonical_org(self):
         rows = [
