@@ -39,7 +39,7 @@ DEFAULT_OUTPUT_CSV = ROOT_DIR / "data" / "output" / "structured_events.csv"
 DEFAULT_FILTERED_JSONL = ROOT_DIR / "data" / "output" / "structured_events_filtered.jsonl"
 DEFAULT_FILTERED_CSV = ROOT_DIR / "data" / "output" / "structured_events_filtered.csv"
 DEFAULT_ORGANIZATION_MASTER_CSV = ROOT_DIR / "data" / "output" / "organization_master.csv"
-DEFAULT_MODEL = "openai/gpt-4.1-mini"
+DEFAULT_MODEL = "openai/gpt-5"
 LOOKUP_TWEET_URL = "https://api.x.com/2/tweets"
 NON_ALNUM_RE = re.compile(r"[^0-9a-zA-Z\u3040-\u30ff\u3400-\u9fff]+")
 

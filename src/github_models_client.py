@@ -15,7 +15,7 @@ from urllib import error, request
 from urllib.parse import urlparse
 
 
-DEFAULT_MODEL = "openai/gpt-4.1-mini"
+DEFAULT_MODEL = "openai/gpt-5"
 DEFAULT_API_VERSION = "2026-03-10"
 INFERENCE_URL = "https://models.github.ai/inference/chat/completions"
 

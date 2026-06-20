@@ -43,7 +43,7 @@ jobs:
       X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
       GH_MODELS_TOKEN: ${{ secrets.GH_MODELS_TOKEN }}
       GITHUB_TOKEN: ${{ secrets.GH_MODELS_TOKEN }}
-      GITHUB_MODELS_MODEL: ${{ vars.GH_MODELS_MODEL || 'openai/gpt-4.1-mini' }}
+      GITHUB_MODELS_MODEL: ${{ vars.GH_MODELS_MODEL || 'openai/gpt-5' }}
       GITHUB_MODELS_API_VERSION: ${{ vars.GH_MODELS_API_VERSION || '2026-03-10' }}
       X_API_KEY: ${{ secrets.X_API_KEY }}
       X_API_SECRET: ${{ secrets.X_API_SECRET }}

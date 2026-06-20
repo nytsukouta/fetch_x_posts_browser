@@ -25,7 +25,7 @@ from event_cumulative_core import (
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 DEFAULT_ENV_FILE = ROOT_DIR / ".env"
-DEFAULT_MODEL = "openai/gpt-4.1-mini"
+DEFAULT_MODEL = "openai/gpt-5"
 
 SECONDARY_DEDUPE_SYSTEM_PROMPT = """あなたは日本語の公演イベント重複統合アシスタントです。
 入力される複数レコードは、同日かつ同一会場または同一団体で候補絞り込み済みです。
