@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from atomic_io import atomic_open
+from location_normalization import extract_prefecture
 
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
@@ -56,6 +57,7 @@ def build_organization_items(rows: list[dict[str, str]]) -> list[dict[str, Any]]
                 "id": (row.get("organization_id") or "").strip(),
                 "name": (row.get("organization_name") or "").strip(),
                 "location": (row.get("location") or "").strip(),
+                "prefecture": extract_prefecture(row.get("location")),
                 "official_website": (row.get("official_website") or "").strip(),
                 "official_x": normalize_x_url(row.get("official_x") or ""),
                 "query_include": is_truthy(row.get("query_include") or ""),
@@ -72,6 +74,7 @@ def build_venue_items(rows: list[dict[str, str]]) -> list[dict[str, Any]]:
                 "id": (row.get("venue_id") or "").strip(),
                 "name": (row.get("venue_name") or "").strip(),
                 "location": (row.get("location") or "").strip(),
+                "prefecture": extract_prefecture(row.get("location")),
                 "official_website": (row.get("official_website") or "").strip(),
             }
         )

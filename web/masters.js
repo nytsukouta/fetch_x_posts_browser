@@ -1,4 +1,16 @@
 const DATA_URL = "./data/master_data.json";
+const PREFECTURE_PATTERN = /北海道|東京都|京都府|大阪府|(?:青森|岩手|宮城|秋田|山形|福島|茨城|栃木|群馬|埼玉|千葉|神奈川|新潟|富山|石川|福井|山梨|長野|岐阜|静岡|愛知|三重|滋賀|兵庫|奈良|和歌山|鳥取|島根|岡山|広島|山口|徳島|香川|愛媛|高知|福岡|佐賀|長崎|熊本|大分|宮崎|鹿児島|沖縄)県/g;
+const MUNICIPALITY_PREFECTURES = new Map([
+  ["金沢市", "石川県"], ["七尾市", "石川県"], ["白山市", "石川県"],
+  ["小松市", "石川県"], ["加賀市", "石川県"], ["野々市市", "石川県"],
+  ["輪島市", "石川県"], ["珠洲市", "石川県"], ["羽咋市", "石川県"],
+  ["富山市", "富山県"], ["高岡市", "富山県"], ["射水市", "富山県"],
+  ["黒部市", "富山県"], ["砺波市", "富山県"], ["魚津市", "富山県"],
+  ["氷見市", "富山県"], ["南砺市", "富山県"],
+  ["福井市", "福井県"], ["鯖江市", "福井県"], ["越前市", "福井県"],
+  ["坂井市", "福井県"], ["敦賀市", "福井県"], ["大野市", "福井県"],
+  ["勝山市", "福井県"], ["小浜市", "福井県"],
+]);
 
 const state = {
   payload: null,
@@ -83,7 +95,7 @@ function syncItems() {
 
 function populateLocations(items) {
   const currentValue = elements.locationFilter.value;
-  const locations = unique(items.map((item) => item.location).filter(Boolean));
+  const locations = unique(items.map(getItemPrefecture).filter(Boolean));
   elements.locationFilter.innerHTML = '<option value="">すべて</option>';
   for (const location of locations) {
     elements.locationFilter.append(createOption(location, location));
@@ -109,7 +121,7 @@ function applyFilters() {
       return false;
     }
 
-    if (location && item.location !== location) {
+    if (location && getItemPrefecture(item) !== location) {
       return false;
     }
 
@@ -123,6 +135,25 @@ function applyFilters() {
     return;
   }
   elements.resultSummary.textContent = `${typeLabel} ${state.filteredItems.length} 件を表示中 / 全 ${state.items.length} 件`;
+}
+
+function extractPrefecture(value) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  const explicit = unique(text.match(PREFECTURE_PATTERN) || []);
+  if (explicit.length === 1) return explicit[0];
+  if (explicit.length > 1) return "";
+
+  const inferred = unique(
+    [...MUNICIPALITY_PREFECTURES.entries()]
+      .filter(([municipality]) => text.includes(municipality))
+      .map(([, prefecture]) => prefecture),
+  );
+  return inferred.length === 1 ? inferred[0] : "";
+}
+
+function getItemPrefecture(item) {
+  return String(item.prefecture || "").trim() || extractPrefecture(item.location);
 }
 
 function renderCards(items, type) {

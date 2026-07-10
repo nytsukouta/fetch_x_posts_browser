@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-15T21:38:37+09:00",
+  "generated_at": "2026-07-10T20:27:22+09:00",
   "counts": {
     "organizations": 40,
     "venues": 25
@@ -9,6 +9,7 @@
       "id": "org-ほくりくアイドル部",
       "name": "ほくりくアイドル部",
       "location": "北陸地方",
+      "prefecture": "",
       "official_website": "https://hkrk.jp",
       "official_x": "https://x.com/hokuriku_idolbu",
       "query_include": false
@@ -17,6 +18,7 @@
       "id": "org-び-めんぷろじぇくと",
       "name": "び〜めんぷろじぇくと",
       "location": "富山県",
+      "prefecture": "富山県",
       "official_website": "https://b-men-project.jimdofree.com/",
       "official_x": "https://x.com/b_men_project",
       "query_include": true
@@ -25,6 +27,7 @@
       "id": "org-劇団ココロ跡",
       "name": "劇団ココロ跡",
       "location": "富山県",
+      "prefecture": "富山県",
       "official_website": "https://kokoroato.com/",
       "official_x": "https://x.com/kokoro_art2",
       "query_include": false
@@ -33,6 +36,7 @@
       "id": "org-東京富山パフォーミングアーツプロジェクト",
       "name": "東京富山パフォーミングアーツプロジェクト",
       "location": "富山県",
+      "prefecture": "富山県",
       "official_website": "",
       "official_x": "https://x.com/TsproToyama",
       "query_include": true
@@ -41,6 +45,7 @@
       "id": "org-演人全開",
       "name": "演人全開「血が滾ってきたぜ！」",
       "location": "富山県",
+      "prefecture": "富山県",
       "official_website": "https://chigatagi.net/",
       "official_x": "https://x.com/chigatagi",
       "query_include": true
@@ -49,6 +54,7 @@
       "id": "org-表現実験bashow",
       "name": "表現実験BASHOW",
       "location": "富山県",
+      "prefecture": "富山県",
       "official_website": "https://note.com/hyougenbashow",
       "official_x": "https://x.com/BASHOW1104",
       "query_include": false
@@ -57,6 +63,7 @@
       "id": "org-魔導演劇結社インポッシブル",
       "name": "魔導演劇結社インポッシブル",
       "location": "富山県",
+      "prefecture": "富山県",
       "official_website": "",
       "official_x": "https://x.com/Unit_INP",
       "query_include": false
@@ -65,6 +72,7 @@
       "id": "org-演劇集団富山舞台",
       "name": "演劇集団富山舞台",
       "location": "富山県富山市",
+      "prefecture": "富山県",
       "official_website": "",
       "official_x": "https://x.com/toyama_butai",
       "query_include": false
@@ -73,6 +81,7 @@
       "id": "org-血パンダ",
       "name": "血パンダ",
       "location": "富山県射水市",
+      "prefecture": "富山県",
       "official_website": "https://blood-panda.net/",
       "official_x": "https://x.com/BP_chipanda",
       "query_include": false
@@ -81,6 +90,7 @@
       "id": "org-劇団すばる",
       "name": "劇団すばる",
       "location": "富山県砺波市",
+      "prefecture": "富山県",
       "official_website": "https://subaru1971tonami.sunnyday.jp/",
       "official_x": "https://x.com/gekisuba1971",
       "query_include": false
@@ -89,6 +99,7 @@
       "id": "org-劇団p-o-d",
       "name": "劇団P.O.D.",
       "location": "富山県高岡市",
+      "prefecture": "富山県",
       "official_website": "http://www.pod-world.com/",
       "official_x": "https://x.com/pod_world",
       "query_include": false
@@ -97,6 +108,7 @@
       "id": "org-劇団フロンティア",
       "name": "劇団フロンティア",
       "location": "富山県黒部市",
+      "prefecture": "富山県",
       "official_website": "http://www.theater-frontier.com/",
       "official_x": "https://x.com/theaterfrontier",
       "query_include": false
@@ -105,6 +117,7 @@
       "id": "org-ririproject-act",
       "name": "RiRiぷろじぇくと",
       "location": "石川県",
+      "prefecture": "石川県",
       "official_website": "",
       "official_x": "https://x.com/RiRiproject_act",
       "query_include": true
@@ -113,6 +126,7 @@
       "id": "org-演芸列車-東西本線",
       "name": "演芸列車「東西本線」",
       "location": "石川県",
+      "prefecture": "石川県",
       "official_website": "https://touzaihonsen.com/",
       "official_x": "https://x.com/touzaihonsen",
       "query_include": true
@@ -121,6 +135,7 @@
       "id": "org-七尾市民劇団n",
       "name": "七尾市民劇団N",
       "location": "石川県七尾市",
+      "prefecture": "石川県",
       "official_website": "https://gekidann.com",
       "official_x": "",
       "query_include": false
@@ -129,6 +144,7 @@
       "id": "org-七尾演劇鑑賞会",
       "name": "七尾演劇鑑賞会",
       "location": "石川県七尾市",
+      "prefecture": "石川県",
       "official_website": "",
       "official_x": "",
       "query_include": false
@@ -137,6 +153,7 @@
       "id": "org-劇団nono",
       "name": "劇団nono",
       "location": "石川県野々市市",
+      "prefecture": "石川県",
       "official_website": "http://gekidan.nono1.jp/gekidan.html",
       "official_x": "https://x.com/gekidannono",
       "query_include": false
@@ -145,6 +162,7 @@
       "id": "org-0me",
       "name": "0ME｜ゼロミー",
       "location": "石川県金沢市",
+      "prefecture": "石川県",
       "official_website": "https://lit.link/zeromeofficial",
       "official_x": "https://x.com/zeroMEOFFICIAL",
       "query_include": true
@@ -153,6 +171,7 @@
       "id": "org-110show",
       "name": "110SHOW",
       "location": "石川県金沢市",
+      "prefecture": "石川県",
       "official_website": "https://www.110show.com/",
       "official_x": "https://x.com/110show1",
       "query_include": false
@@ -161,6 +180,7 @@
       "id": "org-k-cat",
       "name": "K-CAT",
       "location": "石川県金沢市",
+      "prefecture": "石川県",
       "official_website": "http://www.k-cat.net/",
       "official_x": "",
       "query_include": false
@@ -169,6 +189,7 @@
       "id": "org-potluck-theater",
       "name": "Potluck Theater",
       "location": "石川県金沢市",
+      "prefecture": "石川県",
       "official_website": "https://potlucktheater.com/",
       "official_x": "https://x.com/PotluckTheater",
       "query_include": false
@@ -177,6 +198,7 @@
       "id": "org-のんびりユニットころころ",
       "name": "のんびりユニットころころ",
       "location": "石川県金沢市",
+      "prefecture": "石川県",
       "official_website": "",
       "official_x": "https://x.com/kolokolo3214go",
       "query_include": false
@@ -185,6 +207,7 @@
       "id": "org-coffee-ジョキャニーニャ",
       "name": "ジョキャニーニャ",
       "location": "石川県金沢市",
+      "prefecture": "石川県",
       "official_website": "http://jokya.jp/",
       "official_x": "https://x.com/jokya_official",
       "query_include": true
@@ -193,6 +216,7 @@
       "id": "org-ハートグローバル金沢",
       "name": "ハートグローバル金沢",
       "location": "石川県金沢市",
+      "prefecture": "石川県",
       "official_website": "https://www.heart-global.jp",
       "official_x": "https://x.com/0y6bXgO8JEAnim7",
       "query_include": false
@@ -201,6 +225,7 @@
       "id": "org-出会い頭",
       "name": "出会い頭",
       "location": "石川県金沢市",
+      "prefecture": "石川県",
       "official_website": "",
       "official_x": "https://x.com/nabesan_p",
       "query_include": true
@@ -209,6 +234,7 @@
       "id": "org-劇団さくらんぼ",
       "name": "劇団さくらんぼ",
       "location": "石川県金沢市",
+      "prefecture": "石川県",
       "official_website": "https://doubun.arunke.biz/kouen/gekidan/",
       "official_x": "",
       "query_include": false
@@ -217,6 +243,7 @@
       "id": "org-劇団ともだおれ",
       "name": "劇団ともだおれ",
       "location": "石川県金沢市",
+      "prefecture": "石川県",
       "official_website": "https://www.instagram.com/tomodaore70",
       "official_x": "https://x.com/tomodaore70",
       "query_include": false
@@ -225,6 +252,7 @@
       "id": "org-劇団アンゲルス",
       "name": "劇団アンゲルス",
       "location": "石川県金沢市",
+      "prefecture": "石川県",
       "official_website": "https://theaterangelus.com/",
       "official_x": "https://x.com/angels_gekidan",
       "query_include": false
@@ -233,6 +261,7 @@
       "id": "org-劇団ドリームチョップ",
       "name": "劇団ドリームチョップ",
       "location": "石川県金沢市",
+      "prefecture": "石川県",
       "official_website": "https://monthly-pro-geki.online/",
       "official_x": "https://x.com/dreamchop",
       "query_include": false
@@ -241,6 +270,7 @@
       "id": "org-劇団夢宇人",
       "name": "劇団夢宇人",
       "location": "石川県金沢市",
+      "prefecture": "石川県",
       "official_website": "http://munin.jpn.com/",
       "official_x": "",
       "query_include": false
@@ -249,6 +279,7 @@
       "id": "org-劇団新人類人猿",
       "name": "劇団新人類人猿",
       "location": "石川県金沢市",
+      "prefecture": "石川県",
       "official_website": "https://potofu.me/rui-jin-en",
       "official_x": "https://x.com/rui_jin_en",
       "query_include": false
@@ -257,6 +288,7 @@
       "id": "org-劇団羅針盤",
       "name": "劇団羅針盤",
       "location": "石川県金沢市",
+      "prefecture": "石川県",
       "official_website": "https://gekirashinban.com",
       "official_x": "https://x.com/GEKIRASHINBAN",
       "query_include": false
@@ -265,6 +297,7 @@
       "id": "org-浪漫好-romance",
       "name": "演劇ユニット浪漫好",
       "location": "石川県金沢市",
+      "prefecture": "石川県",
       "official_website": "https://www.youtube.com/@ROMANCE966",
       "official_x": "https://x.com/ROMANCE966",
       "query_include": false
@@ -273,6 +306,7 @@
       "id": "org-表現集団tone-tone-tone",
       "name": "表現集団tone!tone!tone!",
       "location": "石川県金沢市",
+      "prefecture": "石川県",
       "official_website": "",
       "official_x": "https://x.com/tonetoneto25403",
       "query_include": false
@@ -281,6 +315,7 @@
       "id": "org-金沢大学劇団らくだ",
       "name": "金沢大学劇団らくだ",
       "location": "石川県金沢市",
+      "prefecture": "石川県",
       "official_website": "https://sites.google.com/view/gekidannrakuda/%E3%83%9B%E3%83%BC%E3%83%A0",
       "official_x": "https://x.com/drama_camel",
       "query_include": false
@@ -289,6 +324,7 @@
       "id": "org-金沢学院大学演劇部",
       "name": "金沢学院大学演劇部",
       "location": "石川県金沢市",
+      "prefecture": "石川県",
       "official_website": "https://www.kanazawa-gu.ac.jp/club-tag/%E6%BC%94%E5%8A%87%E9%83%A8/",
       "official_x": "https://x.com/kg_drama",
       "query_include": false
@@ -297,6 +333,7 @@
       "id": "org-さよならキャンプ",
       "name": "さよならキャンプ",
       "location": "福井県",
+      "prefecture": "福井県",
       "official_website": "https://sayonara-camp.com/",
       "official_x": "https://x.com/sayonara_camp",
       "query_include": true
@@ -305,6 +342,7 @@
       "id": "org-フガフガラボラトリー",
       "name": "フガフガLaboratory",
       "location": "福井県福井市",
+      "prefecture": "福井県",
       "official_website": "https://blog636.wixsite.com/fugalabo",
       "official_x": "https://x.com/fugalabo",
       "query_include": true
@@ -313,6 +351,7 @@
       "id": "org-劇団福井自由舞台",
       "name": "劇団福井自由舞台",
       "location": "福井県福井市",
+      "prefecture": "福井県",
       "official_website": "",
       "official_x": "https://x.com/jiyuubutai",
       "query_include": false
@@ -321,6 +360,7 @@
       "id": "org-演衆やむなし",
       "name": "演衆やむなし",
       "location": "福井県福井市",
+      "prefecture": "福井県",
       "official_website": "https://www.yamunashi.com/",
       "official_x": "https://x.com/fukui_yamunashi",
       "query_include": false
@@ -331,150 +371,175 @@
       "id": "venue-福井鯖江tabby-s",
       "name": "福井鯖江Tabby's",
       "location": "〒916-0038 福井県鯖江市下河端町607",
+      "prefecture": "福井県",
       "official_website": "https://www.tabbys-cafe.com/"
     },
     {
       "id": "venue-金沢市民芸術村",
       "name": "金沢市民芸術村",
       "location": "〒920-0046 石川県金沢市大和町1-1",
+      "prefecture": "石川県",
       "official_website": "https://www.artvillage.gr.jp/"
     },
     {
       "id": "venue-内灘町文化会館",
       "name": "内灘町文化会館",
       "location": "〒920-0267 石川県河北郡内灘町大清台140",
+      "prefecture": "石川県",
       "official_website": ""
     },
     {
       "id": "venue-宇多須神社",
       "name": "宇多須神社",
       "location": "〒920-0831 石川県金沢市東山1丁目30-8",
+      "prefecture": "石川県",
       "official_website": ""
     },
     {
       "id": "venue-石川県立音楽堂",
       "name": "石川県立音楽堂",
       "location": "〒920-0856 石川県金沢市昭和町20番1号",
+      "prefecture": "石川県",
       "official_website": "https://ongakudo.jp/"
     },
     {
       "id": "venue-金沢市文化ホール",
       "name": "金沢市文化ホール",
       "location": "〒920-0864 石川県金沢市高岡町15-1",
+      "prefecture": "石川県",
       "official_website": "https://www.bunka-h.gr.jp/"
     },
     {
       "id": "venue-スタジオ犀",
       "name": "スタジオ犀",
       "location": "〒920-0867 石川県金沢市長土塀3−24−28",
+      "prefecture": "石川県",
       "official_website": "https://studiosai-kanazawa.com/"
     },
     {
       "id": "venue-北國新聞赤羽ホール",
       "name": "北國新聞赤羽ホール",
       "location": "〒920-0919 石川県金沢市南町2番1号",
+      "prefecture": "石川県",
       "official_website": "http://www.akabane-hall.jp/"
     },
     {
       "id": "venue-本多の森北電ホール",
       "name": "本多の森 北電ホール",
       "location": "〒920-0935 石川県金沢市石引4-17-1",
+      "prefecture": "石川県",
       "official_website": "http://www.hondanomori-hall.com/"
     },
     {
       "id": "venue-石川県立能楽堂",
       "name": "石川県立能楽堂",
       "location": "〒920-0935 石川県金沢市石引4丁目18-3",
+      "prefecture": "石川県",
       "official_website": "https://noh-theater.jp/"
     },
     {
       "id": "venue-金沢eight-hall",
       "name": "金沢EIGHT HALL",
       "location": "〒920-0981 石川県金沢市片町1-6-10 ブラザービル2F",
+      "prefecture": "石川県",
       "official_website": "http://www.eighthall.com/"
     },
     {
       "id": "venue-金沢歌劇座",
       "name": "金沢歌劇座",
       "location": "〒920-0993 石川県金沢市下本多町6番丁27番地",
+      "prefecture": "石川県",
       "official_website": "http://www.kagekiza.gr.jp/"
     },
     {
       "id": "venue-白山市鶴来総合文化会館クレイン",
       "name": "白山市鶴来総合文化会館クレイン",
       "location": "〒920-2143 石川県白山市七原町77番地",
+      "prefecture": "石川県",
       "official_website": ""
     },
     {
       "id": "venue-金沢21世紀美術館-シアター21",
       "name": "金沢21世紀美術館 シアター21",
       "location": "〒920-8509 石川県金沢市広坂1-2-1",
+      "prefecture": "石川県",
       "official_website": "https://www.kanazawa21.jp/"
     },
     {
       "id": "venue-にぎわいの里ののいちカミーノ",
       "name": "にぎわいの里ののいち カミーノ",
       "location": "〒921-8815 石川県野々市市本町二丁目1番20号",
+      "prefecture": "石川県",
       "official_website": "https://www.city.nonoichi.lg.jp/site/camino/"
     },
     {
       "id": "venue-学びの杜ののいち-カレード",
       "name": "学びの杜ののいち カレード",
       "location": "〒921-8845 石川県野々市市太平寺4-156",
+      "prefecture": "石川県",
       "official_website": "https://www.kaleido-nono1.jp/"
     },
     {
       "id": "venue-加賀市文化会館",
       "name": "加賀市文化会館",
       "location": "〒922-0243 石川県加賀市山代温泉北部2丁目68",
+      "prefecture": "石川県",
       "official_website": ""
     },
     {
       "id": "venue-小松市團十郎芸術劇場うらら",
       "name": "小松市團十郎芸術劇場うらら",
       "location": "〒923-0921 石川県小松市土居原町710番地",
+      "prefecture": "石川県",
       "official_website": "https://komatsu-urara.com/"
     },
     {
       "id": "venue-白山市松任文化会館",
       "name": "白山市松任文化会館",
       "location": "〒924-0872 石川県白山市古城町2",
+      "prefecture": "石川県",
       "official_website": ""
     },
     {
       "id": "venue-志賀町文化ホール",
       "name": "志賀町文化ホール",
       "location": "〒925-0141 石川県羽咋郡志賀町高浜町カの1番地1",
+      "prefecture": "石川県",
       "official_website": ""
     },
     {
       "id": "venue-七尾市文化ホール",
       "name": "七尾市文化ホール",
       "location": "〒926-0021 石川県七尾市本府中町ヲ部38番地",
+      "prefecture": "石川県",
       "official_website": "https://shisetsu.sports-nanao.or.jp/shisetsu/%E4%B8%83%E5%B0%BE%E5%B8%82%E6%96%87%E5%8C%96%E3%83%9B%E3%83%BC%E3%83%AB/"
     },
     {
       "id": "venue-輪島市文化会館",
       "name": "輪島市文化会館",
       "location": "〒928-0001 石川県輪島市河井町20部1-1",
+      "prefecture": "石川県",
       "official_website": ""
     },
     {
       "id": "venue-能美市根上総合文化会館",
       "name": "能美市根上総合文化会館",
       "location": "〒929-0113 石川県能美市大成町ヌ118",
+      "prefecture": "石川県",
       "official_website": ""
     },
     {
       "id": "venue-津幡町文化会館シグナス",
       "name": "津幡町文化会館シグナス",
       "location": "〒929-0342 石川県河北郡津幡町北中条3丁目1番地",
+      "prefecture": "石川県",
       "official_website": "https://www.town.tsubata.lg.jp/page/1145.html"
     },
     {
       "id": "venue-能登演劇堂",
       "name": "能登演劇堂",
       "location": "〒929-2222 石川県七尾市中島町中島上部9番地",
+      "prefecture": "石川県",
       "official_website": "https://engekido.com/"
     }
   ]

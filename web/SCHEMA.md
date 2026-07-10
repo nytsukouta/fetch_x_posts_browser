@@ -9,27 +9,20 @@
 ```jsonc
 {
   "generated_at": "2026-05-31T12:34:56+09:00",   // ISO8601 (JST)
-  "total_count": 42,                              // items 配列の件数
+  "count": 42,                                    // items 配列の件数
   "items": [
     {
       "event_id": "event-xxxx",                   // event_cumulative.csv の event_id
       "event_name": "公演タイトル",
-      "normalized_event_name": "公演タイトル",     // 揺れ吸収済み名称
-      "organization": "劇団名",
+      "organization_id": "org-xxxx",
+      "organization_name": "劇団名",
       "venue_name": "会場名",
-      "normalized_venue_name": "正規化会場名",
-      "location": "市区町村など",
-      "start_date": "2026-06-01",                 // ISO 日付 (YYYY-MM-DD), 未確定なら空
-      "end_date": "2026-06-02",
-      "start_time": "19:00",                       // HH:MM, 未確定なら空
-      "category": "演劇 | 朗読 | ミュージカル...",
-      "tweet_url": "https://x.com/.../status/...",  // 代表 URL
-      "source_tweet_urls": "url1 | url2",          // " | " 区切り
-      "source_tweet_count": 3,
+      "performance_schedule": "2026-06-01 - 2026-06-02 19:00",
       "official_reference_url": "https://...",     // マスター優先, 無ければ投稿者プロフィール
-      "posting_recommendation": "post | review | skip",
-      "first_seen_created_at": "2026-05-20T...",
-      "last_seen_created_at": "2026-05-29T..."
+      "official_reference_type": "organization_official_website",
+      "normalized_location": "石川県金沢市 / 石川県", // 詳細表示・検索用
+      "source_tweet_url": "https://x.com/.../status/...",
+      "prefecture": "石川県"                       // 都道府県フィルター用。判定不能なら空
     }
   ]
 }
@@ -37,8 +30,8 @@
 
 不変条件:
 - `event_id` はファイル内一意
-- `start_date` <= `end_date`（両方ある場合）
-- `items` は `start_date` 昇順、`start_date` 同値なら `event_name` 昇順
+- `items` は `performance_schedule` 昇順
+- `normalized_location` は詳細地域を保持し、`prefecture` はフィルター用の派生値
 
 ## master_data.json
 
@@ -49,19 +42,22 @@
   "generated_at": "2026-05-31T12:34:56+09:00",
   "organizations": [
     {
+      "id": "org-xxxx",
       "name": "劇団名",
-      "aliases": ["別表記1", "別表記2"],
-      "official_url": "https://...",
+      "location": "石川県金沢市",
+      "prefecture": "石川県",
+      "official_website": "https://...",
       "official_x": "https://x.com/...",
-      "notes": "任意の補足"
+      "query_include": true
     }
   ],
   "venues": [
     {
+      "id": "venue-xxxx",
       "name": "会場名",
-      "address": "石川県金沢市...",
-      "official_url": "https://...",
-      "notes": "任意の補足"
+      "location": "石川県金沢市...",
+      "prefecture": "石川県",
+      "official_website": "https://..."
     }
   ]
 }

@@ -11,6 +11,7 @@ from typing import Any
 
 from atomic_io import atomic_open
 from event_candidate_rules import build_date_range, is_schedule_eligible_event
+from location_normalization import extract_prefecture
 
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
@@ -396,11 +397,21 @@ def write_csv(rows: list[dict[str, Any]], output_path: Path) -> None:
         writer.writerows(rows)
 
 
+def build_json_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    json_rows: list[dict[str, Any]] = []
+    for row in rows:
+        json_row = dict(row)
+        json_row["prefecture"] = extract_prefecture(row.get("normalized_location"))
+        json_rows.append(json_row)
+    return json_rows
+
+
 def write_json(rows: list[dict[str, Any]], output_path: Path) -> None:
+    json_rows = build_json_rows(rows)
     payload = {
         "generated_at": datetime.now().astimezone().isoformat(timespec="seconds"),
-        "count": len(rows),
-        "items": rows,
+        "count": len(json_rows),
+        "items": json_rows,
     }
     with atomic_open(output_path, "w", encoding="utf-8") as handle:
         json.dump(payload, handle, ensure_ascii=False, indent=2)
