@@ -18,6 +18,32 @@ PLACEHOLDER_TITLE_PATTERNS = [
     # 「次回公演」「今度の定期公演」「今月の本公演」など、修飾語＋公演種別だけ
     re.compile(r"^(?:次回|今回|今度|今月|今週|来週|来月)?の?\s*(?:定期公演|本公演|公演|お披露目公演)\s*$"),
 ]
+EVENT_UPDATE_KEYWORDS = (
+    "残席",
+    "座席",
+    "座席追加",
+    "追加販売",
+    "予約",
+    "空席",
+    "満席",
+    "チケット",
+    "販売",
+    "当日券",
+    "キャンセル",
+    "受付中",
+    "お席",
+    "ご予約",
+    "お待ちしています",
+)
+STRONG_EVENT_UPDATE_KEYWORDS = (
+    "残席",
+    "座席追加",
+    "追加販売",
+    "空席",
+    "満席",
+    "当日券",
+    "キャンセル",
+)
 VENUE_GROUP_ALIASES = {
     compact: canonical
     for compact, canonical in {
@@ -336,6 +362,144 @@ def merge_date_range(records: list[dict[str, Any]]) -> tuple[str, str]:
     if merged_end and not merged_start:
         merged_start = merged_end
     return merged_start, merged_end
+
+
+def is_event_update_record(record: dict[str, Any]) -> bool:
+    """既存公演への続報らしいレコードかを判定する。"""
+    source_text = str(record.get("source_text") or "")
+    if not source_text or not any(keyword in source_text for keyword in EVENT_UPDATE_KEYWORDS):
+        return False
+    title = _record_title(record)
+    if title and not is_placeholder_title(title) and not any(
+        keyword in source_text for keyword in STRONG_EVENT_UPDATE_KEYWORDS
+    ):
+        return False
+    return bool(
+        (record.get("organization") or "").strip()
+        or (record.get("start_date") or "").strip()
+        or (record.get("event_name") or "").strip()
+    )
+
+
+def _record_handles(record: dict[str, Any]) -> set[str]:
+    values = [
+        str(record.get("author_username") or ""),
+        str(record.get("source_author_usernames") or ""),
+    ]
+    return {
+        handle
+        for value in values
+        for handle in (normalize_handle(part) for part in value.split(" | "))
+        if handle
+    }
+
+
+def _record_title(record: dict[str, Any]) -> str:
+    return str(record.get("normalized_event_name") or record.get("event_name") or "").strip()
+
+
+def event_update_match_score(
+    update_record: dict[str, Any],
+    event_record: dict[str, Any],
+    official_handles: dict[str, str] | set[str] | None = None,
+) -> int:
+    """続報レコードと既存イベントの安全側の関連度を返す。"""
+    update_org = compact_text(str(update_record.get("organization") or ""))
+    event_org = compact_text(str(event_record.get("organization") or ""))
+    if not update_org or not event_org or update_org != event_org:
+        return -100
+
+    update_start = str(update_record.get("start_date") or "").strip()
+    event_start = str(event_record.get("start_date") or "").strip()
+    if update_start and event_start and not _date_ranges_overlap(
+        update_start,
+        str(update_record.get("end_date") or update_start).strip(),
+        event_start,
+        str(event_record.get("end_date") or event_start).strip(),
+    ):
+        return -100
+
+    update_venue = normalize_venue_group_key(
+        str(update_record.get("normalized_venue_name") or update_record.get("venue_name") or "")
+    )
+    event_venue = normalize_venue_group_key(
+        str(event_record.get("normalized_venue_name") or event_record.get("venue_name") or "")
+    )
+    if update_venue and event_venue and update_venue != event_venue:
+        return -100
+
+    update_title = _record_title(update_record)
+    event_title = _record_title(event_record)
+    if (
+        update_title
+        and event_title
+        and not is_placeholder_title(update_title)
+        and not is_placeholder_title(event_title)
+        and not titles_are_similar(update_title, event_title)
+    ):
+        return -100
+
+    score = 5  # organization is required above
+    if update_start and event_start:
+        score += 4
+    if update_venue and event_venue:
+        score += 3
+    if any(keyword in str(update_record.get("source_text") or "") for keyword in EVENT_UPDATE_KEYWORDS):
+        score += 3
+
+    update_handles = _record_handles(update_record)
+    if isinstance(official_handles, dict):
+        official_for_org = {
+            normalize_handle(handle)
+            for handle, organization in official_handles.items()
+            if compact_text(str(organization or "")) == event_org
+        }
+    else:
+        official_for_org = {normalize_handle(handle) for handle in (official_handles or set())}
+    if update_handles & official_for_org:
+        score += 4
+
+    if update_title and event_title and titles_are_similar(update_title, event_title):
+        score += 3
+
+    if not update_title and not update_venue and not update_start:
+        score -= 3
+    return score
+
+
+def attach_event_updates(
+    records: list[dict[str, Any]],
+    official_handles: dict[str, str] | set[str] | None = None,
+) -> list[dict[str, Any]]:
+    """続報を既存イベントへ付加し、未照合の空タイトル続報は公開対象外にする。"""
+    updates = [record for record in records if is_event_update_record(record)]
+    if not updates:
+        return records
+
+    update_ids = {id(record) for record in updates}
+    ordinary_records = [record for record in records if id(record) not in update_ids]
+    for update in updates:
+        candidates = [
+            (event_update_match_score(update, event, official_handles), event)
+            for event in ordinary_records
+            if event is not update
+        ]
+        best_score, best_event = max(candidates, key=lambda item: item[0], default=(-1, None))
+        if best_event is not None and best_score >= 8:
+            merged = merge_event_group([best_event, update], _record_title(best_event))
+            merged["event_id"] = str(best_event.get("event_id") or "").strip()
+            merged["event_key"] = build_event_key(merged)
+            ordinary_records[ordinary_records.index(best_event)] = merged
+            continue
+
+        # 公演名のない未照合続報を仮イベントとして公開しない。
+        if not _record_title(update):
+            update = dict(update)
+            update["posting_recommendation"] = "skip"
+            update["posting_reason"] = "既存公演への続報候補だが自動照合できないため要確認"
+        ordinary_records.append(update)
+
+    return ordinary_records
 
 
 def choose_canonical_name(records: list[dict[str, Any]], suggested_name: str) -> str:

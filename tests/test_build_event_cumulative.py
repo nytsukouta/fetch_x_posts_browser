@@ -1,9 +1,12 @@
 from build_event_cumulative import (
     apply_organization_canonicalization,
+    attach_event_updates,
     build_event_key,
     build_organization_lookup,
     canonicalize_organization,
     compact_text,
+    event_update_match_score,
+    is_event_update_record,
     is_placeholder_title,
     merge_date_range,
     merge_placeholder_records,
@@ -216,6 +219,90 @@ class TestMergeRecordsByEventId:
         ]
         merged = merge_records_by_event_id(records)
         assert len(merged) == 2
+
+
+class TestEventUpdateAttachment:
+    def _record(self, **overrides):
+        base = {
+            "event_id": "event-街",
+            "event_name": "街 くずれた日常 2026",
+            "normalized_event_name": "街 くずれた日常 2026",
+            "organization": "劇団新人類人猿",
+            "venue_name": "金沢市民芸術村PIT2ドラマ工房",
+            "normalized_venue_name": "金沢市民芸術村PIT2ドラマ工房",
+            "start_date": "2026-07-11",
+            "end_date": "2026-07-12",
+            "start_time": "14:00",
+            "category": "公演",
+            "confidence": "0.9",
+            "source_tweet_urls": "https://x.com/rui_jin_en/status/1",
+            "source_author_usernames": "rui_jin_en",
+            "tweet_url": "https://x.com/rui_jin_en/status/1",
+            "author_username": "rui_jin_en",
+            "source_text": "街 くずれた日常 2026 公演のお知らせ",
+            "created_at": "2026-07-01T10:00:00Z",
+        }
+        base.update(overrides)
+        return base
+
+    def test_official_seat_update_attaches_to_existing_event(self):
+        event = self._record()
+        update = self._record(
+            event_id="event-劇団新人類人猿",
+            event_name="",
+            normalized_event_name="",
+            venue_name="",
+            normalized_venue_name="",
+            source_tweet_urls="https://x.com/rui_jin_en/status/2075106425639256295",
+            tweet_url="https://x.com/rui_jin_en/status/2075106425639256295",
+            source_text="11日14時公演、座席追加で8席の余裕があります。",
+            created_at="2026-07-10T01:00:00Z",
+        )
+        merged = attach_event_updates([event, update], {"rui_jin_en": "劇団新人類人猿"})
+        assert len(merged) == 1
+        assert merged[0]["event_id"] == "event-街"
+        assert merged[0]["event_name"] == "街 くずれた日常 2026"
+        assert merged[0]["venue_name"] == "金沢市民芸術村PIT2ドラマ工房"
+        assert "2075106425639256295" in merged[0]["source_tweet_urls"]
+        assert merged[0]["source_tweet_count"] == 2
+
+    def test_same_org_and_date_without_update_signal_does_not_attach(self):
+        event = self._record()
+        candidate = self._record(
+            event_id="event-new",
+            event_name="",
+            normalized_event_name="",
+            source_text="劇団新人類人猿の公演情報です。",
+        )
+        merged = attach_event_updates([event, candidate], {"rui_jin_en": "劇団新人類人猿"})
+        assert len(merged) == 2
+
+    def test_different_date_or_venue_does_not_attach(self):
+        event = self._record()
+        different_date = self._record(
+            event_id="event-other-date",
+            event_name="",
+            normalized_event_name="",
+            start_date="2026-08-01",
+            end_date="2026-08-01",
+            source_text="残席あります。",
+        )
+        different_venue = self._record(
+            event_id="event-other-venue",
+            event_name="",
+            normalized_event_name="",
+            venue_name="別会場",
+            normalized_venue_name="別会場",
+            source_text="残席あります。",
+        )
+        merged = attach_event_updates([event, different_date, different_venue], {"rui_jin_en": "劇団新人類人猿"})
+        assert len(merged) == 3
+        assert event_update_match_score(different_date, event, {"rui_jin_en": "劇団新人類人猿"}) < 8
+        assert event_update_match_score(different_venue, event, {"rui_jin_en": "劇団新人類人猿"}) < 8
+
+    def test_update_detection_requires_keyword(self):
+        assert is_event_update_record(self._record(source_text="11日14時公演です。")) is False
+        assert is_event_update_record(self._record(source_text="11日14時、残席あります。")) is True
 
 
 class TestIsPlaceholderTitle:

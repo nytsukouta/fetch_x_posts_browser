@@ -22,6 +22,7 @@ from event_cumulative_core import (  # noqa: F401
     VENUE_GROUP_ALIASES,
     apply_event_aliases,
     apply_organization_canonicalization,
+    attach_event_updates,
     bool_to_csv,
     build_event_key,
     build_event_records,
@@ -34,6 +35,8 @@ from event_cumulative_core import (  # noqa: F401
     choose_value,
     compact_text,
     is_placeholder_title,
+    is_event_update_record,
+    event_update_match_score,
     is_preview_subsumed,
     merge_date_range,
     merge_event_group,
@@ -163,6 +166,7 @@ def main() -> int:
     rows = apply_organization_canonicalization(rows, name_lookup, handle_lookup)
     records = build_event_records(rows)
     records = secondary_dedupe(records, args.model)
+    records = attach_event_updates(records, handle_lookup)
     alias_pairs = load_event_aliases(Path(args.aliases_csv))
     records = apply_event_aliases(records, alias_pairs)
     records = merge_placeholder_records(records)
