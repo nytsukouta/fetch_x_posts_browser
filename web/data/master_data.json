@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-07-11T16:30:58+09:00",
+  "generated_at": "2026-07-11T16:33:46+09:00",
   "counts": {
-    "organizations": 41,
+    "organizations": 43,
     "venues": 25
   },
   "organizations": [
@@ -121,6 +121,24 @@
       "official_website": "",
       "official_x": "https://x.com/yubipero_engeki",
       "query_include": true
+    },
+    {
+      "id": "org-劇団はぐるま",
+      "name": "劇団はぐるま",
+      "location": "岐阜県岐阜市",
+      "prefecture": "岐阜県",
+      "official_website": "https://www.gekidanhaguruma.com/",
+      "official_x": "https://x.com/GekidanHaguruma",
+      "query_include": false
+    },
+    {
+      "id": "org-劇団ゼロ",
+      "name": "劇団ゼロ",
+      "location": "岐阜県岐阜市",
+      "prefecture": "岐阜県",
+      "official_website": "",
+      "official_x": "https://x.com/shukan_zero",
+      "query_include": false
     },
     {
       "id": "org-ririproject-act",
