@@ -308,6 +308,7 @@ jobs:
               Path("data/output/posted_events.csv"),
               Path("data/output/structured_events_cumulative.csv"),
               Path("data/output/structured_events_filtered_cumulative.csv"),
+              Path("data/output/event_cumulative_base.csv"),
               Path("data/output/event_cumulative.csv"),
           ]
 

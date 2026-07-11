@@ -71,6 +71,10 @@ def choose_reference_url(
     organization_row: dict[str, str] | None,
     venue_row: dict[str, str] | None,
 ) -> tuple[str, str]:
+    manual_reference_url = (event_row.get("manual_reference_url") or "").strip()
+    if manual_reference_url:
+        return manual_reference_url, "manual_reference_url"
+
     if organization_row:
         official_website = (organization_row.get("official_website") or "").strip()
         if official_website:

@@ -19,7 +19,7 @@
       "venue_name": "会場名",
       "performance_schedule": "2026-06-01 - 2026-06-02 19:00",
       "official_reference_url": "https://...",     // マスター優先, 無ければ投稿者プロフィール
-      "official_reference_type": "organization_official_website",
+      "official_reference_type": "organization_official_website", // 手動補正時は manual_reference_url
       "normalized_location": "石川県金沢市 / 石川県", // 詳細表示・検索用
       "source_tweet_url": "https://x.com/.../status/...",
       "prefecture": "石川県"                       // 都道府県フィルター用。判定不能なら空
@@ -32,6 +32,8 @@
 - `event_id` はファイル内一意
 - `items` は `performance_schedule` 昇順
 - `normalized_location` は詳細地域を保持し、`prefecture` はフィルター用の派生値
+- 手動補正の `manual_reference_url` は、団体・会場マスターや投稿者プロフィールより優先する
+- `manual_publish_status` が `excluded` の公演は除外し、`published` は最低限の日付と名称があれば自動判定より優先して掲載する
 
 ## master_data.json
 

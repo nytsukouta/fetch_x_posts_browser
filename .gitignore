@@ -5,6 +5,7 @@ data/output/*
 !data/output/organization_master.csv
 !data/output/venue_master.csv
 data/session/
-docs/
+docs/*
+!docs/LOCAL_MAINTENANCE_IMPLEMENTATION_PLAN.md
 .vscode/mcp.json
 .playwright-mcp/

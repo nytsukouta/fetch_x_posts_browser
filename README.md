@@ -85,6 +85,36 @@
 - データは `data/output/schedule_list.json` を読み込みます
 - そのまま GitHub Pages や Cloudflare Pages に置きたい場合も、同じ静的ファイル構成を流用できます
 
+## ローカルの公演メンテナンス画面
+
+GitHub Actions が生成した最新の詳細データを取得し、公演名、団体、会場、日程、公式参照URL、公開状態を手動補正できます。管理画面は GitHub Pages へ配備されず、この端末の `127.0.0.1` だけで動作します。
+
+前提:
+
+- GitHub CLI (`gh`) をインストールして、このリポジトリを読めるアカウントで認証する
+- 最新の `Daily Theater Pipeline` が成功し、`pipeline-history-main` artifact が残っている
+
+起動:
+
+1. Windowsでは `start_maintenance.bat` をダブルクリックする（または `.venv/Scripts/python.exe src/maintenance_server.py` を実行する）
+2. 自動的に開く `http://127.0.0.1:8765/` を使用する
+3. 「GitHubから最新データ取得」で最新artifactを同期する
+4. 公演を編集して「補正を保存」する
+5. ローカルプレビューを確認後、「補正をGitHubへ反映」する
+
+ブラウザを自動で開かない場合は `--no-browser`、ポートを変える場合は `--port 8766` を指定します。
+
+補正内容は `config/manual_event_overrides.json` にだけ永続保存されます。`data/output/event_cumulative.csv` や公開JSONを直接編集しないでください。補正前データは `data/output/event_cumulative_base.csv`、補正適用後データは `data/output/event_cumulative.csv` です。
+
+「補正をGitHubへ反映」は、現在のブランチが `main` で、ローカルが `origin/main` より古くない場合に限り、補正JSONだけをcommit/pushします。他の変更はcommitへ含めません。条件を満たさない場合は自動pullやforce pushを行わず停止します。
+
+トラブルシュート:
+
+- `gh` が見つからない場合は GitHub CLI をインストールする
+- 未認証の場合は端末で `gh auth login` を実行する
+- artifact がない場合は GitHub Actions からパイプラインを一度成功させる
+- orphan補正は元の `event_id` と元ツイートURLの両方で対象を見つけられない状態なので、補正内容を確認する
+
 ## docs/ への配信
 
 `docs/` は GitHub Pages 配信用で、`web/` から生成します。HTML/CSS/JS を編集するときは `web/` 側だけを直接編集し、次のコマンドで `docs/` を再生成します。

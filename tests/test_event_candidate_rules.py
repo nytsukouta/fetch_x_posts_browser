@@ -140,3 +140,26 @@ class TestIsScheduleEligibleEvent:
     def test_missing_venue_and_org_rejected(self):
         row = make_row(venue_name="", normalized_venue_name="", organization="")
         assert is_schedule_eligible_event(row) is False
+
+    def test_manual_excluded_wins(self):
+        assert is_schedule_eligible_event(make_row(manual_publish_status="excluded")) is False
+
+    def test_manual_published_bypasses_theater_signal(self):
+        row = make_row(
+            event_name="地域イベント",
+            organization="主催者",
+            venue_name="",
+            normalized_venue_name="",
+            category="その他",
+            source_text="",
+            posting_recommendation="skip",
+            manual_publish_status="published",
+        )
+        assert is_schedule_eligible_event(row) is True
+
+    def test_manual_published_still_requires_valid_start_date(self):
+        row = make_row(start_date="2026/06/10", manual_publish_status="published")
+        assert is_schedule_eligible_event(row) is False
+
+    def test_manual_default_keeps_existing_behavior(self):
+        assert is_schedule_eligible_event(make_row(manual_publish_status="default")) is True

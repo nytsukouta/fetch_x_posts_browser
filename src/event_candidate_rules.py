@@ -149,6 +149,12 @@ def is_schedule_eligible_event(row: dict[str, str]) -> bool:
     organization_name = (row.get("organization") or "").strip()
     venue_name = (row.get("normalized_venue_name") or row.get("venue_name") or "").strip()
     date_range = build_date_range(row)
+    manual_publish_status = (row.get("manual_publish_status") or "default").strip().lower()
+
+    if manual_publish_status == "excluded":
+        return False
+    if manual_publish_status == "published":
+        return parse_iso_date(row.get("start_date") or "") is not None and bool(event_name or organization_name)
 
     if not date_range:
         return False

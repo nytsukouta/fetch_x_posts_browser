@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from atomic_io import atomic_open
+from manual_event_overrides import apply_manual_event_overrides, load_manual_event_overrides
 
 # 後方互換: 既存の import 元 (tests など) のため core を再エクスポート
 from event_cumulative_core import (  # noqa: F401
@@ -70,7 +71,9 @@ from event_cumulative_llm import (  # noqa: F401
 ROOT_DIR = Path(__file__).resolve().parent.parent
 DEFAULT_INPUT_CSV = ROOT_DIR / "data" / "output" / "structured_events_filtered_cumulative.csv"
 DEFAULT_OUTPUT_CSV = ROOT_DIR / "data" / "output" / "event_cumulative.csv"
+DEFAULT_BASE_OUTPUT_CSV = ROOT_DIR / "data" / "output" / "event_cumulative_base.csv"
 DEFAULT_ALIASES_CSV = ROOT_DIR / "config" / "event_aliases.csv"
+DEFAULT_MANUAL_OVERRIDES_JSON = ROOT_DIR / "config" / "manual_event_overrides.json"
 DEFAULT_ORGANIZATION_MASTER_CSV = ROOT_DIR / "data" / "output" / "organization_master.csv"
 
 OUTPUT_FIELDS = [
@@ -107,6 +110,9 @@ OUTPUT_FIELDS = [
     "source_author_usernames",
     "first_seen_created_at",
     "last_seen_created_at",
+    "manual_reference_url",
+    "manual_publish_status",
+    "manual_override_updated_at",
 ]
 
 
@@ -114,7 +120,13 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Build event-level cumulative records from filtered cumulative tweet records")
     parser.add_argument("--input-csv", default=str(DEFAULT_INPUT_CSV), help="filtered cumulative CSV のパス")
     parser.add_argument("--output-csv", default=str(DEFAULT_OUTPUT_CSV), help="イベント累積CSVの保存先")
+    parser.add_argument("--base-output-csv", default=str(DEFAULT_BASE_OUTPUT_CSV), help="手動補正前イベント累積CSVの保存先")
     parser.add_argument("--aliases-csv", default=str(DEFAULT_ALIASES_CSV), help="手動マージ対応表 CSV (canonical_event_id,alias_event_id)")
+    parser.add_argument(
+        "--manual-overrides-json",
+        default=str(DEFAULT_MANUAL_OVERRIDES_JSON),
+        help="公演単位の手動補正JSON",
+    )
     parser.add_argument(
         "--organization-master-csv",
         default=str(DEFAULT_ORGANIZATION_MASTER_CSV),
@@ -171,10 +183,21 @@ def main() -> int:
     records = apply_event_aliases(records, alias_pairs)
     records = merge_placeholder_records(records)
     records = merge_records_by_event_id(records)
-    write_csv(records, Path(args.output_csv))
+    write_csv(records, Path(args.base_output_csv))
 
+    override_payload = load_manual_event_overrides(Path(args.manual_overrides_json))
+    effective_records, override_stats = apply_manual_event_overrides(records, override_payload["overrides"])
+    write_csv(effective_records, Path(args.output_csv))
+
+    print(f"saved event cumulative base: {args.base_output_csv}")
     print(f"saved event cumulative: {args.output_csv}")
-    print(f"rows: {len(records)}")
+    print(f"rows: {len(effective_records)}")
+    print(
+        "manual overrides:",
+        f"applied={override_stats['applied']}",
+        f"orphan={len(override_stats['orphan'])}",
+        f"ambiguous={len(override_stats['ambiguous'])}",
+    )
     if alias_pairs:
         print(f"applied event aliases: {len(alias_pairs)} pair(s)")
     return 0
