@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "overrides": [
+    {
+      "target_event_id": "event-混沌",
+      "target_source_tweet_urls": [
+        "https://x.com/rui_jin_en/status/2074195438052544784",
+        "https://x.com/rui_jin_en/status/2075106425639256295"
+      ],
+      "set": {
+        "is_event_announcement": "",
+        "has_actionable_schedule_info": "",
+        "manual_publish_status": "excluded"
+      },
+      "note": "",
+      "updated_at": "2026-07-11T16:14:36+09:00"
+    }
+  ]
+}
