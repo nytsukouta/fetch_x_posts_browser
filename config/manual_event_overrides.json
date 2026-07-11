@@ -2,6 +2,20 @@
   "version": 1,
   "overrides": [
     {
+      "target_event_id": "event-いしかわ舞台芸術祭",
+      "target_source_tweet_urls": [
+        "https://x.com/RiRiproject_act/status/2064547663371280704",
+        "https://x.com/jokya_official/status/2061363485951643703"
+      ],
+      "set": {
+        "is_event_announcement": "",
+        "has_actionable_schedule_info": "",
+        "manual_publish_status": "excluded"
+      },
+      "note": "",
+      "updated_at": "2026-07-11T16:24:27+09:00"
+    },
+    {
       "target_event_id": "event-四姉妹の墓じまい",
       "target_source_tweet_urls": [
         "https://x.com/fukinodesign/status/2069238927136072027"
