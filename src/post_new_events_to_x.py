@@ -18,6 +18,7 @@ from urllib import error, parse, request
 
 from event_candidate_rules import is_schedule_eligible_event, parse_iso_date
 from github_models_client import load_dotenv
+from atomic_io import atomic_open
 
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
@@ -386,24 +387,55 @@ def post_tweet(text: str) -> str:
     return tweet_id
 
 
+POST_LOG_FIELDS = [
+    "event_id",
+    "event_name",
+    "organization",
+    "venue_name",
+    "performance_schedule",
+    "posted_at",
+    "posted_tweet_id",
+    "source_tweet_url",
+]
+
+
+def build_post_log_row(row: dict[str, str], posted_tweet_id: str) -> dict[str, str]:
+    return {
+        "event_id": (row.get("event_id") or "").strip(),
+        "event_name": (row.get("event_name") or "").strip(),
+        "organization": (row.get("organization") or "").strip(),
+        "venue_name": (row.get("normalized_venue_name") or row.get("venue_name") or "").strip(),
+        "performance_schedule": build_date_range(row),
+        "posted_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "posted_tweet_id": posted_tweet_id,
+        "source_tweet_url": choose_event_url(row),
+    }
+
+
 def append_post_log(path: Path, rows: list[dict[str, str]]) -> None:
+    """投稿ログをevent_id単位で冪等にatomic置換する。"""
     path.parent.mkdir(parents=True, exist_ok=True)
-    fieldnames = [
-        "event_id",
-        "event_name",
-        "organization",
-        "venue_name",
-        "performance_schedule",
-        "posted_at",
-        "posted_tweet_id",
-        "source_tweet_url",
-    ]
-    file_exists = path.exists()
-    with path.open("a", encoding="utf-8-sig", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fieldnames)
-        if not file_exists:
-            writer.writeheader()
-        writer.writerows(rows)
+    existing_rows = load_csv_rows(path)
+    rows_by_event_id: dict[str, dict[str, str]] = {}
+    rows_without_event_id: list[dict[str, str]] = []
+    for existing in existing_rows:
+        event_id = (existing.get("event_id") or "").strip()
+        if event_id:
+            rows_by_event_id[event_id] = existing
+        else:
+            rows_without_event_id.append(existing)
+    for row in rows:
+        event_id = (row.get("event_id") or "").strip()
+        if event_id:
+            rows_by_event_id[event_id] = row
+        else:
+            rows_without_event_id.append(row)
+
+    merged_rows = [*rows_by_event_id.values(), *rows_without_event_id]
+    with atomic_open(path, "w", encoding="utf-8-sig", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=POST_LOG_FIELDS)
+        writer.writeheader()
+        writer.writerows(merged_rows)
 
 
 def run_dry(candidates: list[dict[str, str]], hashtag: str, header_label: str, site_url: str) -> int:
@@ -441,7 +473,6 @@ def main() -> int:
         print("投稿対象の新規公演はありません")
         return 0
 
-    posted_rows: list[dict[str, str]] = []
     posted_count = 0
     duplicate_count = 0
     for index, row in enumerate(candidates, start=1):
@@ -455,23 +486,11 @@ def main() -> int:
         except DuplicateTweetContentError as exc:
             duplicate_count += 1
             print(f"skipping duplicate content: {event_id}")
-        posted_rows.append(
-            {
-                "event_id": event_id,
-                "event_name": (row.get("event_name") or "").strip(),
-                "organization": (row.get("organization") or "").strip(),
-                "venue_name": (row.get("normalized_venue_name") or row.get("venue_name") or "").strip(),
-                "performance_schedule": build_date_range(row),
-                "posted_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-                "posted_tweet_id": tweet_id,
-                "source_tweet_url": choose_event_url(row),
-            }
-        )
+        append_post_log(Path(args.posted_log_csv), [build_post_log_row(row, tweet_id)])
 
-    append_post_log(Path(args.posted_log_csv), posted_rows)
     print(f"posted events: {posted_count}")
     print(f"duplicate content skipped: {duplicate_count}")
-    print(f"logged events: {len(posted_rows)}")
+    print(f"logged events: {posted_count + duplicate_count}")
     print(f"posted log: {args.posted_log_csv}")
     return 0
 

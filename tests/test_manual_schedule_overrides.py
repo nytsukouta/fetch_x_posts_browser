@@ -1,4 +1,4 @@
-from build_schedule_list import build_schedule_rows, choose_reference_url
+from build_schedule_list import build_json_payload, build_schedule_rows, choose_reference_url, serialize_json_payload
 
 
 def _event(**overrides):
@@ -49,3 +49,14 @@ def test_manual_published_is_in_schedule_without_auto_signal():
     )
     rows = build_schedule_rows([event], {}, {})
     assert len(rows) == 1
+
+
+def test_schedule_json_payload_can_be_serialized_once_for_multiple_outputs():
+    rows = build_schedule_rows([_event()], {}, {})
+    payload = build_json_payload(rows, generated_at="2026-07-17T12:00:00+09:00")
+    first = serialize_json_payload(payload)
+    second = serialize_json_payload(payload)
+
+    assert first == second
+    assert payload["generated_at"] == "2026-07-17T12:00:00+09:00"
+    assert payload["count"] == 1

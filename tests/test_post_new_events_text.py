@@ -1,4 +1,6 @@
-from post_new_events_to_x import build_post_text, count_tweet_length
+import csv
+
+from post_new_events_to_x import append_post_log, build_post_log_row, build_post_text, count_tweet_length
 
 
 SITE_URL = "https://example.github.io/repo/"
@@ -61,3 +63,23 @@ def test_post_text_skips_outer_brackets_for_kakkokakko_style():
     )
     assert "『0ME" not in text
     assert "【誰が為に】" in text
+
+
+def test_append_post_log_is_idempotent_and_keeps_utf8_bom(tmp_path):
+    path = tmp_path / "posted_events.csv"
+    row = _row(
+        organization="劇団A",
+        venue_name="会場A",
+        start_date="2026-08-01",
+        end_date="2026-08-01",
+    )
+
+    append_post_log(path, [build_post_log_row(row, "tweet-1")])
+    append_post_log(path, [build_post_log_row(row, "tweet-2")])
+
+    raw = path.read_bytes()
+    assert raw.startswith(b"\xef\xbb\xbf")
+    with path.open("r", encoding="utf-8-sig", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+    assert len(rows) == 1
+    assert rows[0]["posted_tweet_id"] == "tweet-2"

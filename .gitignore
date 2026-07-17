@@ -7,5 +7,6 @@ data/output/*
 data/session/
 docs/*
 !docs/LOCAL_MAINTENANCE_IMPLEMENTATION_PLAN.md
+!docs/PERFORMANCE_REFACTORING_PLAN.md
 .vscode/mcp.json
 .playwright-mcp/

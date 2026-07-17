@@ -177,9 +177,33 @@ def sync_latest_artifact(
     *,
     root_dir: Path = ROOT_DIR,
     runner: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run,
+    force: bool = False,
 ) -> dict[str, Any]:
     check_gh(root_dir=root_dir, runner=runner)
     run = find_latest_successful_run(root_dir=root_dir, runner=runner)
+    state_path = root_dir / "data/output/_tmp/maintenance_sync_state.json"
+    if not force and state_path.exists():
+        try:
+            previous_state = json.loads(state_path.read_text(encoding="utf-8-sig"))
+        except (OSError, UnicodeError, json.JSONDecodeError):
+            previous_state = {}
+        required_paths = [root_dir / member for member in REQUIRED_MEMBERS]
+        if (
+            isinstance(previous_state, dict)
+            and str(previous_state.get("run_id") or "") == str(run.get("databaseId") or "")
+            and all(path.is_file() for path in required_paths)
+        ):
+            restored = [
+                member
+                for member in sorted(ALLOWED_MEMBERS)
+                if (root_dir / member).is_file()
+            ]
+            return {
+                **previous_state,
+                "restored": restored,
+                "skipped": True,
+            }
+
     with tempfile.TemporaryDirectory(prefix="maintenance-download-") as temporary:
         download_dir = Path(temporary)
         _run(
@@ -209,6 +233,5 @@ def sync_latest_artifact(
         "url": run.get("url", ""),
         "warnings": restored["warnings"],
     }
-    state_path = root_dir / "data/output/_tmp/maintenance_sync_state.json"
     atomic_write_text(state_path, json.dumps(state, ensure_ascii=False, indent=2) + "\n")
-    return {**state, "restored": restored["restored"]}
+    return {**state, "restored": restored["restored"], "skipped": False}

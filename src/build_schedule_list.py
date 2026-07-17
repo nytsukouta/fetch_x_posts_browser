@@ -410,15 +410,27 @@ def build_json_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return json_rows
 
 
-def write_json(rows: list[dict[str, Any]], output_path: Path) -> None:
+def build_json_payload(rows: list[dict[str, Any]], generated_at: str | None = None) -> dict[str, Any]:
     json_rows = build_json_rows(rows)
-    payload = {
-        "generated_at": datetime.now().astimezone().isoformat(timespec="seconds"),
+    return {
+        "generated_at": generated_at or datetime.now().astimezone().isoformat(timespec="seconds"),
         "count": len(json_rows),
         "items": json_rows,
     }
+
+
+def serialize_json_payload(payload: dict[str, Any]) -> str:
+    return json.dumps(payload, ensure_ascii=False, indent=2) + "\n"
+
+
+def write_json_text(output_path: Path, text: str) -> None:
     with atomic_open(output_path, "w", encoding="utf-8") as handle:
-        json.dump(payload, handle, ensure_ascii=False, indent=2)
+        handle.write(text)
+
+
+def write_json(rows: list[dict[str, Any]], output_path: Path) -> None:
+    """後方互換用の単一出力ヘルパー。複数出力時はpayloadを共有する。"""
+    write_json_text(output_path, serialize_json_payload(build_json_payload(rows)))
 
 
 def main() -> int:
@@ -431,8 +443,9 @@ def main() -> int:
     venue_index = index_master(venue_rows, "venue_name_normalized")
     schedule_rows = build_schedule_rows(event_rows, organization_index, venue_index)
     write_csv(schedule_rows, Path(args.output_csv))
-    write_json(schedule_rows, Path(args.output_json))
-    write_json(schedule_rows, Path(args.pages_json))
+    json_text = serialize_json_payload(build_json_payload(schedule_rows))
+    write_json_text(Path(args.output_json), json_text)
+    write_json_text(Path(args.pages_json), json_text)
 
     print(f"saved schedule list: {args.output_csv}")
     print(f"saved schedule json: {args.output_json}")

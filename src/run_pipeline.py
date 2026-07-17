@@ -31,6 +31,8 @@ DEFAULT_PENDING_EXTRACT_INPUT_CSV = DEFAULT_TMP_DIR / "extract_pending.csv"
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run collection and data shaping pipeline in one command")
     parser.add_argument("--skip-collect", action="store_true", help="情報収集を飛ばして既存CSVから続行する")
+    parser.add_argument("--skip-query-rebuild", action="store_true", help="実行開始時の優先検索クエリ再生成を飛ばす")
+    parser.add_argument("--rebuild-only", action="store_true", help="既存の累積filtered CSVからイベント・schedule・masterを再生成する")
     parser.add_argument("--input-csv", default=None, help="--skip-collect 時に使う収集済みCSV（--skip-collect 指定時は必須）")
     parser.add_argument("--query-file", default=str(DEFAULT_QUERY_FILE), help="収集に使うクエリJSON")
     parser.add_argument("--output-dir", default=str(DEFAULT_OUTPUT_DIR), help="収集CSVの出力先")
@@ -374,27 +376,41 @@ def main() -> int:
         raise ValueError("--publish と --local-preview-dir は同時に使えません。")
     if args.post_dry_run and not args.post_new_events:
         raise ValueError("--post-dry-run を使う場合は --post-new-events も指定してください。")
+    if args.rebuild_only and args.post_new_events:
+        raise ValueError("--rebuild-only と --post-new-events は併用できません。")
+    if args.rebuild_only and args.input_csv:
+        raise ValueError("--rebuild-only と --input-csv は併用できません。")
 
     runtime_paths = resolve_runtime_paths(args)
-    rebuild_query_configuration(runtime_paths["query_file"])
-    if args.skip_collect:
-        if not args.input_csv:
-            raise ValueError("--skip-collect を使う場合は --input-csv で収集済み CSV を指定してください。")
-        input_csv = Path(args.input_csv)
-        if not input_csv.exists():
-            raise FileNotFoundError(f"input csv not found: {input_csv}")
-    else:
-        input_csv = collect_posts(args, runtime_paths["query_file"])
+    if not args.skip_query_rebuild and not args.rebuild_only:
+        rebuild_query_configuration(runtime_paths["query_file"])
 
-    extraction_input_csv = prepare_extraction_input(input_csv)
-    if extraction_input_csv is None:
-        print("extract skipped: 新規 tweet がありません")
+    if args.rebuild_only:
         if not DEFAULT_CUMULATIVE_FILTERED_CSV.exists():
-            raise FileNotFoundError("新規 tweet がなく、structured_events_filtered_cumulative.csv も見つかりません。")
+            raise FileNotFoundError(
+                f"rebuild-only input not found: {DEFAULT_CUMULATIVE_FILTERED_CSV}"
+            )
+        input_csv = DEFAULT_CUMULATIVE_FILTERED_CSV
         cumulative_filtered_csv = DEFAULT_CUMULATIVE_FILTERED_CSV
     else:
-        extract_events(extraction_input_csv, args)
-        cumulative_filtered_csv = merge_cumulative_outputs()
+        if args.skip_collect:
+            if not args.input_csv:
+                raise ValueError("--skip-collect を使う場合は --input-csv で収集済み CSV を指定してください。")
+            input_csv = Path(args.input_csv)
+            if not input_csv.exists():
+                raise FileNotFoundError(f"input csv not found: {input_csv}")
+        else:
+            input_csv = collect_posts(args, runtime_paths["query_file"])
+
+        extraction_input_csv = prepare_extraction_input(input_csv)
+        if extraction_input_csv is None:
+            print("extract skipped: 新規 tweet がありません")
+            if not DEFAULT_CUMULATIVE_FILTERED_CSV.exists():
+                raise FileNotFoundError("新規 tweet がなく、structured_events_filtered_cumulative.csv も見つかりません。")
+            cumulative_filtered_csv = DEFAULT_CUMULATIVE_FILTERED_CSV
+        else:
+            extract_events(extraction_input_csv, args)
+            cumulative_filtered_csv = merge_cumulative_outputs()
     build_excluded_tweet_ids()
     event_cumulative_csv = build_event_cumulative(cumulative_filtered_csv)
     print("master update skipped: 劇団マスターと劇場マスターは既存ファイルを保持します")

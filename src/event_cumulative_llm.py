@@ -2,8 +2,10 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import os
 import sys
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -13,6 +15,7 @@ from github_models_client import (
     get_github_models_token,
     load_dotenv,
 )
+from atomic_io import atomic_write_text
 from event_cumulative_core import (
     build_similarity_clusters,
     compact_text,
@@ -26,6 +29,8 @@ from event_cumulative_core import (
 ROOT_DIR = Path(__file__).resolve().parent.parent
 DEFAULT_ENV_FILE = ROOT_DIR / ".env"
 DEFAULT_MODEL = "openai/gpt-5"
+DEFAULT_DEDUPE_CACHE_PATH = ROOT_DIR / "data" / "output" / "_state" / "event_dedupe_cache.json"
+CACHE_VERSION = 1
 
 SECONDARY_DEDUPE_SYSTEM_PROMPT = """あなたは日本語の公演イベント重複統合アシスタントです。
 入力される複数レコードは、同日かつ同一会場または同一団体で候補絞り込み済みです。
@@ -107,13 +112,72 @@ def build_dedupe_prompt(records: list[dict[str, Any]]) -> str:
     return json.dumps(payload, ensure_ascii=False, indent=2)
 
 
-def secondary_dedupe(records: list[dict[str, Any]], model: str) -> list[dict[str, Any]]:
+def load_dedupe_cache(path: Path) -> dict[str, Any]:
+    if not path.exists():
+        return {"version": CACHE_VERSION, "entries": {}}
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8-sig"))
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        print(f"dedupe cache ignored: {path}", file=sys.stderr)
+        return {"version": CACHE_VERSION, "entries": {}}
+    if not isinstance(payload, dict) or payload.get("version") != CACHE_VERSION:
+        return {"version": CACHE_VERSION, "entries": {}}
+    entries = payload.get("entries")
+    if not isinstance(entries, dict):
+        return {"version": CACHE_VERSION, "entries": {}}
+    return {"version": CACHE_VERSION, "entries": entries}
+
+
+def write_dedupe_cache(path: Path, payload: dict[str, Any]) -> None:
+    atomic_write_text(path, json.dumps(payload, ensure_ascii=False, indent=2) + "\n")
+
+
+def build_dedupe_cache_key(records: list[dict[str, Any]], model: str, api_version: str) -> str:
+    cache_payload = {
+        "version": CACHE_VERSION,
+        "model": model,
+        "api_version": api_version,
+        "system_prompt": SECONDARY_DEDUPE_SYSTEM_PROMPT,
+        "prompt": json.loads(build_dedupe_prompt(records)),
+    }
+    serialized = json.dumps(cache_payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
+
+
+def validate_dedupe_decisions(payload: Any, valid_ids: set[str]) -> list[dict[str, Any]] | None:
+    decisions = payload.get("decisions") if isinstance(payload, dict) else None
+    if not isinstance(decisions, list):
+        return None
+    consumed: list[str] = []
+    normalized: list[dict[str, Any]] = []
+    for decision in decisions:
+        if not isinstance(decision, dict) or not isinstance(decision.get("member_ids"), list):
+            return None
+        member_ids = [str(value) for value in decision["member_ids"]]
+        if not member_ids or any(value not in valid_ids for value in member_ids):
+            return None
+        if any(value in consumed for value in member_ids):
+            return None
+        canonical_name = decision.get("canonical_name")
+        if not isinstance(canonical_name, str):
+            return None
+        consumed.extend(member_ids)
+        normalized.append({"member_ids": member_ids, "canonical_name": canonical_name})
+    if set(consumed) != valid_ids or len(consumed) != len(valid_ids):
+        return None
+    return normalized
+
+
+def secondary_dedupe(
+    records: list[dict[str, Any]],
+    model: str,
+    cache_path: Path | None = DEFAULT_DEDUPE_CACHE_PATH,
+) -> list[dict[str, Any]]:
     load_dotenv(DEFAULT_ENV_FILE)
-    github_token = get_github_models_token()
     api_version = os.getenv("GITHUB_MODELS_API_VERSION", DEFAULT_API_VERSION).strip() or DEFAULT_API_VERSION
-    if not github_token:
-        print("secondary dedupe skipped: GH_MODELS_TOKEN または GITHUB_TOKEN が見つかりません")
-        return records
+    cache = load_dedupe_cache(cache_path) if cache_path else {"version": CACHE_VERSION, "entries": {}}
+    cache_changed = False
+    github_token = get_github_models_token()
 
     grouped_records: dict[str, list[dict[str, Any]]] = {}
     passthrough_records: list[dict[str, Any]] = []
@@ -136,19 +200,42 @@ def secondary_dedupe(records: list[dict[str, Any]], model: str) -> list[dict[str
                 merged_records.extend(cluster)
                 continue
 
-            prompt = build_dedupe_prompt(cluster)
-            try:
-                response_payload = call_dedupe_model(github_token, api_version, model, prompt)
-                decision_payload = extract_json_content(response_payload)
-            except Exception as exc:
-                print(f"secondary dedupe skipped for group {group_key} cluster {cluster_index}: {exc}", file=sys.stderr)
-                merged_records.extend(cluster)
-                continue
-
             id_to_record = {str(index): record for index, record in enumerate(cluster, start=1)}
+            valid_ids = set(id_to_record)
+            cache_key = build_dedupe_cache_key(cluster, model, api_version)
+            cached_entry = cache["entries"].get(cache_key)
+            decisions = None
+            if isinstance(cached_entry, dict):
+                decisions = validate_dedupe_decisions(cached_entry.get("decision"), valid_ids)
+
+            if decisions is None:
+                if not github_token:
+                    print("secondary dedupe skipped: GH_MODELS_TOKEN または GITHUB_TOKEN が見つかりません")
+                    merged_records.extend(cluster)
+                    continue
+                prompt = build_dedupe_prompt(cluster)
+                try:
+                    response_payload = call_dedupe_model(github_token, api_version, model, prompt)
+                    decision_payload = extract_json_content(response_payload)
+                    decisions = validate_dedupe_decisions(decision_payload, valid_ids)
+                    if decisions is None:
+                        raise RuntimeError("LLMの重複統合decisionが全IDを網羅していません")
+                except Exception as exc:
+                    print(f"secondary dedupe skipped for group {group_key} cluster {cluster_index}: {exc}", file=sys.stderr)
+                    merged_records.extend(cluster)
+                    continue
+
+                if cache_path:
+                    cache["entries"][cache_key] = {
+                        "model": model,
+                        "api_version": api_version,
+                        "decision": {"decisions": decisions},
+                        "created_at": datetime.now().astimezone().isoformat(timespec="seconds"),
+                    }
+                    cache_changed = True
+
             consumed_ids: set[str] = set()
-            decisions = decision_payload.get("decisions") if isinstance(decision_payload, dict) else None
-            if not isinstance(decisions, list):
+            if decisions is None:
                 merged_records.extend(cluster)
                 continue
 
@@ -167,4 +254,6 @@ def secondary_dedupe(records: list[dict[str, Any]], model: str) -> list[dict[str
                 if member_id not in consumed_ids:
                     merged_records.append(record)
 
+    if cache_path and cache_changed:
+        write_dedupe_cache(cache_path, cache)
     return renumber_records(suppress_preview_like_records(merged_records))

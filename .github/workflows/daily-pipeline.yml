@@ -5,6 +5,16 @@ on:
     - cron: "10 22 * * *"
   workflow_dispatch:
     inputs:
+      pipeline_mode:
+        description: "実行モード"
+        required: true
+        default: auto
+        type: choice
+        options:
+          - auto
+          - full
+          - rebuild
+          - pages
       post_mode:
         description: "X 投稿モード"
         required: true
@@ -23,6 +33,7 @@ on:
       - "data/output/organization_master.csv"
       - "data/output/venue_master.csv"
       - "web/**"
+      - "docs/**"
       - "src/**"
 
 permissions:
@@ -35,9 +46,64 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  mode:
+    runs-on: ubuntu-latest
+    outputs:
+      pipeline_mode: ${{ steps.detect.outputs.pipeline_mode }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Detect pipeline mode
+        id: detect
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          DISPATCH_MODE: ${{ github.event.inputs.pipeline_mode || 'auto' }}
+          BEFORE_SHA: ${{ github.event.before }}
+          CURRENT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" == "schedule" ]]; then
+            mode="full"
+          elif [[ "$EVENT_NAME" == "workflow_dispatch" && "$DISPATCH_MODE" != "auto" ]]; then
+            mode="$DISPATCH_MODE"
+          elif [[ "$EVENT_NAME" != "push" ]]; then
+            mode="full"
+          else
+            if [[ -z "$BEFORE_SHA" || "$BEFORE_SHA" =~ ^0+$ ]]; then
+              mode="full"
+            else
+              changed=$(git diff --name-only "$BEFORE_SHA" "$CURRENT_SHA")
+              mode="pages"
+              while IFS= read -r path; do
+                [[ -z "$path" ]] && continue
+                case "$path" in
+                  src/fetch_x_posts.py|src/extract_events_github_models.py|src/x_tweet_context.py|src/github_models_client.py|src/build_priority_queries_from_masters.py|data/output/organization_master.csv|data/output/venue_master.csv|.github/workflows/daily-pipeline.yml)
+                    mode="full"
+                    ;;
+                  config/manual_event_overrides.json|config/event_aliases.csv|src/event_candidate_rules.py|src/event_cumulative_core.py|src/event_cumulative_llm.py|src/build_event_cumulative.py|src/build_schedule_list.py|src/manual_event_overrides.py|src/run_pipeline.py)
+                    [[ "$mode" == "pages" ]] && mode="rebuild"
+                    ;;
+                  web/*|docs/*|src/sync_web_to_docs.py)
+                    ;;
+                  *)
+                    mode="full"
+                    ;;
+                esac
+              done <<< "$changed"
+            fi
+          fi
+          echo "pipeline_mode=$mode" >> "$GITHUB_OUTPUT"
+          echo "Selected pipeline mode: $mode"
+
   build:
+    needs: mode
     runs-on: ubuntu-latest
     env:
+      PIPELINE_MODE: ${{ needs.mode.outputs.pipeline_mode }}
       POST_MODE: ${{ github.event_name == 'schedule' && 'live' || github.event_name == 'workflow_dispatch' && github.event.inputs.post_mode || 'off' }}
       TZ: Asia/Tokyo
       X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
@@ -68,6 +134,7 @@ jobs:
         run: python -m pytest tests/ -q
 
       - name: Validate required secrets
+        if: env.PIPELINE_MODE == 'full'
         shell: bash
         run: |
           set -euo pipefail
@@ -81,6 +148,7 @@ jobs:
           fi
 
       - name: Restore pipeline caches
+        if: env.PIPELINE_MODE != 'pages'
         uses: actions/cache/restore@v4
         with:
           path: |
@@ -93,6 +161,7 @@ jobs:
             posted-events-${{ github.ref_name }}-
 
       - name: Restore durable pipeline history
+        if: env.PIPELINE_MODE != 'pages'
         shell: bash
         env:
           ACTIONS_REPO_TOKEN: ${{ github.token }}
@@ -205,10 +274,8 @@ jobs:
           )
           PY
 
-      - name: Rebuild query configuration
-        run: python src/build_priority_queries_from_masters.py
-
       - name: Seed cumulative history baseline
+        if: env.PIPELINE_MODE != 'pages'
         shell: bash
         run: |
           set -euo pipefail
@@ -268,6 +335,7 @@ jobs:
           PY
 
       - name: Run API pipeline
+        if: env.PIPELINE_MODE == 'full'
         shell: bash
         run: |
           set -euo pipefail
@@ -282,8 +350,13 @@ jobs:
           esac
           python src/run_pipeline.py "${args[@]}"
 
+      - name: Run rebuild pipeline
+        if: env.PIPELINE_MODE == 'rebuild'
+        shell: bash
+        run: python src/run_pipeline.py --rebuild-only --skip-query-rebuild
+
       - name: Save posted event log
-        if: success() && (hashFiles('data/output/posted_events.csv') != '' || hashFiles('data/output/structured_events_cumulative.csv') != '' || hashFiles('data/output/structured_events_filtered_cumulative.csv') != '' || hashFiles('data/output/event_cumulative.csv') != '')
+        if: success() && env.PIPELINE_MODE != 'pages' && (hashFiles('data/output/posted_events.csv') != '' || hashFiles('data/output/structured_events_cumulative.csv') != '' || hashFiles('data/output/structured_events_filtered_cumulative.csv') != '' || hashFiles('data/output/event_cumulative.csv') != '')
         uses: actions/cache/save@v4
         with:
           path: |
@@ -294,7 +367,7 @@ jobs:
           key: posted-events-${{ github.ref_name }}-${{ github.run_id }}
 
       - name: Build durable pipeline history snapshot
-        if: success() && (hashFiles('data/output/posted_events.csv') != '' || hashFiles('data/output/structured_events_cumulative.csv') != '' || hashFiles('data/output/structured_events_filtered_cumulative.csv') != '' || hashFiles('data/output/event_cumulative.csv') != '')
+        if: success() && env.PIPELINE_MODE != 'pages' && (hashFiles('data/output/posted_events.csv') != '' || hashFiles('data/output/structured_events_cumulative.csv') != '' || hashFiles('data/output/structured_events_filtered_cumulative.csv') != '' || hashFiles('data/output/event_cumulative.csv') != '')
         shell: bash
         run: |
           set -euo pipefail
@@ -321,7 +394,7 @@ jobs:
           PY
 
       - name: Upload durable pipeline history
-        if: success() && hashFiles('data/output/pipeline_history_snapshot.zip') != ''
+        if: success() && env.PIPELINE_MODE != 'pages' && hashFiles('data/output/pipeline_history_snapshot.zip') != ''
         uses: actions/upload-artifact@v4
         with:
           name: pipeline-history-${{ github.ref_name }}
