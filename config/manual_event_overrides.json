@@ -16,6 +16,20 @@
       "updated_at": "2026-07-11T16:24:27+09:00"
     },
     {
+      "target_event_id": "event-ポケット公演",
+      "target_source_tweet_urls": [
+        "https://x.com/jokya_official/status/2076071137935810702",
+        "https://x.com/yubipero_engeki/status/2075552905353191516"
+      ],
+      "set": {
+        "is_event_announcement": "",
+        "has_actionable_schedule_info": "",
+        "manual_publish_status": "excluded"
+      },
+      "note": "",
+      "updated_at": "2026-07-17T11:17:48+09:00"
+    },
+    {
       "target_event_id": "event-四姉妹の墓じまい",
       "target_source_tweet_urls": [
         "https://x.com/fukinodesign/status/2069238927136072027"
@@ -26,6 +40,19 @@
       },
       "note": "",
       "updated_at": "2026-07-11T16:23:38+09:00"
+    },
+    {
+      "target_event_id": "event-東京富山パフォーミングアーツプロジェクト-新作上演",
+      "target_source_tweet_urls": [
+        "https://x.com/TsproToyama/status/2062521095039996249"
+      ],
+      "set": {
+        "is_event_announcement": "",
+        "has_actionable_schedule_info": "",
+        "manual_publish_status": "excluded"
+      },
+      "note": "",
+      "updated_at": "2026-07-17T11:19:07+09:00"
     },
     {
       "target_event_id": "event-混沌",
@@ -40,6 +67,19 @@
       },
       "note": "",
       "updated_at": "2026-07-11T16:14:36+09:00"
+    },
+    {
+      "target_event_id": "event-語りworkshop",
+      "target_source_tweet_urls": [
+        "https://x.com/rui_jin_en/status/2076505662578958525"
+      ],
+      "set": {
+        "is_event_announcement": "",
+        "has_actionable_schedule_info": "",
+        "manual_publish_status": "excluded"
+      },
+      "note": "",
+      "updated_at": "2026-07-17T11:18:18+09:00"
     },
     {
       "target_event_id": "event-髑髏城の七人",
