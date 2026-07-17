@@ -40,6 +40,38 @@
       },
       "note": "",
       "updated_at": "2026-07-11T16:14:36+09:00"
+    },
+    {
+      "target_event_id": "event-髑髏城の七人",
+      "target_source_tweet_urls": [
+        "https://x.com/Mickey99aiuto/status/2076579531734028753",
+        "https://x.com/bun1_info/status/2076654528947159074",
+        "https://x.com/jokya_official/status/2076796622806147485",
+        "https://x.com/lanipuapua/status/2076589447521726511"
+      ],
+      "set": {
+        "is_event_announcement": "",
+        "has_actionable_schedule_info": "",
+        "manual_publish_status": "excluded"
+      },
+      "note": "",
+      "updated_at": "2026-07-17T11:16:59+09:00"
+    },
+    {
+      "target_event_id": "event-髑髏城の七人-last-stand",
+      "target_source_tweet_urls": [
+        "https://x.com/R_Y_info/status/2076584109674213406",
+        "https://x.com/SHINKANSENtopic/status/2076577370916429876",
+        "https://x.com/Yuki_Saotome_5/status/2076579433687953774",
+        "https://x.com/sanpo13_shinshu/status/2077255260926849303"
+      ],
+      "set": {
+        "start_date": "2027-02-08",
+        "is_event_announcement": "",
+        "has_actionable_schedule_info": ""
+      },
+      "note": "",
+      "updated_at": "2026-07-17T11:16:51+09:00"
     }
   ]
 }
