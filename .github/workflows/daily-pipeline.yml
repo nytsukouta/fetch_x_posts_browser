@@ -88,6 +88,7 @@ jobs:
                     [[ "$mode" == "pages" ]] && mode="rebuild"
                     ;;
                   web/*|docs/*|src/sync_web_to_docs.py)
+                    [[ "$mode" == "pages" ]] && mode="rebuild"
                     ;;
                   *)
                     mode="full"
