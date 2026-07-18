@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-07-11T16:33:46+09:00",
+  "generated_at": "2026-07-18T15:22:30+09:00",
   "counts": {
-    "organizations": 43,
+    "organizations": 54,
     "venues": 25
   },
   "organizations": [
@@ -13,6 +13,15 @@
       "official_website": "https://hkrk.jp",
       "official_x": "https://x.com/hokuriku_idolbu",
       "query_include": false
+    },
+    {
+      "id": "org-restart",
+      "name": "劇団『Re:Start』",
+      "location": "千葉県東金市",
+      "prefecture": "千葉県",
+      "official_website": "https://note.com/restart0405/",
+      "official_x": "https://x.com/maoto33",
+      "query_include": true
     },
     {
       "id": "org-び-めんぷろじぇくと",
@@ -114,6 +123,42 @@
       "query_include": false
     },
     {
+      "id": "org-劇団小さな夢アソビ",
+      "name": "劇団小さな夢アソビ",
+      "location": "山口県宇部市",
+      "prefecture": "山口県",
+      "official_website": "https://ameblo.jp/chisanayumeasobi/",
+      "official_x": "https://x.com/yumeasobi_t",
+      "query_include": true
+    },
+    {
+      "id": "org-劇団遊覚",
+      "name": "劇団遊覚",
+      "location": "山口県宇部市",
+      "prefecture": "山口県",
+      "official_website": "http://yukaku.exblog.jp/",
+      "official_x": "https://x.com/yukaku2008",
+      "query_include": true
+    },
+    {
+      "id": "org-ユニットピコ",
+      "name": "ユニット・ピコ",
+      "location": "山口県山口市",
+      "prefecture": "山口県",
+      "official_website": "https://unitpico.com/",
+      "official_x": "https://x.com/unitpico0",
+      "query_include": true
+    },
+    {
+      "id": "org-演劇ユニット石ころ",
+      "name": "演劇ユニット・石ころ",
+      "location": "山口県山口市",
+      "prefecture": "山口県",
+      "official_website": "",
+      "official_x": "https://x.com/ishi_koro6",
+      "query_include": true
+    },
+    {
       "id": "org-指先ペロペロキャンディー",
       "name": "指先ペロペロキャンディー",
       "location": "岐阜県",
@@ -121,6 +166,15 @@
       "official_website": "",
       "official_x": "https://x.com/yubipero_engeki",
       "query_include": true
+    },
+    {
+      "id": "org-劇団のりしろ",
+      "name": "劇団のりしろ",
+      "location": "岐阜県岐阜市",
+      "prefecture": "岐阜県",
+      "official_website": "",
+      "official_x": "https://x.com/g_norishiro",
+      "query_include": false
     },
     {
       "id": "org-劇団はぐるま",
@@ -138,6 +192,51 @@
       "prefecture": "岐阜県",
       "official_website": "",
       "official_x": "https://x.com/shukan_zero",
+      "query_include": false
+    },
+    {
+      "id": "org-劇団一級河川",
+      "name": "劇団一級河川",
+      "location": "島根県",
+      "prefecture": "島根県",
+      "official_website": "",
+      "official_x": "https://x.com/1kyukasen",
+      "query_include": false
+    },
+    {
+      "id": "org-メガジョッキ",
+      "name": "メガジョッキ",
+      "location": "広島県",
+      "prefecture": "広島県",
+      "official_website": "https://sites.google.com/view/megazyokki",
+      "official_x": "https://x.com/mega_zyokki",
+      "query_include": true
+    },
+    {
+      "id": "org-motopro",
+      "name": "劇人motoPro",
+      "location": "広島県福山市・尾道市",
+      "prefecture": "広島県",
+      "official_website": "",
+      "official_x": "https://x.com/motoPro7",
+      "query_include": true
+    },
+    {
+      "id": "org-あとみよそわか",
+      "name": "まげもの劇団「あとみよそわか」",
+      "location": "東京都",
+      "prefecture": "東京都",
+      "official_website": "https://atomiyosowaka.net",
+      "official_x": "https://x.com/ato_miyo_sowaka",
+      "query_include": false
+    },
+    {
+      "id": "org-あちゃらかきっず",
+      "name": "天才演劇集団 あちゃらかきっず",
+      "location": "栃木県足利市",
+      "prefecture": "栃木県",
+      "official_website": "https://acharakakids.jimdofree.com/",
+      "official_x": "https://x.com/tensaikansai",
       "query_include": false
     },
     {

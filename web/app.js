@@ -264,6 +264,50 @@ function initCalendar() {
 
   state.calendar = calendar;
   calendar.render();
+  bindCalendarSwipe();
+}
+
+function bindCalendarSwipe() {
+  let startX = 0;
+  let startY = 0;
+  let tracking = false;
+
+  elements.calendarRoot.addEventListener("touchstart", (event) => {
+    if (event.touches.length !== 1 || event.target.closest("button, a, input, select")) {
+      tracking = false;
+      return;
+    }
+
+    const touch = event.touches[0];
+    startX = touch.clientX;
+    startY = touch.clientY;
+    tracking = true;
+  }, { passive: true });
+
+  elements.calendarRoot.addEventListener("touchend", (event) => {
+    if (!tracking || event.changedTouches.length !== 1 || !state.calendar) {
+      tracking = false;
+      return;
+    }
+
+    const touch = event.changedTouches[0];
+    const deltaX = touch.clientX - startX;
+    const deltaY = touch.clientY - startY;
+    const horizontalDistance = Math.abs(deltaX);
+    const verticalDistance = Math.abs(deltaY);
+    tracking = false;
+
+    if (horizontalDistance < 60 || horizontalDistance <= verticalDistance * 1.2) return;
+    if (deltaX < 0) {
+      state.calendar.next();
+    } else {
+      state.calendar.prev();
+    }
+  }, { passive: true });
+
+  elements.calendarRoot.addEventListener("touchcancel", () => {
+    tracking = false;
+  }, { passive: true });
 }
 
 function refreshCalendarEvents(items) {
