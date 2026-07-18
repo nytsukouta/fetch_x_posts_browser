@@ -715,6 +715,7 @@ body::before {
   background: var(--card-bg);
   box-shadow: var(--shadow);
   touch-action: pan-y;
+  overscroll-behavior-x: contain;
   --fc-border-color: rgba(34, 57, 74, 0.08);
   --fc-page-bg-color: transparent;
   --fc-neutral-bg-color: rgba(255, 255, 255, 0.4);

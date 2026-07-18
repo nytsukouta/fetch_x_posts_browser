@@ -284,6 +284,17 @@ function bindCalendarSwipe() {
     tracking = true;
   }, { passive: true });
 
+  elements.calendarRoot.addEventListener("touchmove", (event) => {
+    if (!tracking || event.touches.length !== 1) return;
+
+    const touch = event.touches[0];
+    const deltaX = touch.clientX - startX;
+    const deltaY = touch.clientY - startY;
+    if (Math.abs(deltaX) > 10 && Math.abs(deltaX) > Math.abs(deltaY)) {
+      event.preventDefault();
+    }
+  }, { passive: false });
+
   elements.calendarRoot.addEventListener("touchend", (event) => {
     if (!tracking || event.changedTouches.length !== 1 || !state.calendar) {
       tracking = false;
