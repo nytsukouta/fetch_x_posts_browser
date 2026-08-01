@@ -26,7 +26,7 @@ DEFAULT_ENV_FILE = ROOT_DIR / ".env"
 DEFAULT_EVENTS_CSV = ROOT_DIR / "data" / "output" / "event_cumulative.csv"
 DEFAULT_POSTED_LOG_CSV = ROOT_DIR / "data" / "output" / "posted_events.csv"
 CREATE_TWEET_URL = "https://api.x.com/2/tweets"
-DEFAULT_HASHTAG = "石川演劇"
+DEFAULT_HASHTAG = ""
 DEFAULT_HEADER = "新しい公演が追加されましたジョキャ！"
 URL_LENGTH = 23
 MAX_TWEET_LENGTH = 280
@@ -44,7 +44,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--posted-log-csv", default=str(DEFAULT_POSTED_LOG_CSV), help="投稿済みイベント記録CSVのパス")
     parser.add_argument("--dry-run", action="store_true", help="投稿せず、作成されるポスト本文だけを表示する")
     parser.add_argument("--limit", type=int, default=None, help="投稿または dry-run 表示する件数上限")
-    parser.add_argument("--hashtag", default=DEFAULT_HASHTAG, help="末尾に付けるハッシュタグ。空文字で無効化")
+    parser.add_argument("--hashtag", default=DEFAULT_HASHTAG, help="末尾に付けるハッシュタグ。既定では付けない")
     parser.add_argument("--header", default=DEFAULT_HEADER, help="投稿1行目の文言")
     parser.add_argument("--site-url", default="", help="公開中の schedule ページ URL。未指定時は GitHub Pages URL を推定")
     parser.add_argument(
@@ -178,6 +178,25 @@ def build_schedule_page_url(site_url: str, row: dict[str, str]) -> str:
     return parse.urlunsplit((parsed.scheme, parsed.netloc, parsed.path, new_query, parsed.fragment))
 
 
+def build_schedule_batch_url(site_url: str, rows: list[dict[str, str]]) -> str:
+    base_url = site_url.strip()
+    if not base_url:
+        return ""
+
+    parsed = parse.urlsplit(base_url)
+    query_pairs = [
+        (key, value)
+        for key, value in parse.parse_qsl(parsed.query, keep_blank_values=True)
+        if key not in {"event", "events"}
+    ]
+    for row in rows:
+        event_id = (row.get("event_id") or "").strip()
+        if event_id:
+            query_pairs.append(("events", event_id))
+    new_query = parse.urlencode(query_pairs)
+    return parse.urlunsplit((parsed.scheme, parsed.netloc, parsed.path, new_query, parsed.fragment))
+
+
 def count_tweet_length(text: str) -> int:
     total = 0
     position = 0
@@ -258,6 +277,51 @@ def build_post_text(row: dict[str, str], hashtag: str, header_label: str, site_u
     if hashtag:
         fixed_lines.append(f"#{hashtag}")
     return "\n".join(fixed_lines)
+
+
+def build_summary_post_text(rows: list[dict[str, str]], hashtag: str, header_label: str, site_url: str) -> str:
+    if not rows:
+        return ""
+    if len(rows) == 1:
+        return build_post_text(rows[0], hashtag, header_label, site_url)
+
+    header = (header_label or DEFAULT_HEADER).strip() or DEFAULT_HEADER
+    hashtag = hashtag.strip().lstrip("#")
+    batch_url = build_schedule_batch_url(site_url, rows)
+    url_section = ["詳しくはこちら↓", batch_url] if batch_url else []
+    names = [
+        (row.get("event_name") or row.get("organization") or "名称未設定").strip()
+        for row in rows
+    ]
+    names = [f"・{name}" for name in names if name]
+
+    def assemble(name_lines: list[str]) -> str:
+        sections: list[list[str]] = [[header], [f"今回追加された公演（{len(rows)}件）"]]
+        if name_lines:
+            sections.append(name_lines)
+        if url_section:
+            sections.append(url_section)
+        if hashtag:
+            sections.append([f"#{hashtag}"])
+        return "\n\n".join("\n".join(section) for section in sections)
+
+    included_names: list[str] = []
+    for name in names:
+        candidate = assemble([*included_names, name])
+        if count_tweet_length(candidate) > MAX_TWEET_LENGTH:
+            break
+        included_names.append(name)
+
+    text = assemble(included_names)
+    if count_tweet_length(text) <= MAX_TWEET_LENGTH:
+        return text
+
+    sections = [[header], [f"今回追加された公演（{len(rows)}件）"]]
+    if url_section:
+        sections.append(url_section)
+    if hashtag:
+        sections.append([f"#{hashtag}"])
+    return "\n\n".join("\n".join(section) for section in sections)
 
 
 def sort_key(row: dict[str, str]) -> tuple[date, str, str]:
@@ -442,12 +506,9 @@ def run_dry(candidates: list[dict[str, str]], hashtag: str, header_label: str, s
     if not candidates:
         print("dry-run: 投稿対象の新規公演はありません")
         return 0
-    for index, row in enumerate(candidates, start=1):
-        text = build_post_text(row, hashtag, header_label, site_url)
-        print(f"dry-run {index}/{len(candidates)}: {(row.get('event_id') or '').strip()}")
-        print(text)
-        if index != len(candidates):
-            print("-" * 40)
+    text = build_summary_post_text(candidates, hashtag, header_label, site_url)
+    print(f"dry-run summary: {len(candidates)} events")
+    print(text)
     print(f"dry-run candidates: {len(candidates)}")
     return 0
 
@@ -475,18 +536,19 @@ def main() -> int:
 
     posted_count = 0
     duplicate_count = 0
-    for index, row in enumerate(candidates, start=1):
-        event_id = (row.get("event_id") or "").strip()
-        text = build_post_text(row, args.hashtag, args.header, site_url)
-        print(f"posting {index}/{len(candidates)}: {event_id}")
-        tweet_id = ""
-        try:
-            tweet_id = post_tweet(text)
-            posted_count += 1
-        except DuplicateTweetContentError as exc:
-            duplicate_count += 1
-            print(f"skipping duplicate content: {event_id}")
-        append_post_log(Path(args.posted_log_csv), [build_post_log_row(row, tweet_id)])
+    text = build_summary_post_text(candidates, args.hashtag, args.header, site_url)
+    print(f"posting summary: {len(candidates)} events")
+    tweet_id = ""
+    try:
+        tweet_id = post_tweet(text)
+        posted_count = len(candidates)
+    except DuplicateTweetContentError as exc:
+        duplicate_count = len(candidates)
+        print("skipping duplicate content: summary")
+    append_post_log(
+        Path(args.posted_log_csv),
+        [build_post_log_row(row, tweet_id) for row in candidates],
+    )
 
     print(f"posted events: {posted_count}")
     print(f"duplicate content skipped: {duplicate_count}")

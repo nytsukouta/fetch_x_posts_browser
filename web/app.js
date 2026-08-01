@@ -6,6 +6,7 @@ const URL_PARAM_KEYS = {
   scope: "scope",
   view: "view",
   event: "event",
+  events: "events",
 };
 
 const VIEW_STORAGE_KEY = "schedule.view";
@@ -27,6 +28,7 @@ const state = {
   allItems: [],
   itemById: new Map(),
   initialEventId: "",
+  initialEventIds: [],
   initialView: "",
   pendingLocation: "",
   calendar: null,
@@ -107,11 +109,13 @@ function restoreFiltersFromUrl() {
   const scope = params.get(URL_PARAM_KEYS.scope);
   const view = params.get(URL_PARAM_KEYS.view);
   const eventId = params.get(URL_PARAM_KEYS.event);
+  const eventIds = params.getAll(URL_PARAM_KEYS.events).map((value) => value.trim()).filter(Boolean);
 
   if (search) elements.searchInput.value = search;
   if (scope === "all" || scope === "upcoming") elements.dateScopeFilter.value = scope;
   state.pendingLocation = location || "";
   state.initialEventId = (eventId || "").trim();
+  state.initialEventIds = [...new Set(eventIds)];
 
   let resolvedView = "";
   if (view && VALID_VIEWS.has(view)) {
@@ -143,6 +147,7 @@ function writeFiltersToUrl() {
     }
   }
   if (state.initialEventId) params.set(URL_PARAM_KEYS.event, state.initialEventId);
+  for (const eventId of state.initialEventIds) params.append(URL_PARAM_KEYS.events, eventId);
 
   const query = params.toString();
   const newUrl = query ? `${window.location.pathname}?${query}` : window.location.pathname;
@@ -154,6 +159,7 @@ function clearFilters() {
   elements.dateScopeFilter.value = "upcoming";
   elements.locationFilter.value = "";
   state.initialEventId = "";
+  state.initialEventIds = [];
   applyFilters();
 }
 
@@ -178,6 +184,9 @@ function getFilteredItems() {
   const scope = elements.dateScopeFilter.value;
 
   return state.allItems.filter((item) => {
+    if (state.initialEventIds.length && !state.initialEventIds.includes(item.event_id)) {
+      return false;
+    }
     if (scope === "upcoming" && !isUpcomingSchedule(item.performance_schedule)) {
       return false;
     }
@@ -213,7 +222,9 @@ function applyFilters() {
 
   const keyword = elements.searchInput.value.trim();
   const location = elements.locationFilter.value;
-  const hasFilter = Boolean(keyword || location || elements.dateScopeFilter.value !== "upcoming");
+  const hasFilter = Boolean(
+    keyword || location || elements.dateScopeFilter.value !== "upcoming" || state.initialEventIds.length,
+  );
   elements.resultSummary.textContent = `${items.length} 件を表示中 / 全 ${totalScope.length} 件`;
   if (elements.clearFiltersButton) {
     elements.clearFiltersButton.hidden = !hasFilter;
@@ -442,7 +453,7 @@ function openEventDialog(eventId) {
 }
 
 function focusInitialEvent() {
-  if (!state.initialEventId) return;
+  if (!state.initialEventId || state.initialEventIds.length) return;
   const item = state.itemById.get(state.initialEventId);
   if (!item) return;
   if (state.calendar) {

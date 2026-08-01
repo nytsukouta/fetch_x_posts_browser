@@ -1,6 +1,13 @@
 import csv
 
-from post_new_events_to_x import append_post_log, build_post_log_row, build_post_text, count_tweet_length
+from post_new_events_to_x import (
+    append_post_log,
+    build_post_log_row,
+    build_post_text,
+    build_schedule_batch_url,
+    build_summary_post_text,
+    count_tweet_length,
+)
 
 
 SITE_URL = "https://example.github.io/repo/"
@@ -40,6 +47,45 @@ def test_post_text_without_event_name():
     # 公演名がない時は『』を出さない
     assert "『』" not in text
     assert "詳しくはこちら↓" in text
+
+
+def test_post_text_without_hashtag_omits_hashtag_section():
+    text = build_post_text(_row(), hashtag="", header_label="新しい公演が追加されましたジョキャ！", site_url=SITE_URL)
+
+    assert "#" not in text
+
+
+def test_summary_post_text_lists_multiple_events_and_uses_one_batch_url():
+    rows = [
+        _row(event_id="event-a", event_name="公演A"),
+        _row(event_id="event-b", event_name="公演B"),
+    ]
+
+    text = build_summary_post_text(rows, hashtag="石川演劇", header_label="新着", site_url=SITE_URL)
+
+    assert "今回追加された公演（2件）" in text
+    assert "・公演A" in text
+    assert "・公演B" in text
+    assert "events=event-a&events=event-b" in text
+    assert count_tweet_length(text) <= 280
+
+
+def test_summary_post_text_falls_back_to_count_when_names_do_not_fit():
+    rows = [_row(event_id=f"event-{index}", event_name="あ" * 300) for index in range(10)]
+
+    text = build_summary_post_text(rows, hashtag="石川演劇", header_label="新着", site_url=SITE_URL)
+
+    assert "今回追加された公演（10件）" in text
+    assert "・" not in text
+    assert count_tweet_length(text) <= 280
+
+
+def test_schedule_batch_url_replaces_existing_event_filters():
+    rows = [_row(event_id="event-a"), _row(event_id="event-b")]
+
+    url = build_schedule_batch_url(f"{SITE_URL}?event=old&events=stale", rows)
+
+    assert url == f"{SITE_URL}?events=event-a&events=event-b"
 
 
 def test_post_text_skips_outer_brackets_when_name_already_quoted():

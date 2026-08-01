@@ -44,7 +44,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--post-new-events", action="store_true", help="新規公演を X に投稿する")
     parser.add_argument("--post-dry-run", action="store_true", help="新規公演の投稿文だけを表示し、実際には投稿しない")
     parser.add_argument("--post-limit", type=int, default=None, help="投稿または dry-run 表示する件数上限")
-    parser.add_argument("--post-hashtag", default="石川演劇", help="投稿末尾に付けるハッシュタグ。空文字で無効化")
+    parser.add_argument("--post-hashtag", default="", help="投稿末尾に付けるハッシュタグ。既定では付けない")
     parser.add_argument(
         "--local-preview-dir",
         nargs="?",
