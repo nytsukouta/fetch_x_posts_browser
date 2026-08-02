@@ -19,3 +19,18 @@ def test_rebuild_only_rejects_posting(monkeypatch):
 
     with pytest.raises(ValueError, match="--rebuild-only と --post-new-events"):
         run_pipeline.main()
+
+
+def test_merge_cumulative_outputs_uses_existing_data_when_extraction_is_empty(tmp_path, monkeypatch):
+    structured_path = tmp_path / "structured_events.csv"
+    cumulative_filtered_path = tmp_path / "structured_events_filtered_cumulative.csv"
+    structured_path.write_text("tweet_url,event_name\n", encoding="utf-8-sig")
+    cumulative_filtered_path.write_text(
+        "tweet_url,event_name\nhttps://x.test/1,公演\n",
+        encoding="utf-8-sig",
+    )
+
+    monkeypatch.setattr(run_pipeline, "DEFAULT_STRUCTURED_CSV", structured_path)
+    monkeypatch.setattr(run_pipeline, "DEFAULT_CUMULATIVE_FILTERED_CSV", cumulative_filtered_path)
+
+    assert run_pipeline.merge_cumulative_outputs() == cumulative_filtered_path

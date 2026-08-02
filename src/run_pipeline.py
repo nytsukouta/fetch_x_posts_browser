@@ -231,6 +231,9 @@ def prepare_extraction_input(input_csv: Path) -> Path | None:
 def merge_cumulative_outputs() -> Path:
     current_rows, current_fieldnames = load_csv_rows(DEFAULT_STRUCTURED_CSV)
     if not current_rows or not current_fieldnames:
+        if DEFAULT_CUMULATIVE_FILTERED_CSV.exists():
+            print("structured_events.csv に新規抽出結果がないため、既存の累積データを使用します")
+            return DEFAULT_CUMULATIVE_FILTERED_CSV
         raise RuntimeError("structured_events.csv が見つからないため累積マージできません。")
 
     cumulative_rows, cumulative_fieldnames = load_csv_rows(DEFAULT_CUMULATIVE_STRUCTURED_CSV)
