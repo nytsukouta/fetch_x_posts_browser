@@ -65,9 +65,16 @@ async function main() {
     }
     elements.generatedAt.textContent = formatGeneratedAt(payload.generated_at);
 
-    if (state.initialEventId) {
-      const target = state.itemById.get(state.initialEventId);
-      if (target && elements.dateScopeFilter.value === "upcoming" && !isUpcomingSchedule(target.performance_schedule)) {
+    const requestedEventIds = [
+      state.initialEventId,
+      ...state.initialEventIds,
+    ].filter(Boolean);
+    if (requestedEventIds.length && elements.dateScopeFilter.value === "upcoming") {
+      const hasPastTarget = requestedEventIds.some((eventId) => {
+        const target = state.itemById.get(eventId);
+        return target && !isUpcomingSchedule(target.performance_schedule);
+      });
+      if (hasPastTarget) {
         elements.dateScopeFilter.value = "all";
       }
     }
