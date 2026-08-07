@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-07-18T15:22:30+09:00",
+  "generated_at": "2026-08-07T20:31:30+09:00",
   "counts": {
-    "organizations": 54,
+    "organizations": 76,
     "venues": 25
   },
   "organizations": [
@@ -159,6 +159,24 @@
       "query_include": true
     },
     {
+      "id": "org-gekidan-du",
+      "name": "劇団Du",
+      "location": "岐阜県",
+      "prefecture": "岐阜県",
+      "official_website": "https://gekidan-du.jimdofree.com/",
+      "official_x": "https://x.com/gekidan_du",
+      "query_include": false
+    },
+    {
+      "id": "org-gifu-puppet-center",
+      "name": "岐阜人形劇センター",
+      "location": "岐阜県",
+      "prefecture": "岐阜県",
+      "official_website": "https://gifu-puppet-center.jimdofree.com/",
+      "official_x": "https://x.com/gifupuppet",
+      "query_include": true
+    },
+    {
       "id": "org-指先ペロペロキャンディー",
       "name": "指先ペロペロキャンディー",
       "location": "岐阜県",
@@ -166,6 +184,60 @@
       "official_website": "",
       "official_x": "https://x.com/yubipero_engeki",
       "query_include": true
+    },
+    {
+      "id": "org-the-teas",
+      "name": "演劇集団紅茶組",
+      "location": "岐阜県",
+      "prefecture": "岐阜県",
+      "official_website": "https://the-teas.com/",
+      "official_x": "https://x.com/TheTeas2011",
+      "query_include": false
+    },
+    {
+      "id": "org-yarusenai",
+      "name": "劇団やるせない",
+      "location": "岐阜県・愛知県",
+      "prefecture": "",
+      "official_website": "",
+      "official_x": "https://x.com/team__yarusenai",
+      "query_include": false
+    },
+    {
+      "id": "org-kaitouranma",
+      "name": "劇団芝居屋かいとうらんま",
+      "location": "岐阜県大垣市・岐阜市",
+      "prefecture": "岐阜県",
+      "official_website": "https://kaitouranma.net/official/",
+      "official_x": "https://x.com/kaitouramma_OA",
+      "query_include": false
+    },
+    {
+      "id": "org-hapiendou",
+      "name": "はぴえん堂",
+      "location": "岐阜県岐阜市",
+      "prefecture": "岐阜県",
+      "official_website": "",
+      "official_x": "https://x.com/hapiendou",
+      "query_include": true
+    },
+    {
+      "id": "org-gekidan-sui",
+      "name": "劇団『彗』",
+      "location": "岐阜県岐阜市",
+      "prefecture": "岐阜県",
+      "official_website": "https://gekidansui.wordpress.com",
+      "official_x": "https://x.com/gekidan_sui",
+      "query_include": false
+    },
+    {
+      "id": "org-ato-no-matsuri",
+      "name": "劇団あとの祭り",
+      "location": "岐阜県岐阜市",
+      "prefecture": "岐阜県",
+      "official_website": "https://after-p.com/",
+      "official_x": "https://x.com/afterP_hyalala",
+      "query_include": false
     },
     {
       "id": "org-劇団のりしろ",
@@ -193,6 +265,132 @@
       "official_website": "",
       "official_x": "https://x.com/shukan_zero",
       "query_include": false
+    },
+    {
+      "id": "org-luckycats",
+      "name": "劇団ラッキー・キャッツ",
+      "location": "岐阜県岐阜市",
+      "prefecture": "岐阜県",
+      "official_website": "https://luckycats.main.jp/",
+      "official_x": "https://x.com/TC_Luckycats",
+      "query_include": false
+    },
+    {
+      "id": "org-gifu-ibuki",
+      "name": "岐阜ろう劇団いぶき",
+      "location": "岐阜県岐阜市",
+      "prefecture": "岐阜県",
+      "official_website": "https://gifu-ibuki.jimdofree.com/",
+      "official_x": "https://x.com/gifuibuki",
+      "query_include": false
+    },
+    {
+      "id": "org-gekidan-shibainu",
+      "name": "劇団しばいぬ",
+      "location": "岩手県滝沢市",
+      "prefecture": "岩手県",
+      "official_website": "",
+      "official_x": "https://x.com/gekidanshibainu",
+      "query_include": false
+    },
+    {
+      "id": "org-gekidan-channel",
+      "name": "劇団ちゃねる",
+      "location": "岩手県滝沢市",
+      "prefecture": "岩手県",
+      "official_website": "https://gekidan-channel.jimdofree.com/",
+      "official_x": "https://x.com/gekidan_channel",
+      "query_include": false
+    },
+    {
+      "id": "org-gekidan-yuu",
+      "name": "劇団ゆう",
+      "location": "岩手県滝沢市",
+      "prefecture": "岩手県",
+      "official_website": "https://www.gekidan-yuu.com/",
+      "official_x": "",
+      "query_include": false
+    },
+    {
+      "id": "org-liner-notes",
+      "name": "ライナー・ノーツ",
+      "location": "岩手県盛岡市",
+      "prefecture": "岩手県",
+      "official_website": "",
+      "official_x": "https://x.com/liner__notes_",
+      "query_include": true
+    },
+    {
+      "id": "org-kotonakonata",
+      "name": "劇団コトナコナタ",
+      "location": "岩手県盛岡市",
+      "prefecture": "岩手県",
+      "official_website": "https://kotonakonata.pya.jp/",
+      "official_x": "https://x.com/kotonakonata",
+      "query_include": false
+    },
+    {
+      "id": "org-gekidan-zeminar",
+      "name": "劇団ゼミナール",
+      "location": "岩手県盛岡市",
+      "prefecture": "岩手県",
+      "official_website": "",
+      "official_x": "https://x.com/gekidan_zeminar",
+      "query_include": false
+    },
+    {
+      "id": "org-trouble-cafe-theater",
+      "name": "劇団トラブルカフェシアター",
+      "location": "岩手県盛岡市",
+      "prefecture": "岩手県",
+      "official_website": "http://tctmorioka.web.fc2.com/",
+      "official_x": "https://x.com/tcafetheater",
+      "query_include": false
+    },
+    {
+      "id": "org-gekidan-akai-kaze",
+      "name": "劇団赤い風",
+      "location": "岩手県盛岡市",
+      "prefecture": "岩手県",
+      "official_website": "",
+      "official_x": "https://x.com/AkAikazeyaruze",
+      "query_include": false
+    },
+    {
+      "id": "org-gekidan-kappa",
+      "name": "岩手大学劇団かっぱ",
+      "location": "岩手県盛岡市",
+      "prefecture": "岩手県",
+      "official_website": "",
+      "official_x": "https://x.com/gekidankappa",
+      "query_include": false
+    },
+    {
+      "id": "org-kakuu-no-gekidan",
+      "name": "架空の劇団",
+      "location": "岩手県盛岡市",
+      "prefecture": "岩手県",
+      "official_website": "https://kakoo2001.wixsite.com/kakoo2001",
+      "official_x": "https://x.com/kakoono2001",
+      "query_include": false
+    },
+    {
+      "id": "org-geki9-aura",
+      "name": "演劇集団九月とアウラー",
+      "location": "岩手県盛岡市",
+      "prefecture": "岩手県",
+      "official_website": "",
+      "official_x": "https://x.com/geki9aura",
+      "query_include": false
+    },
+    {
+      "id": "org-kuroneko-sha",
+      "name": "黒猫舎",
+      "location": "岩手県盛岡市",
+      "prefecture": "岩手県",
+      "official_website": "",
+      "official_x": "https://x.com/kuroneko_sha",
+      "query_include": true
     },
     {
       "id": "org-劇団一級河川",
