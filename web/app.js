@@ -460,8 +460,13 @@ function openEventDialog(eventId) {
 }
 
 function focusInitialEvent() {
-  if (!state.initialEventId || state.initialEventIds.length) return;
-  const item = state.itemById.get(state.initialEventId);
+  const requestedEventIds = [
+    state.initialEventId,
+    ...state.initialEventIds,
+  ].filter(Boolean);
+  const targetId = requestedEventIds.find((eventId) => state.itemById.has(eventId));
+  if (!targetId) return;
+  const item = state.itemById.get(targetId);
   if (!item) return;
   if (state.calendar) {
     const range = parseScheduleRange(item.performance_schedule);
@@ -469,7 +474,9 @@ function focusInitialEvent() {
       try { state.calendar.gotoDate(range.start); } catch (_e) { /* ignore */ }
     }
   }
-  openEventDialog(state.initialEventId);
+  if (state.initialEventId) {
+    openEventDialog(state.initialEventId);
+  }
 }
 
 function isMobileViewport() {
