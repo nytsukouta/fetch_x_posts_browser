@@ -1,10 +1,37 @@
 {
-  "generated_at": "2026-08-07T20:31:30+09:00",
+  "generated_at": "2026-08-08T13:44:13+09:00",
   "counts": {
-    "organizations": 76,
+    "organizations": 89,
     "venues": 25
   },
   "organizations": [
+    {
+      "id": "org-sisikababu",
+      "name": "人形劇団ししかばぶ",
+      "location": "三重県伊勢市",
+      "prefecture": "三重県",
+      "official_website": "https://sites.google.com/view/sisikababu",
+      "official_x": "https://x.com/sisikababu_i",
+      "query_include": false
+    },
+    {
+      "id": "org-adist-mie",
+      "name": "三重大学 劇団アディスト",
+      "location": "三重県津市",
+      "prefecture": "三重県",
+      "official_website": "https://www.mie-u.ac.jp/students/activities/club-circle/Adist.html",
+      "official_x": "https://x.com/AdistMie",
+      "query_include": false
+    },
+    {
+      "id": "org-aonokai",
+      "name": "演劇集団 青の会",
+      "location": "三重県鈴鹿市",
+      "prefecture": "三重県",
+      "official_website": "https://aonokai01.amebaownd.com/",
+      "official_x": "https://x.com/aonokai_jp",
+      "query_include": false
+    },
     {
       "id": "org-ほくりくアイドル部",
       "name": "ほくりくアイドル部",
@@ -420,6 +447,51 @@
       "query_include": true
     },
     {
+      "id": "org-amaoto",
+      "name": "劇団あまおと（徳島大学演劇部）",
+      "location": "徳島県徳島市",
+      "prefecture": "徳島県",
+      "official_website": "https://tokushimaactclub.web.fc2.com/",
+      "official_x": "https://x.com/tokuactclub",
+      "query_include": false
+    },
+    {
+      "id": "org-manmaru",
+      "name": "劇団まんまる",
+      "location": "徳島県徳島市",
+      "prefecture": "徳島県",
+      "official_website": "https://troupemanmaru.com/",
+      "official_x": "https://x.com/troupemanmaru",
+      "query_include": false
+    },
+    {
+      "id": "org-todokeru",
+      "name": "todokeru",
+      "location": "徳島県板野郡北島町",
+      "prefecture": "徳島県",
+      "official_website": "https://todokeru.studio.site/",
+      "official_x": "https://x.com/todokeru_engeki",
+      "query_include": true
+    },
+    {
+      "id": "org-yawatahama-musical",
+      "name": "八幡浜ミュージカル劇団",
+      "location": "愛媛県八幡浜市",
+      "prefecture": "愛媛県",
+      "official_website": "",
+      "official_x": "https://x.com/8mu_com",
+      "query_include": false
+    },
+    {
+      "id": "org-gekidan-uz",
+      "name": "劇団UZ（うず）",
+      "location": "愛媛県松山市",
+      "prefecture": "愛媛県",
+      "official_website": "https://gekidanuz.wixsite.com/home",
+      "official_x": "https://x.com/gekidan_uz",
+      "query_include": false
+    },
+    {
       "id": "org-あとみよそわか",
       "name": "まげもの劇団「あとみよそわか」",
       "location": "東京都",
@@ -687,6 +759,51 @@
       "prefecture": "福井県",
       "official_website": "https://www.yamunashi.com/",
       "official_x": "https://x.com/fukui_yamunashi",
+      "query_include": false
+    },
+    {
+      "id": "org-ticktacknoiz",
+      "name": "劇団チクタクノイズ",
+      "location": "香川県",
+      "prefecture": "香川県",
+      "official_website": "https://sites.google.com/view/ticktacknoiz/home",
+      "official_x": "https://x.com/ticktacknoiz",
+      "query_include": false
+    },
+    {
+      "id": "org-maekabu",
+      "name": "株式劇団マエカブ",
+      "location": "香川県坂出市・高松市",
+      "prefecture": "香川県",
+      "official_website": "http://www.maekabu.com/",
+      "official_x": "https://x.com/mae_kabu",
+      "query_include": false
+    },
+    {
+      "id": "org-gintetsu-kagawa",
+      "name": "劇団 銀河鉄道",
+      "location": "香川県高松市",
+      "prefecture": "香川県",
+      "official_website": "",
+      "official_x": "https://x.com/gintetsu_t",
+      "query_include": false
+    },
+    {
+      "id": "org-kochi-enkai",
+      "name": "高知演劇ネットワーク演会",
+      "location": "高知県",
+      "prefecture": "高知県",
+      "official_website": "https://enkai-kochi.com/",
+      "official_x": "https://x.com/enkai_kochi",
+      "query_include": false
+    },
+    {
+      "id": "org-kochi-u-theater",
+      "name": "高知大学演劇研究会",
+      "location": "高知県高知市",
+      "prefecture": "高知県",
+      "official_website": "https://www.kochi-u.ac.jp/education-support/activities/circles/theater/",
+      "official_x": "https://x.com/kochi_enken3",
       "query_include": false
     }
   ],
