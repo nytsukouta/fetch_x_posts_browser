@@ -37,6 +37,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--query-file", default=str(DEFAULT_QUERY_FILE), help="収集に使うクエリJSON")
     parser.add_argument("--output-dir", default=str(DEFAULT_OUTPUT_DIR), help="収集CSVの出力先")
     parser.add_argument("--max-results", type=int, default=None, help="各クエリの取得件数")
+    parser.add_argument("--force-collect", action="store_true", help="収集間隔を無視して全クエリを検索する")
     parser.add_argument("--extract-limit", type=int, default=None, help="構造化抽出の件数上限")
     parser.add_argument("--model", default=None, help="GitHub Models のモデルIDを上書きする")
     parser.add_argument("--no-images", action="store_true", help="構造化抽出で添付画像を GitHub Models に渡さない")
@@ -114,6 +115,8 @@ def collect_posts(args: argparse.Namespace, query_file: Path) -> Path:
     command.extend(["--excluded-ids-csv", str(DEFAULT_EXCLUDED_IDS_CSV)])
     if args.max_results is not None:
         command.extend(["--max-results", str(args.max_results)])
+    if args.force_collect:
+        command.append("--force-collect")
 
     completed = run_command(command)
     return find_saved_csv(completed.stdout)

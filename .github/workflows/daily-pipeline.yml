@@ -74,7 +74,7 @@ jobs:
             mode="full"
           else
             if [[ -z "$BEFORE_SHA" || "$BEFORE_SHA" =~ ^0+$ ]]; then
-              mode="full"
+              mode="rebuild"
             else
               changed=$(git diff --name-only "$BEFORE_SHA" "$CURRENT_SHA")
               mode="pages"
@@ -82,7 +82,7 @@ jobs:
                 [[ -z "$path" ]] && continue
                 case "$path" in
                   src/fetch_x_posts.py|src/extract_events_github_models.py|src/x_tweet_context.py|src/github_models_client.py|src/build_priority_queries_from_masters.py|data/output/organization_master.csv|data/output/venue_master.csv|.github/workflows/daily-pipeline.yml)
-                    mode="full"
+                    mode="rebuild"
                     ;;
                   config/manual_event_overrides.json|config/event_aliases.csv|src/event_candidate_rules.py|src/event_cumulative_core.py|src/event_cumulative_llm.py|src/build_event_cumulative.py|src/build_schedule_list.py|src/manual_event_overrides.py|src/run_pipeline.py)
                     [[ "$mode" == "pages" ]] && mode="rebuild"
@@ -91,7 +91,7 @@ jobs:
                     [[ "$mode" == "pages" ]] && mode="rebuild"
                     ;;
                   *)
-                    mode="full"
+                    mode="rebuild"
                     ;;
                 esac
               done <<< "$changed"
@@ -157,6 +157,9 @@ jobs:
             data/output/structured_events_cumulative.csv
             data/output/structured_events_filtered_cumulative.csv
             data/output/event_cumulative.csv
+            data/output/_state/
+            data/output/query_collection_metrics.csv
+            data/output/query_effectiveness_review.csv
           key: posted-events-${{ github.ref_name }}-${{ github.run_id }}
           restore-keys: |
             posted-events-${{ github.ref_name }}-
@@ -181,8 +184,17 @@ jobs:
           output_dir = Path("data/output")
           structured_path = output_dir / "structured_events_cumulative.csv"
           posted_path = output_dir / "posted_events.csv"
+          last_seen_path = output_dir / "_state" / "last_seen_tweet_ids.json"
+          collection_state_path = output_dir / "_state" / "query_collection_state.json"
+          metrics_path = output_dir / "query_collection_metrics.csv"
 
-          if structured_path.exists() and posted_path.exists():
+          if (
+            structured_path.exists()
+            and posted_path.exists()
+            and last_seen_path.exists()
+            and collection_state_path.exists()
+            and metrics_path.exists()
+          ):
             print("durable history restore skipped: cache already restored structured and posted logs")
             raise SystemExit(0)
 
@@ -354,10 +366,21 @@ jobs:
       - name: Run rebuild pipeline
         if: env.PIPELINE_MODE == 'rebuild'
         shell: bash
-        run: python src/run_pipeline.py --rebuild-only --skip-query-rebuild
+        run: python src/run_pipeline.py --rebuild-only
+
+      - name: Monthly query effectiveness review
+        if: success() && env.PIPELINE_MODE == 'full' && github.event_name == 'schedule'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$(date +%d)" != "01" ]]; then
+            echo "monthly query review is scheduled for the first day of the month"
+            exit 0
+          fi
+          python src/review_query_effectiveness.py
 
       - name: Save posted event log
-        if: success() && env.PIPELINE_MODE != 'pages' && (hashFiles('data/output/posted_events.csv') != '' || hashFiles('data/output/structured_events_cumulative.csv') != '' || hashFiles('data/output/structured_events_filtered_cumulative.csv') != '' || hashFiles('data/output/event_cumulative.csv') != '')
+        if: success() && env.PIPELINE_MODE != 'pages' && (hashFiles('data/output/posted_events.csv') != '' || hashFiles('data/output/structured_events_cumulative.csv') != '' || hashFiles('data/output/structured_events_filtered_cumulative.csv') != '' || hashFiles('data/output/event_cumulative.csv') != '' || hashFiles('data/output/_state/**') != '' || hashFiles('data/output/query_collection_metrics.csv') != '')
         uses: actions/cache/save@v4
         with:
           path: |
@@ -365,10 +388,13 @@ jobs:
             data/output/structured_events_cumulative.csv
             data/output/structured_events_filtered_cumulative.csv
             data/output/event_cumulative.csv
+            data/output/_state/
+            data/output/query_collection_metrics.csv
+            data/output/query_effectiveness_review.csv
           key: posted-events-${{ github.ref_name }}-${{ github.run_id }}
 
       - name: Build durable pipeline history snapshot
-        if: success() && env.PIPELINE_MODE != 'pages' && (hashFiles('data/output/posted_events.csv') != '' || hashFiles('data/output/structured_events_cumulative.csv') != '' || hashFiles('data/output/structured_events_filtered_cumulative.csv') != '' || hashFiles('data/output/event_cumulative.csv') != '')
+        if: success() && env.PIPELINE_MODE != 'pages' && (hashFiles('data/output/posted_events.csv') != '' || hashFiles('data/output/structured_events_cumulative.csv') != '' || hashFiles('data/output/structured_events_filtered_cumulative.csv') != '' || hashFiles('data/output/event_cumulative.csv') != '' || hashFiles('data/output/_state/**') != '' || hashFiles('data/output/query_collection_metrics.csv') != '')
         shell: bash
         run: |
           set -euo pipefail
@@ -384,6 +410,10 @@ jobs:
               Path("data/output/structured_events_filtered_cumulative.csv"),
               Path("data/output/event_cumulative_base.csv"),
               Path("data/output/event_cumulative.csv"),
+              Path("data/output/_state/last_seen_tweet_ids.json"),
+              Path("data/output/_state/query_collection_state.json"),
+              Path("data/output/query_collection_metrics.csv"),
+              Path("data/output/query_effectiveness_review.csv"),
           ]
 
           with zipfile.ZipFile(snapshot_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:

@@ -1,0 +1,16 @@
+{
+  "organization": {
+    "official_x_interval_days": 1,
+    "without_official_x_interval_days": 3
+  },
+  "venue": {
+    "official_x_interval_days": 3,
+    "without_official_x_interval_days": 6
+  },
+  "overrides": {},
+  "review": {
+    "window_days": 30,
+    "minimum_collected_runs": 3,
+    "low_effect_average_results": 1.0
+  }
+}

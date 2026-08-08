@@ -25,9 +25,16 @@
 補足:
 
 - recent search が使えない契約や権限だと 403 になります
-- 既定の `max_results_per_query` は 30 件です
+- 既定の `max_results_per_query` は 10 件です
 - 収集CSVは `data/output/x_recent_search_*.csv` に保存されます
 - 同じ tweet が複数クエリに引っかかった場合は、保存前に `tweet_url` / `tweet_id` 単位で重複除去します
+- クエリごとの収集間隔は `config/collection_policy.json` で管理します。公式Xがある団体は1日間隔、公式Xがない団体は3日間隔、会場は3〜6日間隔が初期値です
+- `data/output/_state/query_collection_state.json` に最終収集時刻、`data/output/query_collection_metrics.csv` に取得件数と空振りを保存します
+- 収集間隔を無視して確認する場合は `.venv/Scripts/python.exe src/fetch_x_posts.py --force-collect` を使います
+
+### クエリ効果の月次レビュー
+
+毎月1日のActions定期実行で、直近30日間のクエリ別取得実績を `data/output/query_effectiveness_review.csv` に生成します。`recommendation=review` のクエリは、収集回数が3回以上で平均取得件数が1件未満です。内容を確認して、休止中の団体や不要な会場はマスターの `query_exclude=1`、一時的な低頻度化は `config/collection_policy.json` の `overrides` で調整してください。
 
 ## GitHub Models で構造化抽出
 
@@ -178,6 +185,8 @@ tracked な `config/` や `docs/` を汚さずにローカル確認したい場�
 - Actions の定期実行では新規公演を live 投稿し、`push` 実行では投稿しません
 - Actions の手動実行では `post_mode` に `off` / `dry-run` / `live` を指定できます
 - Actions 側では `data/output/posted_events.csv` を cache で引き継ぎ、同じ公演の再投稿を防ぎます
+- Actions の `push` 起動ではAPI収集を行わず、`rebuild` のみ実行します。Xの収集は定期実行または手動の `full` 実行で行います
+- Actions のcacheと `pipeline-history-main` artifact には、X収集のsince_id、収集間隔state、クエリ別メトリクスも保存されます
 - テスト投稿として明示したい場合は `--header "テスト投稿" --hashtag 石川演劇テスト` のように上書きできます
 - 投稿先の schedule URL は `--site-url` または `.env` の `PUBLIC_SITE_URL` / `SITE_URL` で上書きできます。未指定時は git の origin から GitHub Pages URL を推定します
 

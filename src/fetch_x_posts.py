@@ -5,7 +5,7 @@ import csv
 import json
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 from urllib import error, parse, request
@@ -28,11 +28,29 @@ DEFAULT_QUERY_FILE = ROOT_DIR / "config" / "priority_queries.json"
 DEFAULT_OUTPUT_DIR = ROOT_DIR / "data" / "output"
 DEFAULT_EXCLUDED_IDS_CSV = ROOT_DIR / "data" / "output" / "excluded_tweet_ids.csv"
 DEFAULT_STATE_FILE = ROOT_DIR / "data" / "output" / "_state" / "last_seen_tweet_ids.json"
+DEFAULT_COLLECTION_STATE_FILE = ROOT_DIR / "data" / "output" / "_state" / "query_collection_state.json"
+DEFAULT_METRICS_FILE = ROOT_DIR / "data" / "output" / "query_collection_metrics.csv"
 DEFAULT_ENV_FILE = ROOT_DIR / ".env"
 SEARCH_URL = "https://api.x.com/2/tweets/search/recent"
+COLLECTION_METRIC_FIELDS = [
+    "collected_at",
+    "query_label",
+    "query",
+    "source_type",
+    "source_id",
+    "collection_interval_days",
+    "collection_tier",
+    "status",
+    "skip_reason",
+    "since_id",
+    "result_count",
+    "unique_tweet_count",
+    "known_noise_count",
+    "newest_tweet_id",
+]
 
 
-def load_queries(query_file: Path) -> tuple[list[dict[str, str]], int]:
+def load_queries(query_file: Path) -> tuple[list[dict[str, Any]], int]:
     payload = json.loads(query_file.read_text(encoding="utf-8"))
     queries = payload.get("queries", [])
     if not queries:
@@ -174,6 +192,80 @@ def save_since_id_state(path: Path, state: dict[str, str]) -> None:
     path.write_text(payload, encoding="utf-8")
 
 
+def load_collection_state(path: Path) -> dict[str, str]:
+    if not path.exists():
+        return {}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return {}
+    if not isinstance(data, dict):
+        return {}
+    state: dict[str, str] = {}
+    for key, value in data.items():
+        if isinstance(value, dict):
+            value = value.get("last_collected_at")
+        if value:
+            state[str(key)] = str(value)
+    return state
+
+
+def save_collection_state(path: Path, state: dict[str, str]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = json.dumps(state, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+    with atomic_open(path, "w", encoding="utf-8", newline="") as handle:
+        handle.write(payload)
+
+
+def parse_timestamp(value: str) -> datetime | None:
+    normalized = str(value or "").strip()
+    if not normalized:
+        return None
+    try:
+        parsed = datetime.fromisoformat(normalized.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def query_interval_days(query: dict[str, Any]) -> int:
+    try:
+        return max(1, min(int(query.get("collection_interval_days", 1)), 6))
+    except (TypeError, ValueError):
+        return 1
+
+
+def is_query_due(query: dict[str, Any], collection_state: dict[str, str], now: datetime) -> bool:
+    label = str(query.get("label") or "")
+    last_collected_at = parse_timestamp(collection_state.get(label, ""))
+    if last_collected_at is None:
+        return True
+    current_time = now.astimezone(timezone.utc) if now.tzinfo else now.replace(tzinfo=timezone.utc)
+    return current_time >= last_collected_at + timedelta(days=query_interval_days(query))
+
+
+def append_collection_metrics(path: Path, rows: list[dict[str, Any]]) -> None:
+    if not rows:
+        return
+    existing_rows: list[dict[str, Any]] = []
+    if path.exists():
+        try:
+            with path.open("r", encoding="utf-8-sig", newline="") as handle:
+                existing_rows = list(csv.DictReader(handle))
+        except (OSError, csv.Error):
+            existing_rows = []
+    normalized_rows = [
+        {fieldname: row.get(fieldname, "") for fieldname in COLLECTION_METRIC_FIELDS}
+        for row in [*existing_rows, *rows]
+    ]
+    with atomic_open(path, "w", encoding="utf-8-sig", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=COLLECTION_METRIC_FIELDS)
+        writer.writeheader()
+        writer.writerows(normalized_rows)
+
+
 def newest_tweet_id(payload: dict[str, Any]) -> str:
     meta_newest = str((payload.get("meta") or {}).get("newest_id") or "").strip()
     if meta_newest:
@@ -284,9 +376,24 @@ def parse_args() -> argparse.Namespace:
         help="クエリごとの最新取得 tweet_id を保持する JSON。次回以降 since_id として利用される",
     )
     parser.add_argument(
+        "--collection-state-file",
+        default=str(DEFAULT_COLLECTION_STATE_FILE),
+        help="クエリごとの最終収集時刻を保持する JSON。収集間隔の判定に利用される",
+    )
+    parser.add_argument(
+        "--metrics-file",
+        default=str(DEFAULT_METRICS_FILE),
+        help="クエリごとの取得件数・空振りを追記する CSV",
+    )
+    parser.add_argument(
         "--ignore-state",
         action="store_true",
         help="since_id state を無視して全件取得する（初回・強制再取得用）",
+    )
+    parser.add_argument(
+        "--force-collect",
+        action="store_true",
+        help="収集間隔を無視して全クエリを検索する",
     )
     return parser.parse_args()
 
@@ -303,17 +410,48 @@ def main() -> int:
     query_file = Path(args.query_file)
     output_dir = Path(args.output_dir)
     state_file = Path(args.state_file)
+    collection_state_file = Path(args.collection_state_file)
+    metrics_file = Path(args.metrics_file)
     queries, configured_max_results = load_queries(query_file)
     max_results = args.max_results or configured_max_results
 
     since_state = {} if args.ignore_state else load_since_id_state(state_file)
     next_state = dict(since_state)
+    collection_state = load_collection_state(collection_state_file)
+    next_collection_state = dict(collection_state)
+    collected_at = datetime.now(timezone.utc)
+    collected_at_text = collected_at.isoformat()
+    excluded_keys = load_excluded_tweet_keys(Path(args.excluded_ids_csv))
 
     all_rows: list[dict[str, Any]] = []
+    metrics_rows: list[dict[str, Any]] = []
+    force_collect = args.force_collect or args.ignore_state
     try:
         for item in queries:
-            query_label = item["label"]
-            query_text = item["query"]
+            query_label = str(item.get("label") or "")
+            query_text = str(item.get("query") or "")
+            interval_days = query_interval_days(item)
+            if not force_collect and not is_query_due(item, collection_state, collected_at):
+                print(f"skipping: {query_label} (interval={interval_days} days)")
+                metrics_rows.append(
+                    {
+                        "collected_at": collected_at_text,
+                        "query_label": query_label,
+                        "query": query_text,
+                        "source_type": item.get("source_type", ""),
+                        "source_id": item.get("source_id", ""),
+                        "collection_interval_days": interval_days,
+                        "collection_tier": item.get("collection_tier", ""),
+                        "status": "skipped",
+                        "skip_reason": "interval_not_elapsed",
+                        "since_id": collection_state.get(query_label, ""),
+                        "result_count": 0,
+                        "unique_tweet_count": 0,
+                        "known_noise_count": 0,
+                        "newest_tweet_id": "",
+                    }
+                )
+                continue
             since_id = since_state.get(query_label) or None
             suffix = f" (since_id={since_id})" if since_id else ""
             print(f"searching: {query_label}{suffix}")
@@ -323,6 +461,27 @@ def main() -> int:
             latest_id = newest_tweet_id(payload)
             if latest_id:
                 next_state[query_label] = latest_id
+            next_collection_state[query_label] = collected_at_text
+            _, known_noise_count = filter_excluded_rows(rows, excluded_keys)
+            unique_keys = {tweet_identity_key(row) for row in rows if tweet_identity_key(row)}
+            metrics_rows.append(
+                {
+                    "collected_at": collected_at_text,
+                    "query_label": query_label,
+                    "query": query_text,
+                    "source_type": item.get("source_type", ""),
+                    "source_id": item.get("source_id", ""),
+                    "collection_interval_days": interval_days,
+                    "collection_tier": item.get("collection_tier", ""),
+                    "status": "collected",
+                    "skip_reason": "",
+                    "since_id": since_id or "",
+                    "result_count": len(rows),
+                    "unique_tweet_count": len(unique_keys),
+                    "known_noise_count": known_noise_count,
+                    "newest_tweet_id": latest_id,
+                }
+            )
     except RuntimeError as exc:
         print(str(exc), file=sys.stderr)
         if "client-not-enrolled" in str(exc):
@@ -334,13 +493,18 @@ def main() -> int:
 
     if next_state != since_state:
         save_since_id_state(state_file, next_state)
+    if next_collection_state != collection_state:
+        save_collection_state(collection_state_file, next_collection_state)
+    append_collection_metrics(metrics_file, metrics_rows)
 
     if not all_rows:
+        output_path = write_csv([], output_dir)
         print("新規投稿はありませんでした。")
+        print(f"saved: {output_path}")
+        print("rows: 0")
         return 0
 
     deduped_rows, duplicate_count = dedupe_rows(all_rows)
-    excluded_keys = load_excluded_tweet_keys(Path(args.excluded_ids_csv))
     filtered_rows, excluded_count = filter_excluded_rows(deduped_rows, excluded_keys)
     output_path = write_csv(filtered_rows, output_dir)
     print(f"saved: {output_path}")
