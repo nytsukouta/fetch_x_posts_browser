@@ -105,9 +105,26 @@ jobs:
           echo "pipeline_mode=$mode" >> "$GITHUB_OUTPUT"
           echo "Selected pipeline mode: $mode"
 
-  build:
+  start_runner:
     needs: mode
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Log in to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_RUNNER_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Start self-hosted runner VM
+        run: az vm start --resource-group "${{ vars.AZURE_RUNNER_RESOURCE_GROUP }}" --name "${{ vars.AZURE_RUNNER_VM_NAME }}"
+
+  build:
+    needs: [mode, start_runner]
+    runs-on: [self-hosted, linux, x64, theater-pipeline]
     env:
       PIPELINE_MODE: ${{ needs.mode.outputs.pipeline_mode }}
       POST_MODE: ${{ github.event_name == 'schedule' && 'live' || github.event_name == 'workflow_dispatch' && github.event.inputs.post_mode || 'off' }}
@@ -470,6 +487,24 @@ jobs:
             gh issue create --title "$title" --body "$body" --label pipeline-failure || \
               gh issue create --title "$title" --body "$body"
           fi
+
+  stop_runner:
+    if: always()
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Log in to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_RUNNER_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deallocate self-hosted runner VM
+        run: az vm deallocate --resource-group "${{ vars.AZURE_RUNNER_RESOURCE_GROUP }}" --name "${{ vars.AZURE_RUNNER_VM_NAME }}"
 
   deploy:
     needs: build
