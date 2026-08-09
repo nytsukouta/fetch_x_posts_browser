@@ -21,7 +21,7 @@ on:
         default: dry-run
         type: choice
         options:
-          - off
+          - "off"
           - dry-run
           - live
   push:
