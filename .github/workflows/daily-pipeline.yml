@@ -24,6 +24,11 @@ on:
           - "off"
           - dry-run
           - live
+      force_collect:
+        description: "収集間隔とstateを無視して再収集する"
+        required: true
+        default: false
+        type: boolean
   push:
     branches:
       - main
@@ -106,6 +111,7 @@ jobs:
     env:
       PIPELINE_MODE: ${{ needs.mode.outputs.pipeline_mode }}
       POST_MODE: ${{ github.event_name == 'schedule' && 'live' || github.event_name == 'workflow_dispatch' && github.event.inputs.post_mode || 'off' }}
+      FORCE_COLLECT: ${{ github.event_name == 'workflow_dispatch' && inputs.force_collect || false }}
       TZ: Asia/Tokyo
       X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
       AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
@@ -362,6 +368,9 @@ jobs:
               args+=(--post-new-events --post-dry-run)
               ;;
           esac
+          if [[ "$FORCE_COLLECT" == "true" ]]; then
+            args+=(--force-collect)
+          fi
           python src/run_pipeline.py "${args[@]}"
 
       - name: Run rebuild pipeline
