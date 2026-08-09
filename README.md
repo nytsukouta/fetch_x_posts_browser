@@ -36,12 +36,12 @@
 
 毎月1日のActions定期実行で、直近30日間のクエリ別取得実績を `data/output/query_effectiveness_review.csv` に生成します。`recommendation=review` のクエリは、収集回数が3回以上で平均取得件数が1件未満です。内容を確認して、休止中の団体や不要な会場はマスターの `query_exclude=1`、一時的な低頻度化は `config/collection_policy.json` の `overrides` で調整してください。
 
-## GitHub Models で構造化抽出
+## Azure OpenAI で構造化抽出
 
-収集済み CSV から日時や場所などを抜き出すには、GitHub Models 版を使えます。
+収集済み CSV から日時や場所などを抜き出すには、Azure OpenAI を使います。
 
-1. `.env` に `GH_MODELS_TOKEN` または `GITHUB_TOKEN` を設定する
-2. 必要なら `GITHUB_MODELS_MODEL` を設定する
+1. `.env` に `AZURE_OPENAI_ENDPOINT` と `AZURE_OPENAI_API_KEY` を設定する
+2. `AZURE_OPENAI_DEPLOYMENT` にモデルのデプロイ名を設定する
 3. `.venv/Scripts/python.exe src/extract_events_github_models.py --limit 5` を実行する
 
 画像入力を止めたい場合:
@@ -59,7 +59,7 @@
 - `structured_events.*` は生の抽出結果です
 - `structured_events_filtered.*` はノイズ除去後の結果です
 - JSONL は通常運用では保存せず、必要な時だけ `--debug-outputs` を付けて保存します
-- 既定では tweet の添付画像 URL があれば GitHub Models に画像入力として渡します。コストや入力サイズを抑えたい場合は `--no-images` を使ってください
+- 既定では tweet の添付画像 URL があれば Azure OpenAI に画像入力として渡します。コストや入力サイズを抑えたい場合は `--no-images` を使ってください
 - `organization` は `data/output/organization_master.csv` の `official_x` と正規名に基づいて補正されます
 - `normalized_venue_name` と `normalized_location` に正規化結果が入ります
 

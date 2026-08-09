@@ -39,8 +39,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-results", type=int, default=None, help="各クエリの取得件数")
     parser.add_argument("--force-collect", action="store_true", help="収集間隔を無視して全クエリを検索する")
     parser.add_argument("--extract-limit", type=int, default=None, help="構造化抽出の件数上限")
-    parser.add_argument("--model", default=None, help="GitHub Models のモデルIDを上書きする")
-    parser.add_argument("--no-images", action="store_true", help="構造化抽出で添付画像を GitHub Models に渡さない")
+    parser.add_argument("--model", default=None, help="Azure OpenAI のデプロイ名を上書きする")
+    parser.add_argument("--no-images", action="store_true", help="構造化抽出で添付画像を Azure OpenAI に渡さない")
     parser.add_argument("--debug-outputs", action="store_true", help="抽出段階の JSONL などデバッグ用中間生成物も保存する")
     parser.add_argument("--post-new-events", action="store_true", help="新規公演を X に投稿する")
     parser.add_argument("--post-dry-run", action="store_true", help="新規公演の投稿文だけを表示し、実際には投稿しない")
@@ -85,9 +85,9 @@ def run_command(command: list[str]) -> subprocess.CompletedProcess[str]:
     completed = subprocess.run(command, cwd=ROOT_DIR, text=True, capture_output=True)
     if completed.stdout:
         print(completed.stdout, end="" if completed.stdout.endswith("\n") else "\n")
+    if completed.stderr:
+        print(completed.stderr, file=sys.stderr, end="" if completed.stderr.endswith("\n") else "\n")
     if completed.returncode != 0:
-        if completed.stderr:
-            print(completed.stderr, file=sys.stderr, end="" if completed.stderr.endswith("\n") else "\n")
         raise RuntimeError(f"command failed with exit code {completed.returncode}")
     return completed
 

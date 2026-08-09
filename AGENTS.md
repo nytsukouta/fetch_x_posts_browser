@@ -20,7 +20,7 @@
 - `src/run_pipeline.py`: 収集から公開データ生成までの一括実行入口
 - `src/build_priority_queries_from_masters.py`: 団体・会場マスターから優先検索クエリを生成
 - `src/fetch_x_posts.py`: X Recent Search API による収集
-- `src/extract_events_github_models.py`: X 投稿、引用投稿、添付画像からの構造化抽出
+- `src/extract_events_github_models.py`: Azure OpenAI を使った X 投稿、引用投稿、添付画像からの構造化抽出
 - `src/event_candidate_rules.py`: schedule 掲載と X 投稿候補に共通する公開判定
 - `src/event_cumulative_core.py`: イベント統合・正規化の純粋ロジック
 - `src/build_event_cumulative.py`: 累積観測からイベント単位 CSV を生成

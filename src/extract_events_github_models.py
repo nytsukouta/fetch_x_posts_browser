@@ -14,10 +14,10 @@ from urllib import error, parse, request
 
 from github_models_client import (
     DEFAULT_API_VERSION,
-    GitHubModelsContentPolicyViolation,
+    AzureOpenAIContentPolicyViolation,
     call_chat_completion,
     filter_safe_image_urls,
-    get_github_models_token,
+    get_azure_openai_api_key,
     load_dotenv,
 )
 from atomic_io import atomic_open
@@ -231,16 +231,16 @@ def normalize_organization_name(
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Extract theater event fields from collected X posts using GitHub Models")
+    parser = argparse.ArgumentParser(description="Extract theater event fields from collected X posts using Azure OpenAI")
     parser.add_argument("--input-csv", default=str(DEFAULT_INPUT_CSV), help="収集済みCSVのパス")
     parser.add_argument("--output-jsonl", default=str(DEFAULT_OUTPUT_JSONL), help="構造化結果JSONLの保存先")
     parser.add_argument("--output-csv", default=str(DEFAULT_OUTPUT_CSV), help="構造化結果CSVの保存先")
     parser.add_argument("--filtered-output-jsonl", default=str(DEFAULT_FILTERED_JSONL), help="ノイズ除去後JSONLの保存先")
     parser.add_argument("--filtered-output-csv", default=str(DEFAULT_FILTERED_CSV), help="ノイズ除去後CSVの保存先")
     parser.add_argument("--limit", type=int, default=None, help="処理件数の上限")
-    parser.add_argument("--model", default=os.getenv("GITHUB_MODELS_MODEL", DEFAULT_MODEL), help="GitHub Models のモデルID")
-    parser.add_argument("--workers", type=int, default=2, help="GitHub Models 抽出の並列数")
-    parser.add_argument("--no-images", action="store_true", help="添付画像を GitHub Models へ渡さず、画像URL一覧も入力から外す")
+    parser.add_argument("--model", default=os.getenv("AZURE_OPENAI_DEPLOYMENT", DEFAULT_MODEL), help="Azure OpenAI のデプロイ名")
+    parser.add_argument("--workers", type=int, default=2, help="Azure OpenAI 抽出の並列数")
+    parser.add_argument("--no-images", action="store_true", help="添付画像を Azure OpenAI へ渡さず、画像URL一覧も入力から外す")
     parser.add_argument("--debug-outputs", action="store_true", help="デバッグ用に JSONL 中間生成物も保存する")
     return parser.parse_args()
 
@@ -420,7 +420,7 @@ def extract_json_content(response_payload: dict[str, Any]) -> dict[str, Any]:
         content = "".join(text_parts)
 
     if not isinstance(content, str):
-        raise RuntimeError("GitHub Models の応答形式が想定外です。")
+        raise RuntimeError("Azure OpenAI の応答形式が想定外です。")
 
     return json.loads(content)
 
@@ -648,7 +648,7 @@ def extract_row(
     index: int,
     total: int,
     row: dict[str, str],
-    github_token: str,
+    azure_api_key: str,
     x_bearer_token: str,
     api_version: str,
     model: str,
@@ -660,12 +660,12 @@ def extract_row(
     enriched_row = enrich_source_row(row, x_bearer_token)
     try:
         response_payload = call_github_models(
-            github_token,
+            azure_api_key,
             api_version,
             model,
             build_user_content(enriched_row, include_images=include_images),
         )
-    except GitHubModelsContentPolicyViolation:
+    except AzureOpenAIContentPolicyViolation:
         if not include_images or not row_has_input_images(enriched_row):
             raise
         print(
@@ -673,7 +673,7 @@ def extract_row(
             file=sys.stderr,
         )
         response_payload = call_github_models(
-            github_token,
+            azure_api_key,
             api_version,
             model,
             build_user_content(enriched_row, include_images=False),
@@ -686,11 +686,11 @@ def main() -> int:
     load_dotenv(DEFAULT_ENV_FILE)
     args = parse_args()
 
-    github_token = get_github_models_token()
+    azure_api_key = get_azure_openai_api_key()
     x_bearer_token = get_x_bearer_token()
-    api_version = os.getenv("GITHUB_MODELS_API_VERSION", DEFAULT_API_VERSION).strip() or DEFAULT_API_VERSION
-    if not github_token:
-        print("GH_MODELS_TOKEN または GITHUB_TOKEN が見つかりません。.env または Actions secrets に設定してください。", file=sys.stderr)
+    api_version = os.getenv("AZURE_OPENAI_API_VERSION", DEFAULT_API_VERSION).strip() or DEFAULT_API_VERSION
+    if not azure_api_key:
+        print("AZURE_OPENAI_API_KEY が見つかりません。.env または Actions secrets に設定してください。", file=sys.stderr)
         return 1
 
     input_csv = Path(args.input_csv)
@@ -699,6 +699,7 @@ def main() -> int:
     structured_records: list[dict[str, Any]] = []
     organization_rows = load_organization_rows(DEFAULT_ORGANIZATION_MASTER_CSV)
     organization_name_lookup, organization_handle_lookup = build_organization_lookup(organization_rows)
+    failed_count = 0
 
     with ThreadPoolExecutor(max_workers=max(1, args.workers)) as executor:
         futures = [
@@ -707,7 +708,7 @@ def main() -> int:
                 index,
                 total,
                 row,
-                github_token,
+                azure_api_key,
                 x_bearer_token,
                 api_version,
                 args.model,
@@ -721,7 +722,12 @@ def main() -> int:
             try:
                 structured_records.append(future.result())
             except Exception as exc:
+                failed_count += 1
                 print(f"extract failed, skipping row: {exc}", file=sys.stderr)
+
+    if total > 0 and not structured_records:
+        print(f"all extractions failed: {failed_count}/{total}", file=sys.stderr)
+        return 1
 
     filtered_records = [record for record in structured_records if not record.get("is_noise")]
 

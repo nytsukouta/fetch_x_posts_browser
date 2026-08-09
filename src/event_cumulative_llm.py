@@ -12,7 +12,7 @@ from typing import Any
 from github_models_client import (
     DEFAULT_API_VERSION,
     call_chat_completion,
-    get_github_models_token,
+    get_azure_openai_api_key,
     load_dotenv,
 )
 from atomic_io import atomic_write_text
@@ -86,7 +86,7 @@ def extract_json_content(response_payload: dict[str, Any]) -> dict[str, Any]:
         content = "".join(text_parts)
 
     if not isinstance(content, str):
-        raise RuntimeError("GitHub Models の応答形式が想定外です。")
+        raise RuntimeError("Azure OpenAI の応答形式が想定外です。")
 
     return json.loads(content)
 
@@ -174,10 +174,10 @@ def secondary_dedupe(
     cache_path: Path | None = DEFAULT_DEDUPE_CACHE_PATH,
 ) -> list[dict[str, Any]]:
     load_dotenv(DEFAULT_ENV_FILE)
-    api_version = os.getenv("GITHUB_MODELS_API_VERSION", DEFAULT_API_VERSION).strip() or DEFAULT_API_VERSION
+    api_version = os.getenv("AZURE_OPENAI_API_VERSION", DEFAULT_API_VERSION).strip() or DEFAULT_API_VERSION
     cache = load_dedupe_cache(cache_path) if cache_path else {"version": CACHE_VERSION, "entries": {}}
     cache_changed = False
-    github_token = get_github_models_token()
+    azure_api_key = get_azure_openai_api_key()
 
     grouped_records: dict[str, list[dict[str, Any]]] = {}
     passthrough_records: list[dict[str, Any]] = []
@@ -209,13 +209,13 @@ def secondary_dedupe(
                 decisions = validate_dedupe_decisions(cached_entry.get("decision"), valid_ids)
 
             if decisions is None:
-                if not github_token:
-                    print("secondary dedupe skipped: GH_MODELS_TOKEN または GITHUB_TOKEN が見つかりません")
+                if not azure_api_key:
+                    print("secondary dedupe skipped: AZURE_OPENAI_API_KEY が見つかりません")
                     merged_records.extend(cluster)
                     continue
                 prompt = build_dedupe_prompt(cluster)
                 try:
-                    response_payload = call_dedupe_model(github_token, api_version, model, prompt)
+                    response_payload = call_dedupe_model(azure_api_key, api_version, model, prompt)
                     decision_payload = extract_json_content(response_payload)
                     decisions = validate_dedupe_decisions(decision_payload, valid_ids)
                     if decisions is None:

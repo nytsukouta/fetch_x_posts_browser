@@ -1,3 +1,4 @@
+import subprocess
 import sys
 
 import pytest
@@ -34,3 +35,14 @@ def test_merge_cumulative_outputs_uses_existing_data_when_extraction_is_empty(tm
     monkeypatch.setattr(run_pipeline, "DEFAULT_CUMULATIVE_FILTERED_CSV", cumulative_filtered_path)
 
     assert run_pipeline.merge_cumulative_outputs() == cumulative_filtered_path
+
+
+def test_run_command_reports_stderr_on_success(monkeypatch, capsys):
+    completed = subprocess.CompletedProcess(["child"], 0, stdout="ok\n", stderr="warning\n")
+    monkeypatch.setattr(run_pipeline.subprocess, "run", lambda *args, **kwargs: completed)
+
+    assert run_pipeline.run_command(["child"]) is completed
+
+    captured = capsys.readouterr()
+    assert "ok" in captured.out
+    assert "warning" in captured.err

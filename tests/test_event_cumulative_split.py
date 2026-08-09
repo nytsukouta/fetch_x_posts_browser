@@ -48,7 +48,7 @@ def test_secondary_dedupe_uses_cache_for_same_input(tmp_path, monkeypatch):
     ]
     calls = []
 
-    monkeypatch.setattr(llm, "get_github_models_token", lambda: "token")
+    monkeypatch.setattr(llm, "get_azure_openai_api_key", lambda: "token")
 
     def fake_call(*args, **kwargs):
         calls.append(1)

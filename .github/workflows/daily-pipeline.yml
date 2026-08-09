@@ -108,10 +108,10 @@ jobs:
       POST_MODE: ${{ github.event_name == 'schedule' && 'live' || github.event_name == 'workflow_dispatch' && github.event.inputs.post_mode || 'off' }}
       TZ: Asia/Tokyo
       X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
-      GH_MODELS_TOKEN: ${{ secrets.GH_MODELS_TOKEN }}
-      GITHUB_TOKEN: ${{ secrets.GH_MODELS_TOKEN }}
-      GITHUB_MODELS_MODEL: ${{ vars.GH_MODELS_MODEL || 'openai/gpt-5' }}
-      GITHUB_MODELS_API_VERSION: ${{ vars.GH_MODELS_API_VERSION || '2026-03-10' }}
+      AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+      AZURE_OPENAI_ENDPOINT: ${{ vars.AZURE_OPENAI_ENDPOINT }}
+      AZURE_OPENAI_DEPLOYMENT: ${{ vars.AZURE_OPENAI_DEPLOYMENT || 'gpt-5-4-nano' }}
+      AZURE_OPENAI_API_VERSION: ${{ vars.AZURE_OPENAI_API_VERSION || '2024-10-21' }}
       X_API_KEY: ${{ secrets.X_API_KEY }}
       X_API_SECRET: ${{ secrets.X_API_SECRET }}
       X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
@@ -140,7 +140,8 @@ jobs:
         run: |
           set -euo pipefail
           test -n "$X_BEARER_TOKEN" || { echo "X_BEARER_TOKEN is required"; exit 1; }
-          test -n "$GH_MODELS_TOKEN" || { echo "GH_MODELS_TOKEN is required"; exit 1; }
+          test -n "$AZURE_OPENAI_API_KEY" || { echo "AZURE_OPENAI_API_KEY is required"; exit 1; }
+          test -n "$AZURE_OPENAI_ENDPOINT" || { echo "AZURE_OPENAI_ENDPOINT is required"; exit 1; }
           if [[ "$POST_MODE" == "live" ]]; then
             test -n "$X_API_KEY" || { echo "X_API_KEY is required for live posting"; exit 1; }
             test -n "$X_API_SECRET" || { echo "X_API_SECRET is required for live posting"; exit 1; }

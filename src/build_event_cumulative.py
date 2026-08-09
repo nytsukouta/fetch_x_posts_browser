@@ -132,7 +132,7 @@ def parse_args() -> argparse.Namespace:
         default=str(DEFAULT_ORGANIZATION_MASTER_CSV),
         help="劇団マスターCSVのパス (組織名の正規化に使用)",
     )
-    parser.add_argument("--model", default=os.getenv("GITHUB_MODELS_MODEL", DEFAULT_MODEL), help="二次統合で使う GitHub Models のモデルID")
+    parser.add_argument("--model", default=os.getenv("AZURE_OPENAI_DEPLOYMENT", DEFAULT_MODEL), help="二次統合で使う Azure OpenAI のデプロイ名")
     return parser.parse_args()
 
 
