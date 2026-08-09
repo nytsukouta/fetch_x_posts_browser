@@ -1,5 +1,7 @@
 import subprocess
 import sys
+from argparse import Namespace
+from pathlib import Path
 
 import pytest
 
@@ -46,3 +48,18 @@ def test_run_command_reports_stderr_on_success(monkeypatch, capsys):
     captured = capsys.readouterr()
     assert "ok" in captured.out
     assert "warning" in captured.err
+
+
+def test_force_collect_ignores_collection_interval_and_since_id_state(monkeypatch):
+    commands = []
+    args = Namespace(output_dir="output", max_results=None, force_collect=True)
+
+    def fake_run_command(command):
+        commands.append(command)
+        return subprocess.CompletedProcess(command, 0, stdout="saved: collected.csv\n", stderr="")
+
+    monkeypatch.setattr(run_pipeline, "run_command", fake_run_command)
+
+    assert run_pipeline.collect_posts(args, Path("queries.json")) == Path("collected.csv")
+    assert "--force-collect" in commands[0]
+    assert "--ignore-state" in commands[0]
