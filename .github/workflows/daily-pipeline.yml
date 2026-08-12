@@ -407,7 +407,7 @@ jobs:
           python src/review_query_effectiveness.py
 
       - name: Save posted event log
-        if: success() && env.PIPELINE_MODE != 'pages' && (hashFiles('data/output/posted_events.csv') != '' || hashFiles('data/output/structured_events_cumulative.csv') != '' || hashFiles('data/output/structured_events_filtered_cumulative.csv') != '' || hashFiles('data/output/event_cumulative.csv') != '' || hashFiles('data/output/_state/**') != '' || hashFiles('data/output/query_collection_metrics.csv') != '')
+        if: ${{ !cancelled() && env.PIPELINE_MODE != 'pages' && (hashFiles('data/output/posted_events.csv') != '' || hashFiles('data/output/structured_events_cumulative.csv') != '' || hashFiles('data/output/structured_events_filtered_cumulative.csv') != '' || hashFiles('data/output/event_cumulative.csv') != '' || hashFiles('data/output/_state/**') != '' || hashFiles('data/output/query_collection_metrics.csv') != '') }}
         uses: actions/cache/save@v4
         with:
           path: |
@@ -421,7 +421,7 @@ jobs:
           key: posted-events-${{ github.ref_name }}-${{ github.run_id }}
 
       - name: Build durable pipeline history snapshot
-        if: success() && env.PIPELINE_MODE != 'pages' && (hashFiles('data/output/posted_events.csv') != '' || hashFiles('data/output/structured_events_cumulative.csv') != '' || hashFiles('data/output/structured_events_filtered_cumulative.csv') != '' || hashFiles('data/output/event_cumulative.csv') != '' || hashFiles('data/output/_state/**') != '' || hashFiles('data/output/query_collection_metrics.csv') != '')
+        if: ${{ !cancelled() && env.PIPELINE_MODE != 'pages' && (hashFiles('data/output/posted_events.csv') != '' || hashFiles('data/output/structured_events_cumulative.csv') != '' || hashFiles('data/output/structured_events_filtered_cumulative.csv') != '' || hashFiles('data/output/event_cumulative.csv') != '' || hashFiles('data/output/_state/**') != '' || hashFiles('data/output/query_collection_metrics.csv') != '') }}
         shell: bash
         run: |
           set -euo pipefail
@@ -452,7 +452,7 @@ jobs:
           PY
 
       - name: Upload durable pipeline history
-        if: success() && env.PIPELINE_MODE != 'pages' && hashFiles('data/output/pipeline_history_snapshot.zip') != ''
+        if: ${{ !cancelled() && env.PIPELINE_MODE != 'pages' && hashFiles('data/output/pipeline_history_snapshot.zip') != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: pipeline-history-${{ github.ref_name }}

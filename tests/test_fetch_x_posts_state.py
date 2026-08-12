@@ -46,6 +46,58 @@ def test_load_since_id_state_skips_empty_values(tmp_path: Path) -> None:
     assert load_since_id_state(path) == {"a": "111"}
 
 
+def test_main_retries_without_stale_since_id(tmp_path: Path, monkeypatch, capsys) -> None:
+    query_file = tmp_path / "queries.json"
+    query_file.write_text(
+        json.dumps(
+            {
+                "max_results_per_query": 10,
+                "queries": [{"label": "劇団 A", "query": "from:theater_a"}],
+            }
+        ),
+        encoding="utf-8",
+    )
+    state_path = tmp_path / "since.json"
+    save_since_id_state(state_path, {"劇団 A": "2084238304132952065"})
+    calls: list[str | None] = []
+
+    def fake_fetch_recent_tweets(*args, **kwargs):
+        since_id = kwargs.get("since_id")
+        calls.append(since_id)
+        if since_id:
+            raise RuntimeError(
+                "X API error 400: {'message': \"'since_id' must be a tweet id created after 2026-08-04\"}"
+            )
+        return {"meta": {"newest_id": "2085000000000000000"}}
+
+    monkeypatch.setenv("X_BEARER_TOKEN", "test-token")
+    monkeypatch.setattr(fetch_x_posts, "fetch_recent_tweets", fake_fetch_recent_tweets)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "fetch_x_posts.py",
+            "--query-file",
+            str(query_file),
+            "--output-dir",
+            str(tmp_path / "output"),
+            "--state-file",
+            str(state_path),
+            "--collection-state-file",
+            str(tmp_path / "collection_state.json"),
+            "--metrics-file",
+            str(tmp_path / "metrics.csv"),
+            "--excluded-ids-csv",
+            str(tmp_path / "excluded.csv"),
+        ],
+    )
+
+    assert fetch_x_posts.main() == 0
+    assert calls == ["2084238304132952065", None]
+    assert load_since_id_state(state_path) == {"劇団 A": "2085000000000000000"}
+    assert "stale since_id detected" in capsys.readouterr().out
+
+
 def test_collection_state_roundtrip(tmp_path: Path) -> None:
     state_path = tmp_path / "state" / "collections.json"
     state = {"query A": "2026-08-08T00:00:00+00:00"}

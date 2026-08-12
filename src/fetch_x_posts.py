@@ -96,6 +96,11 @@ def fetch_recent_tweets(
         raise RuntimeError(f"X API へ接続できません: {exc}") from exc
 
 
+def is_stale_since_id_error(message: str) -> bool:
+    normalized = str(message or "").lower()
+    return "since_id" in normalized and "must be a tweet id created after" in normalized
+
+
 def flatten_rows(query_label: str, query_text: str, payload: dict[str, Any]) -> list[dict[str, Any]]:
     users_by_id, tweets_by_id, media_by_key = build_context_maps(payload)
 
@@ -455,7 +460,17 @@ def main() -> int:
             since_id = since_state.get(query_label) or None
             suffix = f" (since_id={since_id})" if since_id else ""
             print(f"searching: {query_label}{suffix}")
-            payload = fetch_recent_tweets(bearer_token, query_text, max_results, since_id=since_id)
+            since_id_reset = False
+            try:
+                payload = fetch_recent_tweets(bearer_token, query_text, max_results, since_id=since_id)
+            except RuntimeError as exc:
+                if not since_id or not is_stale_since_id_error(str(exc)):
+                    raise
+                print(f"stale since_id detected: {query_label}; retrying without since_id")
+                since_id = None
+                next_state.pop(query_label, None)
+                since_id_reset = True
+                payload = fetch_recent_tweets(bearer_token, query_text, max_results)
             rows = flatten_rows(query_label, query_text, payload)
             all_rows.extend(rows)
             latest_id = newest_tweet_id(payload)
@@ -474,7 +489,7 @@ def main() -> int:
                     "collection_interval_days": interval_days,
                     "collection_tier": item.get("collection_tier", ""),
                     "status": "collected",
-                    "skip_reason": "",
+                    "skip_reason": "stale_since_id_reset" if since_id_reset else "",
                     "since_id": since_id or "",
                     "result_count": len(rows),
                     "unique_tweet_count": len(unique_keys),
