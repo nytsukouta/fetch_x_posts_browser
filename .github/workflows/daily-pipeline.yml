@@ -30,6 +30,16 @@ on:
         required: true
         default: false
         type: boolean
+      post_limit:
+        description: "post-only の投稿件数上限（空欄は無制限）"
+        required: false
+        default: ""
+        type: string
+      post_header:
+        description: "post-only の投稿見出し（空欄は既定値）"
+        required: false
+        default: ""
+        type: string
   push:
     branches:
       - main
@@ -130,6 +140,8 @@ jobs:
       PIPELINE_MODE: ${{ needs.mode.outputs.pipeline_mode }}
       POST_MODE: ${{ github.event_name == 'schedule' && 'live' || github.event_name == 'workflow_dispatch' && github.event.inputs.post_mode || 'off' }}
       FORCE_COLLECT: ${{ github.event_name == 'workflow_dispatch' && inputs.force_collect || false }}
+      POST_LIMIT: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.post_limit || '' }}
+      POST_HEADER: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.post_header || '' }}
       TZ: Asia/Tokyo
       X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
       AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
@@ -421,6 +433,12 @@ jobs:
           )
           if [[ "$POST_MODE" == "dry-run" ]]; then
             args+=(--dry-run)
+          fi
+          if [[ -n "$POST_LIMIT" ]]; then
+            args+=(--limit "$POST_LIMIT")
+          fi
+          if [[ -n "$POST_HEADER" ]]; then
+            args+=(--header "$POST_HEADER")
           fi
           python "${args[@]}"
 
