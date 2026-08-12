@@ -506,11 +506,40 @@ def run_dry(candidates: list[dict[str, str]], hashtag: str, header_label: str, s
     if not candidates:
         print("dry-run: 投稿対象の新規公演はありません")
         return 0
-    text = build_summary_post_text(candidates, hashtag, header_label, site_url)
-    print(f"dry-run summary: {len(candidates)} events")
-    print(text)
+    print(f"dry-run posts: {len(candidates)} events")
+    for index, row in enumerate(candidates, start=1):
+        print(f"dry-run post {index}/{len(candidates)}")
+        print(build_post_text(row, hashtag, header_label, site_url))
     print(f"dry-run candidates: {len(candidates)}")
     return 0
+
+
+def post_candidates(
+    candidates: list[dict[str, str]],
+    hashtag: str,
+    header_label: str,
+    site_url: str,
+    posted_log_path: Path,
+) -> tuple[int, int]:
+    posted_count = 0
+    duplicate_count = 0
+
+    for index, row in enumerate(candidates, start=1):
+        event_id = (row.get("event_id") or "").strip()
+        event_name = (row.get("event_name") or "名称未設定").strip()
+        print(f"posting event {index}/{len(candidates)}: {event_id or event_name}")
+        try:
+            tweet_id = post_tweet(build_post_text(row, hashtag, header_label, site_url))
+        except DuplicateTweetContentError:
+            duplicate_count += 1
+            append_post_log(posted_log_path, [build_post_log_row(row, "")])
+            print(f"skipping duplicate content: {event_id or event_name}")
+            continue
+
+        posted_count += 1
+        append_post_log(posted_log_path, [build_post_log_row(row, tweet_id)])
+
+    return posted_count, duplicate_count
 
 
 def main() -> int:
@@ -534,21 +563,17 @@ def main() -> int:
         print("投稿対象の新規公演はありません")
         return 0
 
-    posted_count = 0
-    duplicate_count = 0
-    text = build_summary_post_text(candidates, args.hashtag, args.header, site_url)
-    print(f"posting summary: {len(candidates)} events")
-    tweet_id = ""
     try:
-        tweet_id = post_tweet(text)
-        posted_count = len(candidates)
-    except DuplicateTweetContentError as exc:
-        duplicate_count = len(candidates)
-        print("skipping duplicate content: summary")
-    append_post_log(
-        Path(args.posted_log_csv),
-        [build_post_log_row(row, tweet_id) for row in candidates],
-    )
+        posted_count, duplicate_count = post_candidates(
+            candidates,
+            args.hashtag,
+            args.header,
+            site_url,
+            Path(args.posted_log_csv),
+        )
+    except RuntimeError as exc:
+        print(f"X投稿に失敗しました: {exc}", file=sys.stderr)
+        return 1
 
     print(f"posted events: {posted_count}")
     print(f"duplicate content skipped: {duplicate_count}")

@@ -174,9 +174,9 @@ tracked な `config/` や `docs/` を汚さずにローカル確認したい場�
 
 補足:
 
-- 投稿対象は `data/output/event_cumulative.csv` のうち、投稿済み記録 `data/output/posted_events.csv` に存在しない upcoming 公演です。同じ実行で複数件ある場合も、Xへの投稿はまとめて1回だけ行います
+- 投稿対象は `data/output/event_cumulative.csv` のうち、投稿済み記録 `data/output/posted_events.csv` に存在しない upcoming 公演です。同じ実行で複数件ある場合も、公演ごとに個別投稿します
 - X 投稿候補は schedule 掲載候補と同じ基準を使います。共通ゲートに加えて、劇場除外と演劇シグナル判定も通ったものだけを投稿します
-- 投稿文面は公演名と件数をまとめ、公開中の schedule ページへ誘導する形式が既定です。複数件の場合は `events` パラメータで対象公演だけを表示し、一覧から各公演の詳細を開けます。公演名が長すぎる場合は件数とまとめリンクだけに省略します
+- 投稿文面は公演名と個別の `event` URL で公開中の schedule ページへ誘導する形式が既定です
 - ハッシュタグは通常の投稿では付けません。必要な場合だけ `--hashtag` または `--post-hashtag` で明示的に指定できます
 - 通常の dry-run では投稿済み記録を書き換えません
 - 実投稿する場合は `--dry-run` を外し、`src/post_new_events_to_x.py` か `src/run_pipeline.py --post-new-events` を使います

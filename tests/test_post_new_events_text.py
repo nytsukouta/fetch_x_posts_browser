@@ -1,5 +1,7 @@
 import csv
 
+import pytest
+
 from post_new_events_to_x import (
     append_post_log,
     build_post_log_row,
@@ -7,6 +9,7 @@ from post_new_events_to_x import (
     build_schedule_batch_url,
     build_summary_post_text,
     count_tweet_length,
+    post_candidates,
 )
 
 
@@ -78,6 +81,56 @@ def test_summary_post_text_falls_back_to_count_when_names_do_not_fit():
     assert "今回追加された公演（10件）" in text
     assert "・" not in text
     assert count_tweet_length(text) <= 280
+
+
+def test_post_candidates_posts_each_event_and_logs_each_tweet(tmp_path, monkeypatch):
+    rows = [
+        _row(event_id="event-a", event_name="公演A"),
+        _row(event_id="event-b", event_name="公演B"),
+    ]
+    posted_texts = []
+
+    def fake_post(text):
+        posted_texts.append(text)
+        return f"tweet-{len(posted_texts)}"
+
+    monkeypatch.setattr("post_new_events_to_x.post_tweet", fake_post)
+    log_path = tmp_path / "posted_events.csv"
+
+    posted_count, duplicate_count = post_candidates(rows, "石川演劇", "新着", SITE_URL, log_path)
+
+    assert (posted_count, duplicate_count) == (2, 0)
+    assert "『公演A』" in posted_texts[0]
+    assert "event=event-a" in posted_texts[0]
+    assert "『公演B』" in posted_texts[1]
+    assert "event=event-b" in posted_texts[1]
+    with log_path.open("r", encoding="utf-8-sig", newline="") as handle:
+        assert [row["posted_tweet_id"] for row in csv.DictReader(handle)] == ["tweet-1", "tweet-2"]
+
+
+def test_post_candidates_keeps_successful_log_when_later_post_fails(tmp_path, monkeypatch):
+    rows = [
+        _row(event_id="event-a", event_name="公演A"),
+        _row(event_id="event-b", event_name="公演B"),
+    ]
+    call_count = 0
+
+    def fake_post(text):
+        nonlocal call_count
+        call_count += 1
+        if call_count == 2:
+            raise RuntimeError("403: forbidden")
+        return "tweet-1"
+
+    monkeypatch.setattr("post_new_events_to_x.post_tweet", fake_post)
+    log_path = tmp_path / "posted_events.csv"
+
+    with pytest.raises(RuntimeError, match="403: forbidden"):
+        post_candidates(rows, "石川演劇", "新着", SITE_URL, log_path)
+
+    with log_path.open("r", encoding="utf-8-sig", newline="") as handle:
+        logged_rows = list(csv.DictReader(handle))
+    assert [row["event_id"] for row in logged_rows] == ["event-a"]
 
 
 def test_schedule_batch_url_replaces_existing_event_filters():

@@ -188,11 +188,11 @@ sync_latest_artifact(..., force: bool = False) -> dict[str, Any]
 
 ---
 
-## 7. フェーズ2: X投稿ログの逐次チェックポイント
+## 7. フェーズ2: X投稿ログの逐次チェックポイント（実装済み）
 
 ### 7.1 問題
 
-`src/post_new_events_to_x.py`は全候補処理後に`posted_events.csv`を一括更新する。途中で通常のAPIエラーが発生すると、すでに成功した投稿もログへ残らず、次回に再投稿される可能性がある。
+`src/post_new_events_to_x.py`は公演ごとに投稿し、成功直後に`posted_events.csv`へ保存する。途中で通常のAPIエラーが発生しても、成功済みの投稿は次回の候補にならない。
 
 ### 7.2 実装内容
 
