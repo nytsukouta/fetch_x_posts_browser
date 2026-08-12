@@ -13,6 +13,7 @@ on:
         options:
           - auto
           - full
+          - post-only
           - rebuild
           - pages
       post_mode:
@@ -158,13 +159,19 @@ jobs:
         run: python -m pytest tests/ -q
 
       - name: Validate required secrets
-        if: env.PIPELINE_MODE == 'full'
+        if: env.PIPELINE_MODE == 'full' || env.PIPELINE_MODE == 'post-only'
         shell: bash
         run: |
           set -euo pipefail
-          test -n "$X_BEARER_TOKEN" || { echo "X_BEARER_TOKEN is required"; exit 1; }
-          test -n "$AZURE_OPENAI_API_KEY" || { echo "AZURE_OPENAI_API_KEY is required"; exit 1; }
-          test -n "$AZURE_OPENAI_ENDPOINT" || { echo "AZURE_OPENAI_ENDPOINT is required"; exit 1; }
+          if [[ "$PIPELINE_MODE" == "full" ]]; then
+            test -n "$X_BEARER_TOKEN" || { echo "X_BEARER_TOKEN is required"; exit 1; }
+            test -n "$AZURE_OPENAI_API_KEY" || { echo "AZURE_OPENAI_API_KEY is required"; exit 1; }
+            test -n "$AZURE_OPENAI_ENDPOINT" || { echo "AZURE_OPENAI_ENDPOINT is required"; exit 1; }
+          fi
+          if [[ "$PIPELINE_MODE" == "post-only" && "$POST_MODE" == "off" ]]; then
+            echo "post-only requires post_mode=live or post_mode=dry-run"
+            exit 1
+          fi
           if [[ "$POST_MODE" == "live" ]]; then
             test -n "$X_API_KEY" || { echo "X_API_KEY is required for live posting"; exit 1; }
             test -n "$X_API_SECRET" || { echo "X_API_SECRET is required for live posting"; exit 1; }
@@ -389,6 +396,33 @@ jobs:
             args+=(--force-collect)
           fi
           python src/run_pipeline.py "${args[@]}"
+
+      - name: Build schedule list for post-only
+        if: env.PIPELINE_MODE == 'post-only'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f data/output/event_cumulative.csv || {
+            echo "data/output/event_cumulative.csv is required for post-only"
+            exit 1
+          }
+          python src/build_schedule_list.py --events-csv data/output/event_cumulative.csv
+
+      - name: Run X post-only pipeline
+        if: env.PIPELINE_MODE == 'post-only'
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=(
+            src/post_new_events_to_x.py
+            --events-csv data/output/event_cumulative.csv
+            --posted-log-csv data/output/posted_events.csv
+            --allowed-event-ids-csv data/output/schedule_list.csv
+          )
+          if [[ "$POST_MODE" == "dry-run" ]]; then
+            args+=(--dry-run)
+          fi
+          python "${args[@]}"
 
       - name: Run rebuild pipeline
         if: env.PIPELINE_MODE == 'rebuild'
