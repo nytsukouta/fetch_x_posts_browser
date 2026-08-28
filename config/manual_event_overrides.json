@@ -16,6 +16,21 @@
       "updated_at": "2026-07-11T16:24:27+09:00"
     },
     {
+      "target_event_id": "event-まとまりのないレプタンギュ",
+      "target_source_tweet_urls": [
+        "https://x.com/jokya_official/status/2064856982218010877",
+        "https://x.com/nytsukouta/status/2064598750182727848"
+      ],
+      "set": {
+        "start_date": "2026-11-27",
+        "end_date": "2026-11-29",
+        "is_event_announcement": "",
+        "has_actionable_schedule_info": ""
+      },
+      "note": "",
+      "updated_at": "2026-08-28T22:12:16+09:00"
+    },
+    {
       "target_event_id": "event-ポケット公演",
       "target_source_tweet_urls": [
         "https://x.com/jokya_official/status/2076071137935810702",
