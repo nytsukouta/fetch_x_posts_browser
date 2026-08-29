@@ -162,6 +162,26 @@
       "updated_at": "2026-08-29T14:21:31+09:00"
     },
     {
+      "target_event_id": "event-到達-その先",
+      "target_source_tweet_urls": [
+        "https://x.com/jokya_official/status/2088753077746806961",
+        "https://x.com/kakoono2001/status/2084485727077990631",
+        "https://x.com/kakoono2001/status/2088041148954931684",
+        "https://x.com/kakoono2001/status/2088891544728449138",
+        "https://x.com/kakoono2001/status/2090368575907491953",
+        "https://x.com/kakoono2001/status/2091736349510701258",
+        "https://x.com/kakoono2001/status/2092460720600608862"
+      ],
+      "set": {
+        "organization": "架空の劇団",
+        "start_date": "2026-09-25",
+        "is_event_announcement": "",
+        "has_actionable_schedule_info": ""
+      },
+      "note": "",
+      "updated_at": "2026-08-29T14:26:43+09:00"
+    },
+    {
       "target_event_id": "event-劇団赤い風-第87回公演-花札伝綺",
       "target_source_tweet_urls": [
         "https://x.com/AkAikazeyaruze/status/2087494178041381335",
