@@ -16,6 +16,25 @@
       "updated_at": "2026-07-11T16:24:27+09:00"
     },
     {
+      "target_event_id": "event-いのうえ歌舞伎-髑髏城の七人-last-stand",
+      "target_source_tweet_urls": [
+        "https://x.com/R_Y_info/status/2076584109674213406",
+        "https://x.com/R_Y_info/status/2092577412563521817",
+        "https://x.com/SHINKANSENtopic/status/2076577370916429876",
+        "https://x.com/Yuki_Saotome_5/status/2076579433687953774",
+        "https://x.com/pia_chubu/status/2089880025692832029",
+        "https://x.com/sanpo13_shinshu/status/2077255260926849303",
+        "https://x.com/t_pia_nagoya/status/2089985730969808918"
+      ],
+      "set": {
+        "start_date": "2027-02-08",
+        "is_event_announcement": "",
+        "has_actionable_schedule_info": ""
+      },
+      "note": "",
+      "updated_at": "2026-08-29T12:11:36+09:00"
+    },
+    {
       "target_event_id": "event-ひぐらしが泣いている",
       "target_source_tweet_urls": [
         "https://x.com/zeroMEOFFICIAL/status/2093100488610996384"
