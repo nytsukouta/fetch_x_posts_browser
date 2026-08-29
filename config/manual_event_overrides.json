@@ -134,6 +134,20 @@
       "updated_at": "2026-07-17T11:17:48+09:00"
     },
     {
+      "target_event_id": "event-中国ブロック劇王決定戦",
+      "target_source_tweet_urls": [
+        "https://x.com/1kyukasen/status/2090613970092892218",
+        "https://x.com/jokya_official/status/2091290757542134265"
+      ],
+      "set": {
+        "organization": "",
+        "is_event_announcement": "",
+        "has_actionable_schedule_info": ""
+      },
+      "note": "",
+      "updated_at": "2026-08-29T14:21:31+09:00"
+    },
+    {
       "target_event_id": "event-劇団赤い風-第87回公演-花札伝綺",
       "target_source_tweet_urls": [
         "https://x.com/AkAikazeyaruze/status/2087494178041381335",
