@@ -91,6 +91,29 @@
       "updated_at": "2026-07-17T11:17:48+09:00"
     },
     {
+      "target_event_id": "event-劇団赤い風-第87回公演-花札伝綺",
+      "target_source_tweet_urls": [
+        "https://x.com/AkAikazeyaruze/status/2087494178041381335",
+        "https://x.com/AkAikazeyaruze/status/2089337393933652013",
+        "https://x.com/AkAikazeyaruze/status/2090767656089751560",
+        "https://x.com/AkAikazeyaruze/status/2091482225158287743",
+        "https://x.com/AkAikazeyaruze/status/2092234023787786663",
+        "https://x.com/AkAikazeyaruze/status/2092585333460480282",
+        "https://x.com/AkAikazeyaruze/status/2092890572474483170",
+        "https://x.com/AkAikazeyaruze/status/2092988121722114336",
+        "https://x.com/jokya_official/status/2089477417874387238",
+        "https://x.com/jokya_official/status/2091290756401270906",
+        "https://x.com/jokya_official/status/2092754082591310022"
+      ],
+      "set": {
+        "is_event_announcement": "",
+        "has_actionable_schedule_info": "",
+        "manual_publish_status": "excluded"
+      },
+      "note": "",
+      "updated_at": "2026-08-29T14:14:39+09:00"
+    },
+    {
       "target_event_id": "event-四姉妹の墓じまい",
       "target_source_tweet_urls": [
         "https://x.com/fukinodesign/status/2069238927136072027"
@@ -170,6 +193,21 @@
       },
       "note": "",
       "updated_at": "2026-07-11T16:14:36+09:00"
+    },
+    {
+      "target_event_id": "event-百万石演劇大合戦",
+      "target_source_tweet_urls": [
+        "https://x.com/jokya_official/status/2058687886677967333",
+        "https://x.com/sakana_de/status/2070477367219564633",
+        "https://x.com/sekaiheiwa_pr/status/2070448825664446773"
+      ],
+      "set": {
+        "is_event_announcement": "",
+        "has_actionable_schedule_info": "",
+        "manual_publish_status": "excluded"
+      },
+      "note": "",
+      "updated_at": "2026-08-29T14:15:22+09:00"
     },
     {
       "target_event_id": "event-百痛肩こり",
