@@ -63,6 +63,20 @@
       "updated_at": "2026-08-28T22:12:16+09:00"
     },
     {
+      "target_event_id": "event-ろうそく能鑑賞会",
+      "target_source_tweet_urls": [
+        "https://x.com/ishikawa_noh/status/2087769868510863753",
+        "https://x.com/jokya_official/status/2089115669401133096"
+      ],
+      "set": {
+        "organization": "いしかわの伝統文化活性化実行委員会",
+        "is_event_announcement": "",
+        "has_actionable_schedule_info": ""
+      },
+      "note": "",
+      "updated_at": "2026-08-29T12:12:45+09:00"
+    },
+    {
       "target_event_id": "event-ポケット公演",
       "target_source_tweet_urls": [
         "https://x.com/jokya_official/status/2076071137935810702",
