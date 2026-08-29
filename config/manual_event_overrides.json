@@ -49,6 +49,20 @@
       "updated_at": "2026-08-29T12:11:36+09:00"
     },
     {
+      "target_event_id": "event-おどりゃ-凡才凡人",
+      "target_source_tweet_urls": [
+        "https://x.com/yubipero_engeki/status/2079160368958730503",
+        "https://x.com/yubipero_engeki/status/2086413270622347510"
+      ],
+      "set": {
+        "start_date": "2026-10-24",
+        "is_event_announcement": "",
+        "has_actionable_schedule_info": ""
+      },
+      "note": "",
+      "updated_at": "2026-08-29T14:25:36+09:00"
+    },
+    {
       "target_event_id": "event-ひぐらしが泣いている",
       "target_source_tweet_urls": [
         "https://x.com/zeroMEOFFICIAL/status/2093100488610996384"
