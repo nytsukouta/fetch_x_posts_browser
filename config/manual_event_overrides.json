@@ -103,6 +103,48 @@
       "updated_at": "2026-07-11T16:23:38+09:00"
     },
     {
+      "target_event_id": "event-夢叶",
+      "target_source_tweet_urls": [
+        "https://x.com/jokya_official/status/2081508102760022324",
+        "https://x.com/maoto33/status/2081227512961802679"
+      ],
+      "set": {
+        "is_event_announcement": "",
+        "has_actionable_schedule_info": "",
+        "manual_publish_status": "excluded"
+      },
+      "note": "",
+      "updated_at": "2026-08-29T12:13:36+09:00"
+    },
+    {
+      "target_event_id": "event-彼方の空から",
+      "target_source_tweet_urls": [
+        "https://x.com/GEKIRASHINBAN/status/2064628416700461313",
+        "https://x.com/jokya_official/status/2064856983073689848"
+      ],
+      "set": {
+        "organization": "劇団羅針盤",
+        "is_event_announcement": "",
+        "has_actionable_schedule_info": ""
+      },
+      "note": "",
+      "updated_at": "2026-08-29T12:14:57+09:00"
+    },
+    {
+      "target_event_id": "event-新企画",
+      "target_source_tweet_urls": [
+        "https://x.com/jokya_official/status/2074985030510936536",
+        "https://x.com/kg_drama/status/2074717034051694634"
+      ],
+      "set": {
+        "is_event_announcement": "",
+        "has_actionable_schedule_info": "",
+        "manual_publish_status": "excluded"
+      },
+      "note": "",
+      "updated_at": "2026-08-29T12:14:27+09:00"
+    },
+    {
       "target_event_id": "event-東京富山パフォーミングアーツプロジェクト-新作上演",
       "target_source_tweet_urls": [
         "https://x.com/TsproToyama/status/2062521095039996249"
@@ -142,6 +184,20 @@
       },
       "note": "",
       "updated_at": "2026-08-29T12:10:45+09:00"
+    },
+    {
+      "target_event_id": "event-秋季歌舞伎特別公演",
+      "target_source_tweet_urls": [
+        "https://x.com/KotobaTeruyuki/status/2080216691985072521",
+        "https://x.com/jokya_official/status/2080420760082931777"
+      ],
+      "set": {
+        "is_event_announcement": "",
+        "has_actionable_schedule_info": "",
+        "manual_publish_status": "excluded"
+      },
+      "note": "",
+      "updated_at": "2026-08-29T12:13:57+09:00"
     },
     {
       "target_event_id": "event-語りworkshop",
