@@ -97,6 +97,20 @@
       "updated_at": "2026-07-11T16:14:36+09:00"
     },
     {
+      "target_event_id": "event-百痛肩こり",
+      "target_source_tweet_urls": [
+        "https://x.com/engekido/status/2092175146215977119",
+        "https://x.com/jokya_official/status/2092754083782504677"
+      ],
+      "set": {
+        "start_date": "2026-09-22",
+        "is_event_announcement": "",
+        "has_actionable_schedule_info": ""
+      },
+      "note": "",
+      "updated_at": "2026-08-29T12:10:45+09:00"
+    },
+    {
       "target_event_id": "event-語りworkshop",
       "target_source_tweet_urls": [
         "https://x.com/rui_jin_en/status/2076505662578958525"
