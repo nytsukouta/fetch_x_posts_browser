@@ -77,6 +77,21 @@
       "updated_at": "2026-08-29T12:12:45+09:00"
     },
     {
+      "target_event_id": "event-わがまま坊主",
+      "target_source_tweet_urls": [
+        "https://x.com/jokya_official/status/2087577502843818419",
+        "https://x.com/team__yarusenai/status/2086320444261662865",
+        "https://x.com/team__yarusenai/status/2087828535251718215"
+      ],
+      "set": {
+        "organization": "劇団やるせない",
+        "is_event_announcement": "",
+        "has_actionable_schedule_info": ""
+      },
+      "note": "",
+      "updated_at": "2026-08-29T14:20:41+09:00"
+    },
+    {
       "target_event_id": "event-コントライブ-lucky-strike",
       "target_source_tweet_urls": [
         "https://x.com/jokya_official/status/2087577508241887586",
