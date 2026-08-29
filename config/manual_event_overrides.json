@@ -295,6 +295,25 @@
       "updated_at": "2026-08-29T12:13:57+09:00"
     },
     {
+      "target_event_id": "event-縛",
+      "target_source_tweet_urls": [
+        "https://x.com/gekidan_channel/status/2087086626216313285",
+        "https://x.com/gekidan_channel/status/2087454847138472374",
+        "https://x.com/gekidan_channel/status/2087806633611342249",
+        "https://x.com/gekidan_channel/status/2089291175291462019",
+        "https://x.com/gekidan_channel/status/2091798095839608950",
+        "https://x.com/gekidan_channel/status/2092160136148365650",
+        "https://x.com/jokya_official/status/2087577504001446102"
+      ],
+      "set": {
+        "organization": "劇団ちゃねる",
+        "is_event_announcement": "",
+        "has_actionable_schedule_info": ""
+      },
+      "note": "",
+      "updated_at": "2026-08-29T14:22:43+09:00"
+    },
+    {
       "target_event_id": "event-花札伝綺",
       "target_source_tweet_urls": [
         "https://x.com/AkAikazeyaruze/status/2089670037011603606",
