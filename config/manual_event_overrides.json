@@ -16,6 +16,19 @@
       "updated_at": "2026-07-11T16:24:27+09:00"
     },
     {
+      "target_event_id": "event-ひぐらしが泣いている",
+      "target_source_tweet_urls": [
+        "https://x.com/zeroMEOFFICIAL/status/2093100488610996384"
+      ],
+      "set": {
+        "end_date": "2026-09-22",
+        "is_event_announcement": "",
+        "has_actionable_schedule_info": ""
+      },
+      "note": "",
+      "updated_at": "2026-08-29T12:09:33+09:00"
+    },
+    {
       "target_event_id": "event-まとまりのないレプタンギュ",
       "target_source_tweet_urls": [
         "https://x.com/jokya_official/status/2064856982218010877",
