@@ -2,6 +2,20 @@
   "version": 1,
   "overrides": [
     {
+      "target_event_id": "event-mind-circut",
+      "target_source_tweet_urls": [
+        "https://x.com/jokya_official/status/2088030296780489141",
+        "https://x.com/troupemanmaru/status/2087612076512673819"
+      ],
+      "set": {
+        "organization": "劇団まんまる",
+        "is_event_announcement": "",
+        "has_actionable_schedule_info": ""
+      },
+      "note": "",
+      "updated_at": "2026-08-29T14:21:08+09:00"
+    },
+    {
       "target_event_id": "event-いしかわ舞台芸術祭",
       "target_source_tweet_urls": [
         "https://x.com/RiRiproject_act/status/2064547663371280704",
