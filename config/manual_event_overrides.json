@@ -77,6 +77,20 @@
       "updated_at": "2026-08-29T12:12:45+09:00"
     },
     {
+      "target_event_id": "event-コントライブ-lucky-strike",
+      "target_source_tweet_urls": [
+        "https://x.com/jokya_official/status/2087577508241887586",
+        "https://x.com/troupemanmaru/status/2085905992307642742"
+      ],
+      "set": {
+        "organization": "劇団まんまる",
+        "is_event_announcement": "",
+        "has_actionable_schedule_info": ""
+      },
+      "note": "",
+      "updated_at": "2026-08-29T14:19:47+09:00"
+    },
+    {
       "target_event_id": "event-ポケット公演",
       "target_source_tweet_urls": [
         "https://x.com/jokya_official/status/2076071137935810702",
