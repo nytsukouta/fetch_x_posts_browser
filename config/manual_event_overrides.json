@@ -200,6 +200,22 @@
       "updated_at": "2026-08-29T12:13:57+09:00"
     },
     {
+      "target_event_id": "event-花札伝綺",
+      "target_source_tweet_urls": [
+        "https://x.com/AkAikazeyaruze/status/2089670037011603606",
+        "https://x.com/AkAikazeyaruze/status/2092890495982920060",
+        "https://x.com/jokya_official/status/2089840433610588356"
+      ],
+      "set": {
+        "organization": "",
+        "is_event_announcement": "",
+        "has_actionable_schedule_info": "",
+        "manual_publish_status": "excluded"
+      },
+      "note": "",
+      "updated_at": "2026-08-29T14:13:48+09:00"
+    },
+    {
       "target_event_id": "event-語りworkshop",
       "target_source_tweet_urls": [
         "https://x.com/rui_jin_en/status/2076505662578958525"
