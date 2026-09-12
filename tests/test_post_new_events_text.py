@@ -58,6 +58,12 @@ def test_post_text_without_hashtag_omits_hashtag_section():
     assert "#" not in text
 
 
+def test_post_text_uses_default_header_when_header_is_empty():
+    text = build_post_text(_row(), hashtag="", header_label="", site_url=SITE_URL)
+
+    assert text.startswith("北陸＋αの演劇スケジュールに新しい公演が追加されましたジョキャ！\n\n")
+
+
 def test_summary_post_text_lists_multiple_events_and_uses_one_batch_url():
     rows = [
         _row(event_id="event-a", event_name="公演A"),

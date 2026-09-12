@@ -237,12 +237,10 @@ def build_queries(
             (row.get("venue_id") or name).strip(),
             bool(official_handle),
         )
-        if official_handle:
-            handle_query = f'from:{official_handle} {venue_context_suffix} {exclusion_suffix}'.strip()
-            add_query(queries, seen, f"劇場 {name} 公式X", handle_query, metadata)
-        else:
-            query = f'"{name}" {venue_context_suffix} {exclusion_suffix}'.strip()
-            add_query(queries, seen, f"劇場 {name}", query, metadata)
+        if not official_handle:
+            continue
+        handle_query = f'from:{official_handle} {venue_context_suffix} {exclusion_suffix}'.strip()
+        add_query(queries, seen, f"劇場 {name} 公式X", handle_query, metadata)
 
     return queries
 

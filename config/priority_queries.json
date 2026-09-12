@@ -642,30 +642,6 @@
       "collection_tier": "daily"
     },
     {
-      "label": "劇場 七尾市文化ホール",
-      "query": "\"七尾市文化ホール\" (\"演劇\" OR \"劇団\" OR \"上演\" OR \"朗読劇\" OR \"歌舞伎\" OR \"芝居\") -\"映画\" -\"上映\" -\"シネマ\" -\"ライブ\" -\"LIVE\" -\"コンサート\" -\"DJ\" -\"フェス\" -\"アイドル\" -\"ダンス\" -is:retweet",
-      "source_type": "venue",
-      "source_id": "venue-七尾市文化ホール",
-      "collection_interval_days": 6,
-      "collection_tier": "low_frequency"
-    },
-    {
-      "label": "劇場 学びの杜ののいち カレード",
-      "query": "\"学びの杜ののいち カレード\" (\"演劇\" OR \"劇団\" OR \"上演\" OR \"朗読劇\" OR \"歌舞伎\" OR \"芝居\") -\"映画\" -\"上映\" -\"シネマ\" -\"ライブ\" -\"LIVE\" -\"コンサート\" -\"DJ\" -\"フェス\" -\"アイドル\" -\"ダンス\" -is:retweet",
-      "source_type": "venue",
-      "source_id": "venue-学びの杜ののいち-カレード",
-      "collection_interval_days": 6,
-      "collection_tier": "low_frequency"
-    },
-    {
-      "label": "劇場 小松市團十郎芸術劇場うらら",
-      "query": "\"小松市團十郎芸術劇場うらら\" (\"演劇\" OR \"劇団\" OR \"上演\" OR \"朗読劇\" OR \"歌舞伎\" OR \"芝居\") -\"映画\" -\"上映\" -\"シネマ\" -\"ライブ\" -\"LIVE\" -\"コンサート\" -\"DJ\" -\"フェス\" -\"アイドル\" -\"ダンス\" -is:retweet",
-      "source_type": "venue",
-      "source_id": "venue-小松市團十郎芸術劇場うらら",
-      "collection_interval_days": 6,
-      "collection_tier": "low_frequency"
-    },
-    {
       "label": "劇場 金沢市文化ホール 公式X",
       "query": "from:bunka_kanazawa (\"演劇\" OR \"劇団\" OR \"上演\" OR \"朗読劇\" OR \"歌舞伎\" OR \"芝居\") -\"映画\" -\"上映\" -\"シネマ\" -\"ライブ\" -\"LIVE\" -\"コンサート\" -\"DJ\" -\"フェス\" -\"アイドル\" -\"ダンス\" -is:retweet",
       "source_type": "venue",
@@ -690,62 +666,6 @@
       "collection_tier": "low_frequency"
     },
     {
-      "label": "劇場 津幡町文化会館シグナス",
-      "query": "\"津幡町文化会館シグナス\" (\"演劇\" OR \"劇団\" OR \"上演\" OR \"朗読劇\" OR \"歌舞伎\" OR \"芝居\") -\"映画\" -\"上映\" -\"シネマ\" -\"ライブ\" -\"LIVE\" -\"コンサート\" -\"DJ\" -\"フェス\" -\"アイドル\" -\"ダンス\" -is:retweet",
-      "source_type": "venue",
-      "source_id": "venue-津幡町文化会館シグナス",
-      "collection_interval_days": 6,
-      "collection_tier": "low_frequency"
-    },
-    {
-      "label": "劇場 内灘町文化会館",
-      "query": "\"内灘町文化会館\" (\"演劇\" OR \"劇団\" OR \"上演\" OR \"朗読劇\" OR \"歌舞伎\" OR \"芝居\") -\"映画\" -\"上映\" -\"シネマ\" -\"ライブ\" -\"LIVE\" -\"コンサート\" -\"DJ\" -\"フェス\" -\"アイドル\" -\"ダンス\" -is:retweet",
-      "source_type": "venue",
-      "source_id": "venue-内灘町文化会館",
-      "collection_interval_days": 6,
-      "collection_tier": "low_frequency"
-    },
-    {
-      "label": "劇場 加賀市文化会館",
-      "query": "\"加賀市文化会館\" (\"演劇\" OR \"劇団\" OR \"上演\" OR \"朗読劇\" OR \"歌舞伎\" OR \"芝居\") -\"映画\" -\"上映\" -\"シネマ\" -\"ライブ\" -\"LIVE\" -\"コンサート\" -\"DJ\" -\"フェス\" -\"アイドル\" -\"ダンス\" -is:retweet",
-      "source_type": "venue",
-      "source_id": "venue-加賀市文化会館",
-      "collection_interval_days": 6,
-      "collection_tier": "low_frequency"
-    },
-    {
-      "label": "劇場 志賀町文化ホール",
-      "query": "\"志賀町文化ホール\" (\"演劇\" OR \"劇団\" OR \"上演\" OR \"朗読劇\" OR \"歌舞伎\" OR \"芝居\") -\"映画\" -\"上映\" -\"シネマ\" -\"ライブ\" -\"LIVE\" -\"コンサート\" -\"DJ\" -\"フェス\" -\"アイドル\" -\"ダンス\" -is:retweet",
-      "source_type": "venue",
-      "source_id": "venue-志賀町文化ホール",
-      "collection_interval_days": 6,
-      "collection_tier": "low_frequency"
-    },
-    {
-      "label": "劇場 白山市松任文化会館",
-      "query": "\"白山市松任文化会館\" (\"演劇\" OR \"劇団\" OR \"上演\" OR \"朗読劇\" OR \"歌舞伎\" OR \"芝居\") -\"映画\" -\"上映\" -\"シネマ\" -\"ライブ\" -\"LIVE\" -\"コンサート\" -\"DJ\" -\"フェス\" -\"アイドル\" -\"ダンス\" -is:retweet",
-      "source_type": "venue",
-      "source_id": "venue-白山市松任文化会館",
-      "collection_interval_days": 6,
-      "collection_tier": "low_frequency"
-    },
-    {
-      "label": "劇場 白山市鶴来総合文化会館クレイン",
-      "query": "\"白山市鶴来総合文化会館クレイン\" (\"演劇\" OR \"劇団\" OR \"上演\" OR \"朗読劇\" OR \"歌舞伎\" OR \"芝居\") -\"映画\" -\"上映\" -\"シネマ\" -\"ライブ\" -\"LIVE\" -\"コンサート\" -\"DJ\" -\"フェス\" -\"アイドル\" -\"ダンス\" -is:retweet",
-      "source_type": "venue",
-      "source_id": "venue-白山市鶴来総合文化会館クレイン",
-      "collection_interval_days": 6,
-      "collection_tier": "low_frequency"
-    },
-    {
-      "label": "劇場 能美市根上総合文化会館",
-      "query": "\"能美市根上総合文化会館\" (\"演劇\" OR \"劇団\" OR \"上演\" OR \"朗読劇\" OR \"歌舞伎\" OR \"芝居\") -\"映画\" -\"上映\" -\"シネマ\" -\"ライブ\" -\"LIVE\" -\"コンサート\" -\"DJ\" -\"フェス\" -\"アイドル\" -\"ダンス\" -is:retweet",
-      "source_type": "venue",
-      "source_id": "venue-能美市根上総合文化会館",
-      "collection_interval_days": 6,
-      "collection_tier": "low_frequency"
-    },
-    {
       "label": "劇場 福井鯖江Tabby's 公式X",
       "query": "from:tabbyscafe (\"演劇\" OR \"劇団\" OR \"上演\" OR \"朗読劇\" OR \"歌舞伎\" OR \"芝居\") -\"映画\" -\"上映\" -\"シネマ\" -\"ライブ\" -\"LIVE\" -\"コンサート\" -\"DJ\" -\"フェス\" -\"アイドル\" -\"ダンス\" -is:retweet",
       "source_type": "venue",
@@ -762,43 +682,11 @@
       "collection_tier": "low_frequency"
     },
     {
-      "label": "劇場 金沢市民芸術村",
-      "query": "\"金沢市民芸術村\" (\"演劇\" OR \"劇団\" OR \"上演\" OR \"朗読劇\" OR \"歌舞伎\" OR \"芝居\") -\"映画\" -\"上映\" -\"シネマ\" -\"ライブ\" -\"LIVE\" -\"コンサート\" -\"DJ\" -\"フェス\" -\"アイドル\" -\"ダンス\" -is:retweet",
-      "source_type": "venue",
-      "source_id": "venue-金沢市民芸術村",
-      "collection_interval_days": 6,
-      "collection_tier": "low_frequency"
-    },
-    {
-      "label": "劇場 スタジオ犀",
-      "query": "\"スタジオ犀\" (\"演劇\" OR \"劇団\" OR \"上演\" OR \"朗読劇\" OR \"歌舞伎\" OR \"芝居\") -\"映画\" -\"上映\" -\"シネマ\" -\"ライブ\" -\"LIVE\" -\"コンサート\" -\"DJ\" -\"フェス\" -\"アイドル\" -\"ダンス\" -is:retweet",
-      "source_type": "venue",
-      "source_id": "venue-スタジオ犀",
-      "collection_interval_days": 6,
-      "collection_tier": "low_frequency"
-    },
-    {
-      "label": "劇場 本多の森 北電ホール",
-      "query": "\"本多の森 北電ホール\" (\"演劇\" OR \"劇団\" OR \"上演\" OR \"朗読劇\" OR \"歌舞伎\" OR \"芝居\") -\"映画\" -\"上映\" -\"シネマ\" -\"ライブ\" -\"LIVE\" -\"コンサート\" -\"DJ\" -\"フェス\" -\"アイドル\" -\"ダンス\" -is:retweet",
-      "source_type": "venue",
-      "source_id": "venue-本多の森北電ホール",
-      "collection_interval_days": 6,
-      "collection_tier": "low_frequency"
-    },
-    {
       "label": "劇場 金沢21世紀美術館 シアター21 公式X",
       "query": "from:Kanazawa_21 (\"演劇\" OR \"劇団\" OR \"上演\" OR \"朗読劇\" OR \"歌舞伎\" OR \"芝居\") -\"映画\" -\"上映\" -\"シネマ\" -\"ライブ\" -\"LIVE\" -\"コンサート\" -\"DJ\" -\"フェス\" -\"アイドル\" -\"ダンス\" -is:retweet",
       "source_type": "venue",
       "source_id": "venue-金沢21世紀美術館-シアター21",
       "collection_interval_days": 3,
-      "collection_tier": "low_frequency"
-    },
-    {
-      "label": "劇場 金沢歌劇座",
-      "query": "\"金沢歌劇座\" (\"演劇\" OR \"劇団\" OR \"上演\" OR \"朗読劇\" OR \"歌舞伎\" OR \"芝居\") -\"映画\" -\"上映\" -\"シネマ\" -\"ライブ\" -\"LIVE\" -\"コンサート\" -\"DJ\" -\"フェス\" -\"アイドル\" -\"ダンス\" -is:retweet",
-      "source_type": "venue",
-      "source_id": "venue-金沢歌劇座",
-      "collection_interval_days": 6,
       "collection_tier": "low_frequency"
     }
   ]

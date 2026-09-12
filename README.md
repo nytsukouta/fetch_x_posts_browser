@@ -193,7 +193,8 @@ tracked な `config/` や `docs/` を汚さずにローカル確認したい場�
 マスター運用メモ:
 
 - `data/output/organization_master.csv` の `query_include` に `1` を入れると、名前判定に引っかからない劇団も優先クエリに含めます
-- `data/output/venue_master.csv` の `query_include` に `1` を入れると、名前判定や除外語に引っかかる劇場も優先クエリに含めます
+- 会場由来の検索は `data/output/venue_master.csv` に `official_x` が設定された会場だけを対象とし、会場名では検索しません
+- 会場の `query_include` に `1` を入れると名前判定や除外語を迂回できますが、`official_x` の設定は必要です
 - どちらも `query_exclude` に `1` を入れると、マスターには残したまま優先クエリから除外します（X API 消費を抑えたい劇場・劇団に使用）
 
 ローカルで公開用 JSON の commit と push まで含めたい場合:

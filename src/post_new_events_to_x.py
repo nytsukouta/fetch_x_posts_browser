@@ -27,7 +27,7 @@ DEFAULT_EVENTS_CSV = ROOT_DIR / "data" / "output" / "event_cumulative.csv"
 DEFAULT_POSTED_LOG_CSV = ROOT_DIR / "data" / "output" / "posted_events.csv"
 CREATE_TWEET_URL = "https://api.x.com/2/tweets"
 DEFAULT_HASHTAG = ""
-DEFAULT_HEADER = "新しい公演が追加されましたジョキャ！"
+DEFAULT_HEADER = "北陸＋αの演劇スケジュールに新しい公演が追加されましたジョキャ！"
 URL_LENGTH = 23
 MAX_TWEET_LENGTH = 280
 
