@@ -126,6 +126,7 @@ SYSTEM_PROMPT = """あなたは日本語のX投稿から演劇イベント情報
 - start_date: YYYY-MM-DD 形式。年が明示されない場合は投稿日時を基準に補ってよい
 - end_date: YYYY-MM-DD 形式。単日なら start_date と同じか null
 - start_time: HH:MM 24時間表記。不明なら null
+- 日時の判定: start_date、end_date、start_time には公演・イベントの開催日時だけを設定してください。チケット発売日時、予約開始日時、申込開始日時、受付開始日時は開催日時に含めず、それらしか分からない場合は null にしてください。「ご予約開始」などの表現に付随する日時を公演日時として扱わないでください
 - category: 公演、募集、ワークショップ、朗読劇、その他 のいずれか
 - content_type: 演劇、映画、音楽ライブ、トーク、展示、配信、その他 のいずれか
 - is_theater_related: 演劇関連なら true、それ以外は false
