@@ -76,6 +76,25 @@
       "updated_at": "2026-08-29T12:09:33+09:00"
     },
     {
+      "target_event_id": "event-ひとりとあかり",
+      "target_source_tweet_urls": [
+        "https://x.com/g_norishiro/status/2090079344802861538",
+        "https://x.com/kaitouramma_OA/status/2096393131029835955",
+        "https://x.com/kaitouramma_OA/status/2097182686104465851",
+        "https://x.com/kaitouramma_OA/status/2097462657385455902",
+        "https://x.com/kaitouramma_OA/status/2100231445537231079"
+      ],
+      "set": {
+        "venue_name": "御浪町ホール",
+        "normalized_venue_name": "御浪町ホール",
+        "end_date": "2026-09-13",
+        "is_event_announcement": "",
+        "has_actionable_schedule_info": ""
+      },
+      "note": "",
+      "updated_at": "2026-10-04T19:45:53+09:00"
+    },
+    {
       "target_event_id": "event-まとまりのないレプタンギュ",
       "target_source_tweet_urls": [
         "https://x.com/jokya_official/status/2064856982218010877",
@@ -132,6 +151,20 @@
       },
       "note": "",
       "updated_at": "2026-08-29T14:19:47+09:00"
+    },
+    {
+      "target_event_id": "event-テラセタ-8",
+      "target_source_tweet_urls": [
+        "https://x.com/hapiendou/status/2104844573185036796",
+        "https://x.com/jokya_official/status/2105061961201484123"
+      ],
+      "set": {
+        "organization": "はぴえん堂",
+        "is_event_announcement": "",
+        "has_actionable_schedule_info": ""
+      },
+      "note": "",
+      "updated_at": "2026-10-04T19:47:35+09:00"
     },
     {
       "target_event_id": "event-ポケット公演",
