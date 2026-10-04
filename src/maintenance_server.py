@@ -179,6 +179,9 @@ class MaintenanceService:
             base_by_id = {str(row.get("event_id") or ""): row for row in base_rows}
             effective_by_id = {str(row.get("event_id") or ""): row for row in effective_rows}
             overrides = load_manual_event_overrides(self.overrides_json)["overrides"]
+            overrides_by_id = {
+                override["target_event_id"]: override for override in overrides
+            }
             unregistered_organization_overrides = []
             for override in overrides:
                 if "organization" not in override["set"]:
@@ -189,6 +192,63 @@ class MaintenanceService:
                     str(row.get("organization") or ""), organization_options
                 ):
                     unregistered_organization_overrides.append(event_id)
+            correction_issues: list[dict[str, Any]] = []
+            for event_id in stats["orphan"]:
+                override = overrides_by_id[event_id]
+                correction_issues.append(
+                    {
+                        "type": "orphan",
+                        "event_id": event_id,
+                        "title": override["set"].get("event_name") or event_id,
+                        "message": (
+                            "補正の対象となる公演が最新データにありません。"
+                            "まず最新データを同期し、それでも見つからなければ古い補正を解除してください。"
+                        ),
+                        "note": override["note"],
+                        "source_tweet_urls": override["target_source_tweet_urls"],
+                    }
+                )
+            for event_id in stats["ambiguous"]:
+                override = overrides_by_id[event_id]
+                target_urls = set(override["target_source_tweet_urls"])
+                related_events = [
+                    {
+                        "event_id": str(row.get("event_id") or ""),
+                        "title": str(row.get("event_name") or row.get("organization") or ""),
+                    }
+                    for row in base_rows
+                    if split_source_tweet_urls(row) & target_urls
+                ]
+                correction_issues.append(
+                    {
+                        "type": "ambiguous",
+                        "event_id": event_id,
+                        "title": override["set"].get("event_name") or event_id,
+                        "message": (
+                            "この補正が複数の公演に一致しています。"
+                            "候補を開いて元投稿と内容を確認してください。"
+                        ),
+                        "note": override["note"],
+                        "related_events": related_events,
+                        "source_tweet_urls": override["target_source_tweet_urls"],
+                    }
+                )
+            for event_id in unregistered_organization_overrides:
+                row = effective_by_id.get(event_id) or base_by_id.get(event_id) or {}
+                organization = str(row.get("organization") or "")
+                correction_issues.append(
+                    {
+                        "type": "organization_unregistered",
+                        "event_id": event_id,
+                        "title": str(row.get("event_name") or organization or event_id),
+                        "message": (
+                            f"団体「{organization}」が団体マスターにありません。"
+                            "既存団体なら公演を開いてマスター登録済みの正しい団体を選んでください。"
+                            "新しい団体として正しい場合は data/output/organization_master.csv に登録してください。"
+                            "公式参照URLを設定しても、この未登録の警告は解消しません。"
+                        ),
+                    }
+                )
             return {
                 "gh": self.gh_status(),
                 "git": self.git_status(),
@@ -209,6 +269,7 @@ class MaintenanceService:
                 "orphan": stats["orphan"],
                 "ambiguous": stats["ambiguous"],
                 "organization_unregistered": unregistered_organization_overrides,
+                "correction_issues": correction_issues,
                 "organization_options": organization_options,
                 "revision": override_revision(load_manual_event_overrides(self.overrides_json)),
             }
@@ -351,7 +412,13 @@ class MaintenanceService:
             except Exception:
                 write_manual_event_overrides(self.overrides_json, current)
                 raise
-            return {"event": self.event(event_id), "rebuild": rebuild}
+            try:
+                event = self.event(event_id)
+            except ApiError as exc:
+                if exc.status != 404:
+                    raise
+                event = None
+            return {"event": event, "rebuild": rebuild}
 
     def schedule(self) -> dict[str, Any]:
         with self._lock:

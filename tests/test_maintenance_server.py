@@ -87,6 +87,45 @@ def test_unregistered_manual_organization_is_reported(service):
     assert saved["event"]["organization_master"] is None
     assert saved["event"]["schedule"]["organization_id"] == ""
     assert service.status()["counts"]["organization_unregistered"] == 1
+    issue = service.status()["correction_issues"][0]
+    assert issue["type"] == "organization_unregistered"
+    assert issue["event_id"] == "event-a"
+    assert "未登録の主催団体" in issue["message"]
+
+
+def test_orphan_override_is_explained_and_can_be_removed(service):
+    overrides = service.overrides_json
+    overrides.write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "overrides": [
+                    {
+                        "target_event_id": "event-old",
+                        "target_source_tweet_urls": ["https://x.com/test/status/old"],
+                        "set": {"event_name": "古い公演"},
+                        "note": "過去の補正",
+                        "updated_at": "",
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    status = service.status()
+    issue = status["correction_issues"][0]
+    assert issue["type"] == "orphan"
+    assert issue["title"] == "古い公演"
+    assert issue["source_tweet_urls"] == ["https://x.com/test/status/old"]
+
+    result = service.delete_override(
+        "event-old",
+        {"revision": status["revision"]},
+    )
+
+    assert result["event"] is None
+    assert service.status()["counts"]["orphan"] == 0
 
 
 def test_review_candidates_are_listed_and_counted(service):

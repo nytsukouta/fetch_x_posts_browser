@@ -21,6 +21,8 @@ const state = {
 const $ = (id) => document.getElementById(id);
 const elements = {
   syncSummary: $("syncSummary"), warningBar: $("warningBar"),
+  correctionIssues: $("correctionIssues"),
+  correctionIssueList: $("correctionIssueList"),
   baseCount: $("baseCount"), scheduleCount: $("scheduleCount"),
   reviewCount: $("reviewCount"), overrideCount: $("overrideCount"),
   problemCount: $("problemCount"),
@@ -216,7 +218,70 @@ function renderStatus() {
   for (const message of sync.warnings || []) warnings.push(message);
   elements.warningBar.hidden = warnings.length === 0;
   elements.warningBar.textContent = warnings.join(" ");
+  renderCorrectionIssues(status.correction_issues || []);
   elements.publishButton.disabled = state.busy || !status.git?.override_changed;
+}
+
+function renderCorrectionIssues(issues) {
+  elements.correctionIssues.hidden = issues.length === 0;
+  elements.correctionIssueList.replaceChildren();
+  const labels = {
+    orphan: "対象の公演が見つからない",
+    ambiguous: "対象の公演を特定できない",
+    organization_unregistered: "団体がマスター未登録",
+  };
+
+  for (const issue of issues) {
+    const card = document.createElement("article");
+    card.className = "correction-issue";
+    const heading = document.createElement("h3");
+    heading.textContent = `${labels[issue.type] || "補正エラー"}：${issue.title || issue.event_id}`;
+    const message = document.createElement("p");
+    message.textContent = issue.message;
+    card.append(heading, message);
+
+    if (issue.note) {
+      const note = document.createElement("p");
+      note.className = "issue-note";
+      note.textContent = `補正メモ：${issue.note}`;
+      card.append(note);
+    }
+
+    const relatedEvents = issue.related_events || (
+      issue.event_id && state.items.some((item) => item.event_id === issue.event_id)
+        ? [{ event_id: issue.event_id, title: issue.title }]
+        : []
+    );
+    for (const related of relatedEvents) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "button secondary issue-action";
+      button.textContent = related.event_id === issue.event_id && issue.type !== "ambiguous"
+        ? "対象公演を開く"
+        : `候補を開く：${related.title || related.event_id}`;
+      button.addEventListener("click", () => selectEvent(related.event_id));
+      card.append(button);
+    }
+
+    for (const url of issue.source_tweet_urls || []) {
+      const link = document.createElement("a");
+      link.href = url;
+      link.target = "_blank";
+      link.rel = "noreferrer";
+      link.textContent = "補正に記録された元投稿を開く";
+      card.append(link);
+    }
+
+    if (issue.type === "orphan") {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "button danger issue-action";
+      button.textContent = "この古い補正を解除";
+      button.addEventListener("click", () => deleteOrphanOverride(issue.event_id));
+      card.append(button);
+    }
+    elements.correctionIssueList.append(card);
+  }
 }
 
 function formatDateTime(value) {
@@ -421,6 +486,25 @@ async function deleteOverride() {
     await refreshAll(true);
   } catch (error) { showToast(error.message, true); }
   finally { setBusy(false); renderStatus(); }
+}
+
+async function deleteOrphanOverride(eventId) {
+  if (!window.confirm(`対象が見つからない補正「${eventId}」を解除しますか？`)) return;
+  setBusy(true);
+  try {
+    await api(`/api/events/${encodeURIComponent(eventId)}/override`, {
+      method: "DELETE",
+      body: JSON.stringify({ revision: state.revision }),
+    });
+    showToast("古い補正を解除しました");
+    state.revision = "";
+    await refreshAll(false);
+  } catch (error) {
+    showToast(error.status === 409 ? `${error.message} 最新データを読み直してください。` : error.message, true);
+  } finally {
+    setBusy(false);
+    renderStatus();
+  }
 }
 
 async function publish() {
