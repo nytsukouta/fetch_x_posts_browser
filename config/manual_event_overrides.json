@@ -153,6 +153,19 @@
       "updated_at": "2026-08-29T14:19:47+09:00"
     },
     {
+      "target_event_id": "event-チガタギ二十五周年記念公演-暮を下ろすにゃまた早い",
+      "target_source_tweet_urls": [
+        "https://x.com/chigatagi/status/2105100372977344681"
+      ],
+      "set": {
+        "is_event_announcement": "",
+        "has_actionable_schedule_info": "",
+        "manual_publish_status": "excluded"
+      },
+      "note": "",
+      "updated_at": "2026-10-04T19:49:42+09:00"
+    },
+    {
       "target_event_id": "event-テラセタ-8",
       "target_source_tweet_urls": [
         "https://x.com/hapiendou/status/2104844573185036796",
