@@ -63,6 +63,19 @@
       "updated_at": "2026-08-29T14:25:36+09:00"
     },
     {
+      "target_event_id": "event-とやま芸術パーク祭2026-初参戦",
+      "target_source_tweet_urls": [
+        "https://x.com/TsproToyama/status/2106361941916889103"
+      ],
+      "set": {
+        "is_event_announcement": "",
+        "has_actionable_schedule_info": "",
+        "manual_publish_status": "excluded"
+      },
+      "note": "",
+      "updated_at": "2026-10-04T19:50:28+09:00"
+    },
+    {
       "target_event_id": "event-ひぐらしが泣いている",
       "target_source_tweet_urls": [
         "https://x.com/zeroMEOFFICIAL/status/2093100488610996384"
