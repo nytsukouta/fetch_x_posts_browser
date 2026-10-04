@@ -24,8 +24,9 @@
   <section class="metrics" aria-label="データ件数">
     <article><span>取得データ</span><strong id="baseCount">0</strong></article>
     <article><span>公開予定</span><strong id="scheduleCount">0</strong></article>
+    <article><span>要確認候補</span><strong id="reviewCount">0</strong></article>
     <article><span>手動補正</span><strong id="overrideCount">0</strong></article>
-    <article><span>要確認</span><strong id="problemCount">0</strong></article>
+    <article><span>補正エラー</span><strong id="problemCount">0</strong></article>
   </section>
 
   <main class="workspace">
@@ -34,11 +35,12 @@
         <label>検索<input id="searchInput" type="search" placeholder="公演名・団体・会場"></label>
         <div class="filter-grid">
           <label>都道府県<select id="prefectureFilter"><option value="">すべて</option></select></label>
-          <label>公開指定<select id="publicationFilter"><option value="">すべて</option><option value="default">自動判定</option><option value="published">掲載確定</option><option value="excluded">除外確定</option></select></label>
+          <label>公開状態<select id="publicationFilter"><option value="">すべて</option><option value="review">要確認</option><option value="default">自動判定</option><option value="published">掲載確定</option><option value="excluded">除外確定</option></select></label>
         </div>
         <div class="checks">
           <label><input id="upcomingOnly" type="checkbox" checked> 開催前のみ</label>
           <label><input id="overrideOnly" type="checkbox"> 補正ありのみ</label>
+          <label><input id="hideExcluded" type="checkbox" checked> 除外済みを非表示</label>
         </div>
       </div>
       <p id="resultCount" class="result-count">0件</p>
@@ -64,7 +66,7 @@
         <div class="form-grid">
           <label class="wide">公演名<input name="event_name" required></label>
           <label class="wide">正規化公演名<input name="normalized_event_name"></label>
-          <label>団体名<input name="organization"></label>
+          <label>団体名（マスター）<select name="organization"><option value="">未指定（団体マスターから選択）</option></select><small id="organizationStatus" class="muted" hidden></small></label>
           <label>カテゴリ<input name="category"></label>
           <label>会場名<input name="venue_name"></label>
           <label>正規化会場名<input name="normalized_venue_name"></label>

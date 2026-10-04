@@ -8,6 +8,7 @@ from datetime import datetime
 from pathlib import Path
 
 from atomic_io import atomic_open
+from event_candidate_rules import is_site_update_notification
 
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
@@ -231,12 +232,34 @@ def prepare_extraction_input(input_csv: Path) -> Path | None:
     return DEFAULT_PENDING_EXTRACT_INPUT_CSV
 
 
+def filter_structured_rows(rows: list[dict[str, str]]) -> list[dict[str, str]]:
+    return [
+        row
+        for row in rows
+        if str(row.get("is_noise") or "").lower() != "true"
+        and not is_site_update_notification(row)
+    ]
+
+
+def refresh_cumulative_filtered_output() -> Path:
+    rows, fieldnames = load_csv_rows(DEFAULT_CUMULATIVE_STRUCTURED_CSV)
+    if not fieldnames:
+        rows, fieldnames = load_csv_rows(DEFAULT_CUMULATIVE_FILTERED_CSV)
+    if not fieldnames:
+        raise RuntimeError("累積structured CSVが見つからないためfiltered CSVを更新できません。")
+
+    filtered_rows = filter_structured_rows(rows)
+    write_csv_rows(DEFAULT_CUMULATIVE_FILTERED_CSV, filtered_rows, fieldnames)
+    print(f"refreshed cumulative filtered rows: {len(filtered_rows)}")
+    return DEFAULT_CUMULATIVE_FILTERED_CSV
+
+
 def merge_cumulative_outputs() -> Path:
     current_rows, current_fieldnames = load_csv_rows(DEFAULT_STRUCTURED_CSV)
     if not current_rows or not current_fieldnames:
-        if DEFAULT_CUMULATIVE_FILTERED_CSV.exists():
+        if DEFAULT_CUMULATIVE_FILTERED_CSV.exists() or DEFAULT_CUMULATIVE_STRUCTURED_CSV.exists():
             print("structured_events.csv に新規抽出結果がないため、既存の累積データを使用します")
-            return DEFAULT_CUMULATIVE_FILTERED_CSV
+            return refresh_cumulative_filtered_output()
         raise RuntimeError("structured_events.csv が見つからないため累積マージできません。")
 
     cumulative_rows, cumulative_fieldnames = load_csv_rows(DEFAULT_CUMULATIVE_STRUCTURED_CSV)
@@ -263,7 +286,7 @@ def merge_cumulative_outputs() -> Path:
         key=lambda row: ((row.get("created_at") or ""), (row.get("tweet_url") or "")),
         reverse=True,
     )
-    filtered_rows = [row for row in merged_rows if str(row.get("is_noise") or "").lower() != "true"]
+    filtered_rows = filter_structured_rows(merged_rows)
 
     write_csv_rows(DEFAULT_CUMULATIVE_STRUCTURED_CSV, merged_rows, fieldnames)
     write_csv_rows(DEFAULT_CUMULATIVE_FILTERED_CSV, filtered_rows, fieldnames)
@@ -392,12 +415,12 @@ def main() -> int:
         rebuild_query_configuration(runtime_paths["query_file"])
 
     if args.rebuild_only:
-        if not DEFAULT_CUMULATIVE_FILTERED_CSV.exists():
+        if not DEFAULT_CUMULATIVE_FILTERED_CSV.exists() and not DEFAULT_CUMULATIVE_STRUCTURED_CSV.exists():
             raise FileNotFoundError(
                 f"rebuild-only input not found: {DEFAULT_CUMULATIVE_FILTERED_CSV}"
             )
-        input_csv = DEFAULT_CUMULATIVE_FILTERED_CSV
-        cumulative_filtered_csv = DEFAULT_CUMULATIVE_FILTERED_CSV
+        cumulative_filtered_csv = refresh_cumulative_filtered_output()
+        input_csv = cumulative_filtered_csv
     else:
         if args.skip_collect:
             if not args.input_csv:
@@ -413,7 +436,7 @@ def main() -> int:
             print("extract skipped: 新規 tweet がありません")
             if not DEFAULT_CUMULATIVE_FILTERED_CSV.exists():
                 raise FileNotFoundError("新規 tweet がなく、structured_events_filtered_cumulative.csv も見つかりません。")
-            cumulative_filtered_csv = DEFAULT_CUMULATIVE_FILTERED_CSV
+            cumulative_filtered_csv = refresh_cumulative_filtered_output()
         else:
             extract_events(extraction_input_csv, args)
             cumulative_filtered_csv = merge_cumulative_outputs()

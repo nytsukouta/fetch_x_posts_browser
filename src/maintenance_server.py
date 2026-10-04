@@ -14,7 +14,8 @@ from typing import Any
 from urllib.parse import unquote, urlsplit, parse_qs
 import webbrowser
 
-from build_event_cumulative import load_rows
+from build_event_cumulative import compact_text, load_rows
+from event_candidate_rules import resolve_publication_status
 from github_artifact_sync import ArtifactSyncError, sync_latest_artifact
 from location_normalization import extract_prefecture
 from manual_event_overrides import (
@@ -67,6 +68,46 @@ class MaintenanceService:
         except (OSError, UnicodeError, json.JSONDecodeError) as exc:
             raise ApiError(500, "ローカルのscheduleデータを読み込めません") from exc
         return payload if isinstance(payload, dict) else {"generated_at": "", "count": 0, "items": []}
+
+    def _organization_master_options(self) -> list[dict[str, Any]]:
+        options: list[dict[str, Any]] = []
+        for row in self._load_rows_if_exists(self.organization_master):
+            canonical = str(row.get("organization_name_normalized") or row.get("organization_name") or "").strip()
+            if not canonical:
+                continue
+            names = list(
+                dict.fromkeys(
+                    value
+                    for value in (
+                        canonical,
+                        str(row.get("organization_name") or "").strip(),
+                    )
+                    if value
+                )
+            )
+            options.append(
+                {
+                    "organization_id": str(row.get("organization_id") or "").strip(),
+                    "organization_name": canonical,
+                    "names": names,
+                }
+            )
+        return options
+
+    def _organization_master_match(
+        self, organization_name: str, options: list[dict[str, Any]] | None = None
+    ) -> dict[str, str] | None:
+        cleaned = str(organization_name or "").strip()
+        if not cleaned:
+            return None
+        target = compact_text(cleaned)
+        for option in options if options is not None else self._organization_master_options():
+            if any(target == compact_text(name) for name in option["names"]):
+                return {
+                    "organization_id": option["organization_id"],
+                    "organization_name": option["organization_name"],
+                }
+        return None
 
     def _load_sync_state(self) -> dict[str, Any]:
         if not self.sync_state.exists():
@@ -134,6 +175,20 @@ class MaintenanceService:
             effective_rows = self._load_rows_if_exists(self.effective_csv)
             stats = self._override_application_stats()
             schedule = self._load_schedule()
+            organization_options = self._organization_master_options()
+            base_by_id = {str(row.get("event_id") or ""): row for row in base_rows}
+            effective_by_id = {str(row.get("event_id") or ""): row for row in effective_rows}
+            overrides = load_manual_event_overrides(self.overrides_json)["overrides"]
+            unregistered_organization_overrides = []
+            for override in overrides:
+                if "organization" not in override["set"]:
+                    continue
+                event_id = override["target_event_id"]
+                row = effective_by_id.get(event_id) or base_by_id.get(event_id)
+                if row and row.get("organization") and not self._organization_master_match(
+                    str(row.get("organization") or ""), organization_options
+                ):
+                    unregistered_organization_overrides.append(event_id)
             return {
                 "gh": self.gh_status(),
                 "git": self.git_status(),
@@ -142,12 +197,19 @@ class MaintenanceService:
                     "base": len(base_rows),
                     "effective": len(effective_rows),
                     "schedule": int(schedule.get("count") or 0),
+                    "review": sum(
+                        resolve_publication_status(row) == "review"
+                        for row in effective_rows
+                    ),
                     "overrides": stats["override_count"],
                     "orphan": len(stats["orphan"]),
                     "ambiguous": len(stats["ambiguous"]),
+                    "organization_unregistered": len(unregistered_organization_overrides),
                 },
                 "orphan": stats["orphan"],
                 "ambiguous": stats["ambiguous"],
+                "organization_unregistered": unregistered_organization_overrides,
+                "organization_options": organization_options,
                 "revision": override_revision(load_manual_event_overrides(self.overrides_json)),
             }
 
@@ -180,6 +242,7 @@ class MaintenanceService:
     def events(self, query: dict[str, list[str]]) -> dict[str, Any]:
         with self._lock:
             base_rows, base_by_id, effective_by_id, overrides_by_id, revision = self._event_data()
+            organization_options = self._organization_master_options()
             schedule_by_id = {
                 str(item.get("event_id") or ""): item
                 for item in self._load_schedule().get("items", [])
@@ -193,7 +256,7 @@ class MaintenanceService:
                 event_id = str(base.get("event_id") or "")
                 effective = effective_by_id.get(event_id, base)
                 override = overrides_by_id.get(event_id)
-                status = str(effective.get("manual_publish_status") or "default").lower()
+                status = resolve_publication_status(effective)
                 location = str(effective.get("normalized_location") or effective.get("location") or "")
                 item_prefecture = extract_prefecture(location)
                 haystack = " ".join(
@@ -213,8 +276,12 @@ class MaintenanceService:
                         "effective": effective,
                         "override": override,
                         "has_override": override is not None,
+                        "publication_status": status,
                         "prefecture": item_prefecture,
                         "schedule": schedule_by_id.get(event_id),
+                        "organization_master": self._organization_master_match(
+                            str(effective.get("organization") or ""), organization_options
+                        ),
                     }
                 )
             return {"items": items, "count": len(items), "revision": revision}
@@ -222,6 +289,7 @@ class MaintenanceService:
     def event(self, event_id: str) -> dict[str, Any]:
         with self._lock:
             _, base_by_id, effective_by_id, overrides_by_id, revision = self._event_data()
+            organization_options = self._organization_master_options()
             base = base_by_id.get(event_id)
             if base is None:
                 raise ApiError(404, "指定した公演が見つかりません")
@@ -237,9 +305,15 @@ class MaintenanceService:
                 "event_id": event_id,
                 "base": base,
                 "effective": effective_by_id.get(event_id, base),
+                "publication_status": resolve_publication_status(
+                    effective_by_id.get(event_id, base)
+                ),
                 "override": overrides_by_id.get(event_id),
                 "source_tweet_urls": sorted(split_source_tweet_urls(base)),
                 "schedule": schedule,
+                "organization_master": self._organization_master_match(
+                    str(effective_by_id.get(event_id, base).get("organization") or ""), organization_options
+                ),
                 "revision": revision,
             }
 

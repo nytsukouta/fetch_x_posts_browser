@@ -76,6 +76,33 @@ def test_stale_revision_is_rejected(service):
     assert exc_info.value.status == 409
 
 
+def test_unregistered_manual_organization_is_reported(service):
+    revision = service.events({})["revision"]
+
+    saved = service.save_override(
+        "event-a",
+        {"revision": revision, "set": {"organization": "未登録の主催団体"}},
+    )
+
+    assert saved["event"]["organization_master"] is None
+    assert saved["event"]["schedule"]["organization_id"] == ""
+    assert service.status()["counts"]["organization_unregistered"] == 1
+
+
+def test_review_candidates_are_listed_and_counted(service):
+    revision = service.events({})["revision"]
+
+    saved = service.save_override(
+        "event-a",
+        {"revision": revision, "set": {"posting_recommendation": "review"}},
+    )
+
+    assert saved["event"]["publication_status"] == "review"
+    assert service.events({"publication": ["review"]})["count"] == 1
+    assert service.status()["counts"]["review"] == 1
+    assert saved["event"]["schedule"] is None
+
+
 def test_unknown_event_is_404(service):
     with pytest.raises(ApiError) as exc_info:
         service.event("event-missing")

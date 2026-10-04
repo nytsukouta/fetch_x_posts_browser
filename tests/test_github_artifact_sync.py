@@ -18,7 +18,7 @@ def _csv_bytes(header="event_id,event_name\n", row="event-a,公演A\n"):
     return (header + row).encode("utf-8-sig")
 
 
-def _snapshot(path, *, include_base=True, extra=None):
+def _snapshot(path, *, include_base=True, include_state=False, extra=None):
     files = {
         "data/output/structured_events_cumulative.csv": _csv_bytes("tweet_url,event_name\n", "https://x.com/a,公演A\n"),
         "data/output/structured_events_filtered_cumulative.csv": _csv_bytes("tweet_url,event_name\n", "https://x.com/a,公演A\n"),
@@ -26,6 +26,11 @@ def _snapshot(path, *, include_base=True, extra=None):
     }
     if include_base:
         files["data/output/event_cumulative_base.csv"] = _csv_bytes()
+    if include_state:
+        files["data/output/_state/last_seen_tweet_ids.json"] = b"{}\n"
+        files["data/output/_state/query_collection_state.json"] = b"{}\n"
+        files["data/output/query_collection_metrics.csv"] = _csv_bytes("query,result_count\n")
+        files["data/output/query_effectiveness_review.csv"] = _csv_bytes("query,recommendation\n")
     if extra:
         files[extra] = b"x"
     with zipfile.ZipFile(path, "w") as archive:
@@ -53,6 +58,16 @@ def test_restore_snapshot_and_old_artifact_fallback(tmp_path):
     assert result["warnings"]
     with (tmp_path / "data/output/event_cumulative_base.csv").open("r", encoding="utf-8-sig", newline="") as handle:
         assert next(csv.DictReader(handle))["event_id"] == "event-a"
+
+
+def test_restore_accepts_durable_pipeline_state(tmp_path):
+    snapshot = tmp_path / "snapshot.zip"
+    _snapshot(snapshot, include_state=True)
+
+    result = restore_snapshot(snapshot, root_dir=tmp_path)
+
+    assert "data/output/_state/last_seen_tweet_ids.json" in result["restored"]
+    assert (tmp_path / "data/output/_state/query_collection_state.json").read_text(encoding="utf-8") == "{}\n"
 
 
 def test_restore_rejects_path_traversal(tmp_path):

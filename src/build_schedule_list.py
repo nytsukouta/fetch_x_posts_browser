@@ -59,11 +59,28 @@ def load_csv_rows(path: Path) -> list[dict[str, str]]:
 
 def index_master(rows: list[dict[str, str]], key_field: str) -> dict[str, dict[str, str]]:
     indexed: dict[str, dict[str, str]] = {}
+    alias_fields = {
+        "organization_name_normalized": ("organization_name",),
+        "venue_name_normalized": ("venue_name",),
+    }
     for row in rows:
-        key = (row.get(key_field) or "").strip()
-        if key:
-            indexed[key] = row
+        fields = (key_field, *alias_fields.get(key_field, ()))
+        for field in fields:
+            key = (row.get(field) or "").strip()
+            if not key:
+                continue
+            indexed.setdefault(key, row)
+            compacted = compact_text(key)
+            if compacted:
+                indexed.setdefault(compacted, row)
     return indexed
+
+
+def lookup_master(index: dict[str, dict[str, str]], value: str) -> dict[str, str] | None:
+    cleaned = value.strip()
+    if not cleaned:
+        return None
+    return index.get(cleaned) or index.get(compact_text(cleaned))
 
 
 def choose_reference_url(
@@ -234,8 +251,8 @@ def build_schedule_rows(
 
         dedupe_key = build_schedule_identity_key(event_row)
 
-        organization_row = organization_index.get(organization_name)
-        venue_row = venue_index.get(venue_name)
+        organization_row = lookup_master(organization_index, organization_name)
+        venue_row = lookup_master(venue_index, venue_name)
         reference_url, reference_source = choose_reference_url(event_row, organization_row, venue_row)
 
         candidate_row = {

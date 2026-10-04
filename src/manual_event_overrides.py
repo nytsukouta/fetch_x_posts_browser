@@ -11,6 +11,7 @@ from typing import Any
 from urllib.parse import urlsplit
 
 from atomic_io import atomic_write_text
+from event_cumulative_core import build_event_key
 
 
 SCHEMA_VERSION = 1
@@ -236,6 +237,8 @@ def apply_manual_event_overrides(
 
         record = dict(effective[candidates[0]])
         record.update(override["set"])
+        if "event_key" in record:
+            record["event_key"] = build_event_key(record)
         record["manual_override_updated_at"] = override["updated_at"]
         effective[candidates[0]] = record
         stats["applied"] += 1

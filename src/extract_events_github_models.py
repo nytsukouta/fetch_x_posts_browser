@@ -21,6 +21,7 @@ from github_models_client import (
     load_dotenv,
 )
 from atomic_io import atomic_open
+from event_candidate_rules import is_site_update_notification
 from x_tweet_context import (
     COMMON_EXPANSIONS,
     COMMON_MEDIA_FIELDS,
@@ -116,6 +117,7 @@ SYSTEM_PROMPT = """あなたは日本語のX投稿から演劇イベント情報
 この処理の目的は演劇関連情報だけを残すことです。
 映画、上映会、音楽ライブ、コンサート、DJイベント、アイドルイベント、展示、トークイベント、配信番組、一般ニュースは原則として演劇関連ではありません。
 ただし、舞台挨拶ではなく実際の演劇公演、朗読劇、演劇ワークショップ、劇団の出演募集、演劇フェスティバルは演劇関連として扱ってください。
+「新しい公演が追加されました」「公演情報を追加しました」などの定型文と「詳しくはこちら」などのリンク誘導で構成された自サイトの更新通知は、公演情報そのものではないため抽出対象外にしてください。
 
 抽出項目:
 - event_name: 公演名や企画名
@@ -599,6 +601,9 @@ def classify_noise(record: dict[str, Any]) -> tuple[bool, str]:
     has_actionable_schedule_info = parse_bool(record.get("has_actionable_schedule_info"))
     posting_recommendation = normalize_posting_recommendation(record.get("posting_recommendation"))
 
+    if is_site_update_notification(record):
+        return True, "site_update_notification"
+
     if isinstance(is_theater_related, str):
         is_theater_related = is_theater_related.strip().lower() == "true"
 
@@ -658,7 +663,15 @@ def extract_row(
     organization_handle_lookup: dict[str, str],
 ) -> dict[str, Any]:
     print(f"extracting: {index}/{total} {row.get('tweet_url', '')}")
+    if is_site_update_notification(row):
+        print(f"extract skipped: site update notification: {row.get('tweet_url', '')}")
+        return normalize_record(row, {}, organization_name_lookup, organization_handle_lookup)
+
     enriched_row = enrich_source_row(row, x_bearer_token)
+    if is_site_update_notification(enriched_row):
+        print(f"extract skipped: site update notification: {row.get('tweet_url', '')}")
+        return normalize_record(enriched_row, {}, organization_name_lookup, organization_handle_lookup)
+
     try:
         response_payload = call_github_models(
             azure_api_key,

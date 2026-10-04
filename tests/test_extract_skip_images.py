@@ -1,3 +1,5 @@
+import extract_events_github_models as extractor
+
 from extract_events_github_models import (
     build_user_content,
     build_user_prompt,
@@ -50,3 +52,34 @@ def test_build_user_prompt_drops_image_urls_for_freepaper() -> None:
 def test_build_user_content_keeps_images_for_normal_row() -> None:
     content = build_user_content(_row_with_normal_announcement(), include_images=True)
     assert any(part.get("type") == "image_url" for part in content)
+
+
+def test_extract_row_skips_site_update_notification_before_model(monkeypatch) -> None:
+    row = {
+        "tweet_url": "https://x.com/jokya_official/status/2089840433610588356",
+        "created_at": "2026-08-18T22:22:41.000Z",
+        "author_name": "Coffeeジョキャニーニャ【公式】",
+        "author_username": "jokya_official",
+        "text": "新しい公演が追加されましたジョキャ！ 『花札伝綺』 詳しくはこちら↓ https://t.co/ebFdXpfkUK",
+    }
+
+    def fail_if_called(*args, **kwargs):
+        raise AssertionError("site update notifications must not call the model")
+
+    monkeypatch.setattr(extractor, "call_github_models", fail_if_called)
+
+    record = extractor.extract_row(
+        1,
+        1,
+        row,
+        "api-key",
+        "",
+        "v1",
+        "model",
+        False,
+        {},
+        {},
+    )
+
+    assert record["is_noise"] is True
+    assert record["noise_reason"] == "site_update_notification"

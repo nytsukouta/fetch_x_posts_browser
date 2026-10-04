@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from atomic_io import atomic_open
+from event_candidate_rules import is_site_update_notification
 from manual_event_overrides import apply_manual_event_overrides, load_manual_event_overrides
 
 # 後方互換: 既存の import 元 (tests など) のため core を再エクスポート
@@ -172,7 +173,7 @@ def write_csv(records: list[dict[str, Any]], output_path: Path) -> None:
 
 def main() -> int:
     args = parse_args()
-    rows = load_rows(Path(args.input_csv))
+    rows = [row for row in load_rows(Path(args.input_csv)) if not is_site_update_notification(row)]
     master_rows = load_organization_master_rows(Path(args.organization_master_csv))
     name_lookup, handle_lookup = build_organization_lookup(master_rows)
     rows = apply_organization_canonicalization(rows, name_lookup, handle_lookup)

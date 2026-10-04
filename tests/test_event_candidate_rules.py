@@ -1,6 +1,7 @@
 from event_candidate_rules import (
     build_date_range,
     has_postable_event_details,
+    is_site_update_notification,
     is_schedule_eligible_event,
     parse_iso_date,
     source_text_mentions_exact_start_date,
@@ -71,6 +72,22 @@ class TestSourceTextMentionsExactStartDate:
 
 
 class TestHasPostableEventDetails:
+    def test_site_update_notification_is_not_postable(self):
+        row = make_row(
+            author_username="jokya_official",
+            source_text="新しい公演が追加されましたジョキャ！ 詳しくはこちら↓ https://t.co/example",
+            posting_recommendation="post",
+        )
+        assert is_site_update_notification(row) is True
+        assert has_postable_event_details(row) is False
+
+    def test_similar_announcement_from_another_account_is_not_filtered(self):
+        row = make_row(
+            author_username="theater_group",
+            source_text="新しい公演が追加されました。詳しくはこちら↓ https://example.test/event",
+        )
+        assert is_site_update_notification(row) is False
+
     def test_recommendation_post_wins(self):
         row = make_row(posting_recommendation="post", is_event_announcement="False")
         assert has_postable_event_details(row) is True
@@ -78,6 +95,17 @@ class TestHasPostableEventDetails:
     def test_recommendation_skip_loses(self):
         row = make_row(posting_recommendation="skip")
         assert has_postable_event_details(row) is False
+
+    def test_review_recommendation_is_not_auto_published(self):
+        row = make_row(posting_recommendation="review")
+        assert is_schedule_eligible_event(row) is False
+
+    def test_review_recommendation_can_be_published_manually(self):
+        row = make_row(
+            posting_recommendation="review",
+            manual_publish_status="published",
+        )
+        assert is_schedule_eligible_event(row) is True
 
     def test_announcement_false_blocks(self):
         row = make_row(posting_recommendation="", is_event_announcement="False")

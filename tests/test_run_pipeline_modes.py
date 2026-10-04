@@ -39,6 +39,30 @@ def test_merge_cumulative_outputs_uses_existing_data_when_extraction_is_empty(tm
     assert run_pipeline.merge_cumulative_outputs() == cumulative_filtered_path
 
 
+def test_refresh_cumulative_filtered_output_removes_site_notifications(tmp_path, monkeypatch):
+    cumulative_structured_path = tmp_path / "structured_events_cumulative.csv"
+    cumulative_filtered_path = tmp_path / "structured_events_filtered_cumulative.csv"
+    cumulative_structured_path.write_text(
+        "tweet_url,author_username,source_text,is_noise\n"
+        "https://x.test/notice,jokya_official,新しい公演が追加されましたジョキャ！ 詳しくはこちら↓ https://t.co/example,False\n"
+        "https://x.test/event,theater_group,公演のお知らせです。2026年6月10日,False\n",
+        encoding="utf-8-sig",
+    )
+    cumulative_filtered_path.write_text(
+        "tweet_url,author_username,source_text,is_noise\n"
+        "https://x.test/notice,jokya_official,新しい公演が追加されましたジョキャ！ 詳しくはこちら↓ https://t.co/example,False\n",
+        encoding="utf-8-sig",
+    )
+
+    monkeypatch.setattr(run_pipeline, "DEFAULT_CUMULATIVE_STRUCTURED_CSV", cumulative_structured_path)
+    monkeypatch.setattr(run_pipeline, "DEFAULT_CUMULATIVE_FILTERED_CSV", cumulative_filtered_path)
+
+    run_pipeline.refresh_cumulative_filtered_output()
+    rows, _ = run_pipeline.load_csv_rows(cumulative_filtered_path)
+
+    assert [row["tweet_url"] for row in rows] == ["https://x.test/event"]
+
+
 def test_run_command_reports_stderr_on_success(monkeypatch, capsys):
     completed = subprocess.CompletedProcess(["child"], 0, stdout="ok\n", stderr="warning\n")
     monkeypatch.setattr(run_pipeline.subprocess, "run", lambda *args, **kwargs: completed)

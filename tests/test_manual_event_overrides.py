@@ -49,6 +49,14 @@ def test_explicit_blank_clears_value():
     assert records[0]["organization"] == ""
 
 
+def test_recomputes_event_key_after_identity_override():
+    record = _record(event_key="old-key")
+    records, _ = apply_manual_event_overrides([record], [_override(organization="劇団B")])
+
+    assert "劇団b" in records[0]["event_key"]
+    assert "劇団a" not in records[0]["event_key"]
+
+
 def test_falls_back_to_source_tweet_url():
     records, stats = apply_manual_event_overrides([_record(event_id="event-new")], [_override(event_name="正式名")])
     assert records[0]["event_name"] == "正式名"

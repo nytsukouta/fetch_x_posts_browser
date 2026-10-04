@@ -1,4 +1,10 @@
-from build_schedule_list import build_json_payload, build_schedule_rows, choose_reference_url, serialize_json_payload
+from build_schedule_list import (
+    build_json_payload,
+    build_schedule_rows,
+    choose_reference_url,
+    index_master,
+    serialize_json_payload,
+)
 
 
 def _event(**overrides):
@@ -38,6 +44,18 @@ def test_manual_excluded_is_not_in_schedule():
     assert rows == []
 
 
+def test_review_recommendation_is_held_until_manually_published():
+    event = _event(posting_recommendation="review")
+
+    assert build_schedule_rows([event], {}, {}) == []
+    rows = build_schedule_rows(
+        [{**event, "manual_publish_status": "published"}],
+        {},
+        {},
+    )
+    assert len(rows) == 1
+
+
 def test_manual_published_is_in_schedule_without_auto_signal():
     event = _event(
         event_name="地域イベント",
@@ -49,6 +67,25 @@ def test_manual_published_is_in_schedule_without_auto_signal():
     )
     rows = build_schedule_rows([event], {}, {})
     assert len(rows) == 1
+
+
+def test_organization_display_name_resolves_master_id():
+    organization_index = index_master(
+        [
+            {
+                "organization_id": "org-a",
+                "organization_name": "表示用劇団A",
+                "organization_name_normalized": "劇団A",
+                "official_website": "https://example.com/a",
+            }
+        ],
+        "organization_name_normalized",
+    )
+
+    rows = build_schedule_rows([_event(organization="表示用劇団A")], organization_index, {})
+
+    assert rows[0]["organization_id"] == "org-a"
+    assert rows[0]["official_reference_url"] == "https://example.com/a"
 
 
 def test_schedule_json_payload_can_be_serialized_once_for_multiple_outputs():

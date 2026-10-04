@@ -23,6 +23,10 @@ ALLOWED_MEMBERS = frozenset(
         "data/output/structured_events_filtered_cumulative.csv",
         "data/output/event_cumulative_base.csv",
         "data/output/event_cumulative.csv",
+        "data/output/_state/last_seen_tweet_ids.json",
+        "data/output/_state/query_collection_state.json",
+        "data/output/query_collection_metrics.csv",
+        "data/output/query_effectiveness_review.csv",
     }
 )
 REQUIRED_MEMBERS = frozenset(
@@ -124,6 +128,22 @@ def _validate_csv(path: Path) -> None:
         raise ArtifactSyncError("artifact内のCSVにヘッダーがありません")
 
 
+def _validate_json(path: Path) -> None:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8-sig"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise ArtifactSyncError("artifact内のJSONを読み込めません") from exc
+    if not isinstance(payload, (dict, list)):
+        raise ArtifactSyncError("artifact内のJSONの形式が不正です")
+
+
+def _validate_member_file(member: str, path: Path) -> None:
+    if member.endswith(".json"):
+        _validate_json(path)
+    else:
+        _validate_csv(path)
+
+
 def _atomic_copy(source: Path, destination: Path) -> None:
     with source.open("rb") as input_handle:
         with atomic_open(destination, "wb") as output_handle:
@@ -166,7 +186,7 @@ def restore_snapshot(snapshot_zip: Path, *, root_dir: Path = ROOT_DIR) -> dict[s
             warnings.append("旧artifactのためeffectiveデータをbaseとして使用しました。補正解除時は元値を確認してください。")
 
         for normalized in members:
-            _validate_csv(extracted_root / normalized)
+            _validate_member_file(normalized, extracted_root / normalized)
         for normalized in sorted(members):
             _atomic_copy(extracted_root / normalized, root_dir / normalized)
 

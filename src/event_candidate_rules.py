@@ -42,6 +42,19 @@ CONDITIONAL_NOISE_PATTERNS = [
     "祭り",
 ]
 
+SITE_UPDATE_NOTIFICATION_PATTERNS = (
+    "新しい公演が追加されました",
+    "新しい公演を追加しました",
+    "公演情報が追加されました",
+    "公演情報を追加しました",
+)
+SITE_UPDATE_LINK_PATTERNS = (
+    "詳しくはこちら",
+    "詳細はこちら",
+    "こちらから",
+)
+SITE_UPDATE_NOTIFICATION_HANDLES = {"jokya_official"}
+
 EXCLUDED_VENUE_PATTERNS = [
     "金沢おぐら座",
     "おぐら座",
@@ -79,6 +92,15 @@ def normalize_posting_recommendation(value: Any) -> str:
     return ""
 
 
+def resolve_publication_status(row: dict[str, Any]) -> str:
+    manual_status = str(row.get("manual_publish_status") or "default").strip().lower()
+    if manual_status in {"published", "excluded"}:
+        return manual_status
+    if normalize_posting_recommendation(row.get("posting_recommendation")) == "review":
+        return "review"
+    return "default"
+
+
 def source_text_mentions_exact_start_date(row: dict[str, str]) -> bool:
     start_date = parse_iso_date(row.get("start_date") or "")
     if start_date is None:
@@ -103,6 +125,9 @@ def source_text_mentions_exact_start_date(row: dict[str, str]) -> bool:
 
 
 def has_postable_event_details(row: dict[str, str]) -> bool:
+    if is_site_update_notification(row):
+        return False
+
     posting_recommendation = normalize_posting_recommendation(row.get("posting_recommendation"))
     is_event_announcement = parse_bool(row.get("is_event_announcement"))
     has_actionable_schedule_info = parse_bool(row.get("has_actionable_schedule_info"))
@@ -129,6 +154,27 @@ def contains_any(value: str, patterns: list[str]) -> bool:
     return any(pattern.lower() in lowered for pattern in patterns)
 
 
+def is_site_update_notification(row: dict[str, Any]) -> bool:
+    text = " ".join(
+        str(row.get(field) or "")
+        for field in ("text", "source_text", "quoted_text", "source_quoted_text")
+    )
+    author_values = " | ".join(
+        str(row.get(field) or "")
+        for field in ("author_username", "source_author_usernames")
+    )
+    author_handles = {
+        value.strip().lstrip("@").lower()
+        for value in author_values.split("|")
+        if value.strip()
+    }
+    return bool(
+        author_handles.intersection(SITE_UPDATE_NOTIFICATION_HANDLES)
+        and any(pattern in text for pattern in SITE_UPDATE_NOTIFICATION_PATTERNS)
+        and any(pattern in text for pattern in SITE_UPDATE_LINK_PATTERNS)
+    )
+
+
 def build_date_range(row: dict[str, str]) -> str:
     start_date = (row.get("start_date") or "").strip()
     end_date = (row.get("end_date") or "").strip()
@@ -149,12 +195,16 @@ def is_schedule_eligible_event(row: dict[str, str]) -> bool:
     organization_name = (row.get("organization") or "").strip()
     venue_name = (row.get("normalized_venue_name") or row.get("venue_name") or "").strip()
     date_range = build_date_range(row)
-    manual_publish_status = (row.get("manual_publish_status") or "default").strip().lower()
+    publication_status = resolve_publication_status(row)
 
-    if manual_publish_status == "excluded":
+    if is_site_update_notification(row):
         return False
-    if manual_publish_status == "published":
+    if publication_status == "excluded":
+        return False
+    if publication_status == "published":
         return parse_iso_date(row.get("start_date") or "") is not None and bool(event_name or organization_name)
+    if publication_status == "review":
+        return False
 
     if not date_range:
         return False

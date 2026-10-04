@@ -22,13 +22,16 @@ const $ = (id) => document.getElementById(id);
 const elements = {
   syncSummary: $("syncSummary"), warningBar: $("warningBar"),
   baseCount: $("baseCount"), scheduleCount: $("scheduleCount"),
-  overrideCount: $("overrideCount"), problemCount: $("problemCount"),
+  reviewCount: $("reviewCount"), overrideCount: $("overrideCount"),
+  problemCount: $("problemCount"),
   syncButton: $("syncButton"), publishButton: $("publishButton"),
   searchInput: $("searchInput"), prefectureFilter: $("prefectureFilter"),
   publicationFilter: $("publicationFilter"), upcomingOnly: $("upcomingOnly"),
-  overrideOnly: $("overrideOnly"), resultCount: $("resultCount"), eventList: $("eventList"),
+  overrideOnly: $("overrideOnly"), hideExcluded: $("hideExcluded"),
+  resultCount: $("resultCount"), eventList: $("eventList"),
   emptyState: $("emptyState"), editForm: $("editForm"), eventId: $("eventId"),
   detailTitle: $("detailTitle"), overrideBadge: $("overrideBadge"), noteInput: $("noteInput"),
+  organizationStatus: $("organizationStatus"),
   previewStatus: $("previewStatus"), previewText: $("previewText"), previewLink: $("previewLink"),
   sourceLinks: $("sourceLinks"), deleteButton: $("deleteButton"), toast: $("toast"),
 };
@@ -100,6 +103,60 @@ function markChangedFields() {
   }
 }
 
+function compactOrganizationName(value) {
+  return String(value || "").trim().toLowerCase().replace(/[^0-9a-z\u3040-\u30ff\u3400-\u9fff]/g, "");
+}
+
+function organizationMasterMatch(value) {
+  const compacted = compactOrganizationName(value);
+  if (!compacted) return null;
+  return (state.status?.organization_options || []).find((option) =>
+    (option.names || []).some((name) => compactOrganizationName(name) === compacted)
+  ) || null;
+}
+
+function renderOrganizationOptions(currentValue = "") {
+  const control = elements.editForm.elements.namedItem("organization");
+  if (!control || control.tagName !== "SELECT") return;
+  const current = String(currentValue || control.value || "").trim();
+  const values = new Set([""]);
+  control.replaceChildren(new Option("未指定（団体マスターから選択）", ""));
+  for (const option of state.status?.organization_options || []) {
+    const value = String(option.organization_name || "").trim();
+    if (!value || values.has(value)) continue;
+    values.add(value);
+    const organizationId = String(option.organization_id || "").trim();
+    const label = organizationId ? `${value} (${organizationId})` : value;
+    control.append(new Option(label, value));
+  }
+  if (current && !values.has(current)) {
+    const match = organizationMasterMatch(current);
+    const label = match
+      ? `現在の表記: ${current}（マスター: ${match.organization_name}）`
+      : `未登録の現在値: ${current}`;
+    control.append(new Option(label, current));
+  }
+  control.value = current;
+}
+
+function renderOrganizationStatus() {
+  if (!state.detail) return;
+  const control = elements.editForm.elements.namedItem("organization");
+  const value = String(control?.value || "").trim();
+  if (!value) {
+    elements.organizationStatus.hidden = true;
+    elements.organizationStatus.textContent = "";
+    return;
+  }
+  const detailValue = String(state.detail.effective?.organization || "").trim();
+  const match = organizationMasterMatch(value)
+    || (value === detailValue ? state.detail.organization_master : null);
+  elements.organizationStatus.hidden = false;
+  elements.organizationStatus.textContent = match
+    ? `団体マスター: ${match.organization_name}${match.organization_id ? ` (${match.organization_id})` : ""}`
+    : "団体マスター未登録。団体ID・公式URLは自動付与されません。";
+}
+
 function updatePreview() {
   if (!state.detail) return;
   const { values } = formValues();
@@ -108,14 +165,22 @@ function updatePreview() {
   const forced = status === "published" && hasDate && Boolean(values.event_name || values.organization);
   const excluded = status === "excluded";
   const currentSchedule = state.detail.schedule;
+  const needsReview = status === "default" && values.posting_recommendation === "review";
   const listed = excluded ? false : forced || (Boolean(currentSchedule) && !isDirty());
-  elements.previewStatus.textContent = listed ? "掲載" : excluded ? "除外" : "保存後に再判定";
+  elements.previewStatus.textContent = listed
+    ? "掲載"
+    : excluded
+      ? "除外"
+      : needsReview
+        ? "要確認（確認後に掲載）"
+        : "保存後に再判定";
   const dateText = [values.start_date, values.end_date && values.end_date !== values.start_date ? `〜 ${values.end_date}` : "", values.start_time].filter(Boolean).join(" ");
   elements.previewText.textContent = `${values.event_name || values.organization || "名称未設定"}｜${values.venue_name || "会場未設定"}｜${dateText || "日程未設定"}`;
   const href = values.manual_reference_url || currentSchedule?.official_reference_url || "";
   elements.previewLink.hidden = !href;
   if (href) elements.previewLink.href = href;
   markChangedFields();
+  renderOrganizationStatus();
 }
 
 function renderStatus() {
@@ -123,8 +188,10 @@ function renderStatus() {
   const counts = status.counts || {};
   elements.baseCount.textContent = String(counts.base || 0);
   elements.scheduleCount.textContent = String(counts.schedule || 0);
+  elements.reviewCount.textContent = String(counts.review || 0);
   elements.overrideCount.textContent = String(counts.overrides || 0);
-  elements.problemCount.textContent = String((counts.orphan || 0) + (counts.ambiguous || 0));
+  const unregisteredOrganizationCount = counts.organization_unregistered || 0;
+  elements.problemCount.textContent = String((counts.orphan || 0) + (counts.ambiguous || 0) + unregisteredOrganizationCount);
   const sync = status.sync || {};
   elements.syncSummary.replaceChildren();
   if (sync.updated_at) {
@@ -145,6 +212,7 @@ function renderStatus() {
   else if (!status.gh?.authenticated) warnings.push("GitHub CLIが未認証です。");
   if (counts.orphan) warnings.push(`対象が見つからない補正が ${counts.orphan} 件あります。`);
   if (counts.ambiguous) warnings.push(`対象を一意に決められない補正が ${counts.ambiguous} 件あります。`);
+  if (unregisteredOrganizationCount) warnings.push(`マスター未登録の団体名補正が ${unregisteredOrganizationCount} 件あります。`);
   for (const message of sync.warnings || []) warnings.push(message);
   elements.warningBar.hidden = warnings.length === 0;
   elements.warningBar.textContent = warnings.join(" ");
@@ -175,12 +243,13 @@ function filteredItems() {
   return state.items.filter((item) => {
     const row = item.effective;
     const haystack = [row.event_name, row.organization, row.venue_name, row.normalized_location].filter(Boolean).join(" ").toLowerCase();
-    const status = row.manual_publish_status || "default";
+    const status = item.publication_status || row.manual_publish_status || "default";
     return (!keyword || haystack.includes(keyword))
       && (!prefecture || item.prefecture === prefecture)
       && (!publication || status === publication)
+      && (!elements.hideExcluded.checked || status !== "excluded" || publication === "excluded")
       && (!elements.overrideOnly.checked || item.has_override)
-      && (!elements.upcomingOnly.checked || isUpcoming(item));
+      && (!elements.upcomingOnly.checked || isUpcoming(item) || status === "review");
   });
 }
 
@@ -210,6 +279,12 @@ function renderList() {
       span.textContent = value;
       meta.append(span);
     }
+    if (item.publication_status === "review") {
+      const badge = document.createElement("span");
+      badge.className = "mini-badge review";
+      badge.textContent = "要確認";
+      meta.append(badge);
+    }
     if (item.has_override) {
       const badge = document.createElement("span");
       badge.className = `mini-badge${row.manual_publish_status === "excluded" ? " excluded" : ""}`;
@@ -233,6 +308,7 @@ function populatePrefectures() {
 async function loadStatus() {
   state.status = await api("/api/status");
   state.revision = state.status.revision || "";
+  renderOrganizationOptions();
   renderStatus();
 }
 
@@ -268,6 +344,7 @@ function fillForm(detail) {
     const control = elements.editForm.elements.namedItem(field);
     let value = row[field] || "";
     if (field === "manual_publish_status" && !value) value = "default";
+    if (field === "organization") renderOrganizationOptions(value);
     control.value = value;
   }
   elements.noteInput.value = detail.override?.note || "";
@@ -362,7 +439,7 @@ function bindEvents() {
   elements.publishButton.addEventListener("click", publish);
   elements.editForm.addEventListener("submit", saveOverride);
   elements.deleteButton.addEventListener("click", deleteOverride);
-  for (const input of [elements.searchInput, elements.prefectureFilter, elements.publicationFilter, elements.upcomingOnly, elements.overrideOnly]) {
+  for (const input of [elements.searchInput, elements.prefectureFilter, elements.publicationFilter, elements.upcomingOnly, elements.overrideOnly, elements.hideExcluded]) {
     input.addEventListener(input.tagName === "INPUT" && input.type === "search" ? "input" : "change", renderList);
   }
   elements.editForm.addEventListener("input", (event) => {
@@ -374,6 +451,7 @@ function bindEvents() {
     }
     updatePreview();
   });
+  elements.editForm.addEventListener("change", updatePreview);
   window.addEventListener("beforeunload", (event) => {
     if (!isDirty()) return;
     event.preventDefault();

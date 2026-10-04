@@ -58,6 +58,7 @@
 
 - `structured_events.*` は生の抽出結果です
 - `structured_events_filtered.*` はノイズ除去後の結果です
+- `jokya_official` の「新しい公演が追加されました」「詳しくはこちら」形式のサイト更新通知は、公演情報として扱わず、LLM抽出・累積filtered・schedule・X投稿の対象から除外します。既存の累積データへ反映する場合は `src/run_pipeline.py --rebuild-only` を使います
 - JSONL は通常運用では保存せず、必要な時だけ `--debug-outputs` を付けて保存します
 - 既定では tweet の添付画像 URL があれば Azure OpenAI に画像入力として渡します。コストや入力サイズを抑えたい場合は `--no-images` を使ってください
 - `organization` は `data/output/organization_master.csv` の `official_x` と正規名に基づいて補正されます
@@ -112,6 +113,10 @@ GitHub Actions が生成した最新の詳細データを取得し、公演名�
 ブラウザを自動で開かない場合は `--no-browser`、ポートを変える場合は `--port 8766` を指定します。
 
 補正内容は `config/manual_event_overrides.json` にだけ永続保存されます。`data/output/event_cumulative.csv` や公開JSONを直接編集しないでください。補正前データは `data/output/event_cumulative_base.csv`、補正適用後データは `data/output/event_cumulative.csv` です。
+
+抽出結果の `posting_recommendation=review` は自動公開されず、保守画面の「要確認」候補に表示されます。元投稿を確認し、必要に応じて公演情報を補正したうえで「公開指定」を「掲載確定」にして保存すると、scheduleへ掲載されます。「除外確定」にすると公開対象から外れます。要確認候補は日程が未確定でも一覧に表示されます。
+
+団体名の補正は対象公演だけに適用され、団体マスターを自動変更しません。補正後の団体名が `data/output/organization_master.csv` に登録済みなら、schedule生成時に団体IDと公式URLも解決されます。未登録名の場合は団体ID・公式URLを自動付与できないため、メンテナンス画面に警告が出ます。正式な団体として継続利用する場合は、先に団体マスターへ登録するか、その公演の「公式参照URL」を手動指定してください。
 
 「補正をGitHubへ反映」は、現在のブランチが `main` で、ローカルが `origin/main` より古くない場合に限り、補正JSONだけをcommit/pushします。他の変更はcommitへ含めません。条件を満たさない場合は自動pullやforce pushを行わず停止します。
 
